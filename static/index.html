@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>雅虎代拍机器人</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
+        .status-running {
+            background: #e6f7ff;
+            color: #1890ff;
+        }
+
+        .status-stopped {
+            background: #fff1f0;
+            color: #f5222d;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        .btn-primary {
+            background: #1890ff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #40a9ff;
+        }
+
+        .btn-danger {
+            background: #ff4d4f;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ff7875;
+        }
+
+        .btn-default {
+            background: #f0f0f0;
+            color: rgba(0, 0, 0, 0.65);
+            border: 1px solid #d9d9d9;
+        }
+
+        .btn-default:hover {
+            color: #40a9ff;
+            border-color: #40a9ff;
+        }
+
+        .logs {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+        }
+
+        .log-line {
+            margin: 2px 0;
+        }
+
+        .log-INFO {
+            color: #d4d4d4;
+        }
+
+        .log-WARNING {
+            color: #faad14;
+        }
+
+        .log-ERROR {
+            color: #ff4d4f;
+        }
+
+        /* Risk Tables & Tags */
+        .panel {
+            background: white;
+            border: 1px solid #d9d9d9;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .panel-title {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .tag {
+            background: #f5f5f5;
+            border: 1px solid #d9d9d9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tag-remove {
+            cursor: pointer;
+            color: #999;
+            font-weight: bold;
+        }
+
+        .tag-remove:hover {
+            color: #ff4d4f;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>雅虎代拍自动下单系统</h2>
+            <span id="status-badge" class="status-badge status-stopped">停止中</span>
+        </div>
+
+        <div class="controls">
+            <button onclick="launchBrowser()" class="btn-default">🚀 启动浏览器 (登录用)</button>
+            <button onclick="initAudio(); startBot()" class="btn-primary">▶ 开始运行</button>
+            <button onclick="stopBot()" class="btn-danger">⏹ 停止</button>
+        </div>
+
+        <!-- Single Order Test -->
+        <div class="controls" style="border-top: 1px solid #eee; padding-top: 15px;">
+            <input type="text" id="single-order-id" placeholder="输入后台ID(如601234)或商品ID"
+                style="padding: 8px; border: 1px solid #d9d9d9; border-radius: 4px; width: 220px;">
+            <button onclick="initAudio(); startSingleTest()" class="btn-primary"
+                style="background: #722ed1; border-color: #722ed1;">🧪 单单测试</button>
+        </div>
+
+        <div id="screenshot-alert-panel"
+            style="display: none; background: #fff1f0; border: 1px solid #ffccc7; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+            <h3 style="color: #cf1322; margin-top: 0;">⚠️ 需手动上传截图订单</h3>
+            <p>检测到以下订单需要您手动处理（上传截图）：</p>
+            <ul id="screenshot-list" style="color: #cf1322; font-weight: bold;"></ul>
+        </div>
+
+        <div class="panel">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <h3 class="panel-title" style="margin: 0; border: none; padding: 0;">🛡️ 风险拦截记录 (Risk History)</h3>
+                    <button onclick="batchCheckStatus()" class="btn-primary"
+                        style="padding: 4px 12px; font-size: 12px;">⚡ 批量检测</button>
+                </div>
+                <input type="date" id="risk-date-filter" onchange="fetchRiskHistory()"
+                    style="padding: 4px; border: 1px solid #d9d9d9; border-radius: 4px;">
+            </div>
+            <div style="max-height: 200px; overflow-y: auto;">
+                <table id="risk-history-table">
+                    <thead>
+                        <tr>
+                            <th>时间</th>
+                            <th>订单号</th>
+                            <th>拦截原因</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Risk Keyword Manager -->
+        <div class="panel">
+            <h3 class="panel-title">🚫 违禁词管理 (Risk Keywords)</h3>
+            <div class="tag-container" id="keyword-list">
+                <!-- Tags populated by JS -->
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="new-keyword-input" placeholder="输入新违禁词..."
+                    style="padding: 6px; border: 1px solid #d9d9d9; border-radius: 4px;">
+                <button onclick="addKeyword()" class="btn-primary" style="padding: 6px 12px;">添加</button>
+            </div>
+        </div>
+
+        <!-- Seller Messages Panel -->
+        <div class="panel">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; flex-wrap: wrap; gap: 5px;">
+                <h3 class="panel-title" style="margin: 0; border: none; padding: 0;">💬 卖家留言 (Seller Messages)</h3>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <select id="msg-date-select" onchange="manualRefreshMessages()"
+                        style="padding: 2px 6px; font-size: 12px; border: 1px solid #ddd; border-radius: 3px;">
+                        <option value="">今天</option>
+                    </select>
+                    <button onclick="exportSellerMessages()" class="btn-default"
+                        style="padding: 2px 8px; font-size: 12px;" title="导出为 Excel/CSV">📥 导出</button>
+                    <button onclick="translateSellerMessages()" class="btn-default"
+                        style="padding: 2px 8px; font-size: 12px;" title="一键翻译日文留言" id="btn-translate">🌐 翻译</button>
+                    <button onclick="manualRefreshMessages()" class="btn-default"
+                        style="padding: 2px 6px; font-size: 12px;">🔄</button>
+                </div>
+            </div>
+            <div style="max-height: 300px; overflow-y: auto;">
+                <table id="seller-messages-table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="width: 140px;">时间</th>
+                            <th style="width: 80px;">订单号</th>
+                            <th style="width: 50px;">类型</th>
+                            <th>留言内容</th>
+                            <th style="width: 40px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #999;">暂无留言</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 店铺黑名单面板 -->
+        <div class="panel" style="margin-top: 10px;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                <h3 class="panel-title" style="margin: 0; border: none; padding: 0;">⛔ 店铺黑名单</h3>
+                <span id="blacklist-count" style="font-size: 12px; color: #999;"></span>
+            </div>
+            <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                <input type="text" id="bl-seller-id" placeholder="卖家ID (如 6heGxY2U7NwE...)"
+                    style="flex: 1; padding: 4px 8px; font-size: 12px; border: 1px solid #ddd; border-radius: 3px;">
+                <input type="text" id="bl-note" placeholder="备注 (可选)"
+                    style="width: 120px; padding: 4px 8px; font-size: 12px; border: 1px solid #ddd; border-radius: 3px;">
+                <button onclick="addToBlacklist()" class="btn-default" style="padding: 4px 10px; font-size: 12px;">➕
+                    添加</button>
+            </div>
+            <div style="max-height: 200px; overflow-y: auto;">
+                <table id="blacklist-table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th>卖家ID</th>
+                            <th style="width: 120px;">备注</th>
+                            <th style="width: 140px;">添加时间</th>
+                            <th style="width: 40px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #999;">暂无黑名单</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div>
+            <label><input type="checkbox" id="test-mode" checked> 测试模式 (不真正点击付款)</label>
+            <label style="margin-left: 15px;"><input type="checkbox" id="headless-mode"> 无头模式 (后台运行)</label>
+        </div>
+
+        <h3>运行日志</h3>
+        <!-- Real-time Logs -->
+        <div style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <h4 style="margin: 0;">实时监控</h4>
+                <span style="font-size: 12px; color: #999;">(Latest events)</span>
+            </div>
+            <div class="logs" id="log-container">
+                <div class="log-line">Waiting for connection...</div>
+            </div>
+        </div>
+
+        <!-- History Logs -->
+        <div style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <h4 style="margin: 0;">📜 历史日志 (History)</h4>
+                <div style="display: flex; gap: 5px;">
+                    <select id="history-log-select" style="padding: 2px; border: 1px solid #d9d9d9; border-radius: 4px;"
+                        onchange="loadHistoryLog()">
+                        <option value="">Select Date...</option>
+                    </select>
+                    <button onclick="fetchLogList()" class="btn-default"
+                        style="padding: 2px 6px; font-size: 12px;">🔄</button>
+                </div>
+            </div>
+            <div class="logs" id="history-log-container" style="background: #2b2b2b; display: none;">
+                <div style="color: #999; text-align: center; padding-top: 20px;">请选择日志文件查看</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8000";
+        const WS_URL = "ws://localhost:8000/ws/logs";
+        let isRunning = false;
+
+        // --- History Log Logic ---
+        async function fetchLogList() {
+            try {
+                const res = await fetch(`${API_URL}/api/logs`);
+                const data = await res.json();
+                const select = document.getElementById('history-log-select');
+                const currentVal = select.value;
+                select.innerHTML = '<option value="">Select Date...</option>';
+
+                (data.logs || []).forEach(file => {
+                    const opt = document.createElement('option');
+                    opt.value = file;
+                    opt.textContent = file.replace('.log', '');
+                    select.appendChild(opt);
+                });
+                if (currentVal) select.value = currentVal;
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadHistoryLog() {
+            const filename = document.getElementById('history-log-select').value;
+            const container = document.getElementById('history-log-container');
+
+            if (!filename) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            container.textContent = "Loading...";
+
+            try {
+                const res = await fetch(`${API_URL}/api/logs/${filename}`);
+                const data = await res.json();
+                if (data.content) {
+                    // Clear and set Text
+                    container.textContent = "";
+                    // Pre-format logic similar to live logs (optional, but raw text is usually fine)
+                    // We just dump text for now, but preserving newlines is key. 
+                    // .logs css has font-family monospace which is good.
+                    // We use innerText to preserve line breaks?
+                    container.innerText = data.content;
+                    container.scrollTop = 0;
+                } else {
+                    container.textContent = "Error loading content.";
+                }
+            } catch (e) {
+                container.textContent = "Error: " + e;
+            }
+        }
+
+        // Init History
+        document.addEventListener('DOMContentLoaded', fetchLogList);
+
+        // WebSocket for Logs (带自动重连)
+        const logContainer = document.getElementById('log-container');
+        let ws = null;
+        let wsReconnectTimer = null;
+
+        function connectWebSocket() {
+            if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+                return; // 已连接或正在连接，跳过
+            }
+
+            ws = new WebSocket(WS_URL);
+
+            ws.onopen = function () {
+                console.log("WebSocket connected");
+                const div = document.createElement('div');
+                div.className = 'log-line';
+                div.style.color = '#52c41a';
+                div.textContent = `[${new Date().toLocaleTimeString()}] WebSocket 已连接`;
+                logContainer.appendChild(div);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            };
+
+            ws.onmessage = function (event) {
+                // Check for Sound Command
+                if (event.data.startsWith('[[SOUND:')) {
+                    const type = event.data.substring(8, event.data.indexOf(']]'));
+                    playAlert(type);
+                    return; // Don't log this
+                }
+
+                const div = document.createElement('div');
+                div.className = 'log-line';
+                div.textContent = event.data;
+                if (event.data.includes('[ERROR]')) div.classList.add('log-ERROR');
+                if (event.data.includes('[WARNING]')) div.classList.add('log-WARNING');
+                logContainer.appendChild(div);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            };
+
+            ws.onclose = function () {
+                console.log("WebSocket disconnected, will reconnect in 2s...");
+                const div = document.createElement('div');
+                div.className = 'log-line';
+                div.style.color = '#faad14';
+                div.textContent = `[${new Date().toLocaleTimeString()}] WebSocket 断开，2秒后自动重连...`;
+                logContainer.appendChild(div);
+                logContainer.scrollTop = logContainer.scrollHeight;
+                // 自动重连
+                if (wsReconnectTimer) clearTimeout(wsReconnectTimer);
+                wsReconnectTimer = setTimeout(connectWebSocket, 2000);
+            };
+
+            ws.onerror = function (err) {
+                console.error("WebSocket error:", err);
+                ws.close(); // 触发 onclose 进行重连
+            };
+        }
+
+        // 初始连接
+        connectWebSocket();
+
+        // Audio Context Setup
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Generate Beeps using Oscillator
+        function playAlert(type) {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'success') {
+                // Happy Major Arpeggio (C5 - E5 - G5)
+                const now = audioCtx.currentTime;
+
+                const osc1 = audioCtx.createOscillator();
+                const gain1 = audioCtx.createGain();
+                osc1.connect(gain1);
+                gain1.connect(audioCtx.destination);
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(523.25, now); // C5
+                gain1.gain.setValueAtTime(0.1, now);
+                gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc1.start(now);
+                osc1.stop(now + 0.1);
+
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.connect(gain2);
+                gain2.connect(audioCtx.destination);
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                gain2.gain.setValueAtTime(0.1, now + 0.1);
+                gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc2.start(now + 0.1);
+                osc2.stop(now + 0.2);
+
+                const osc3 = audioCtx.createOscillator();
+                const gain3 = audioCtx.createGain();
+                osc3.connect(gain3);
+                gain3.connect(audioCtx.destination);
+                osc3.type = 'sine';
+                osc3.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                gain3.gain.setValueAtTime(0.1, now + 0.2);
+                gain3.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc3.start(now + 0.2);
+                osc3.stop(now + 0.4);
+
+            } else if (type === 'error') {
+                // Buzz / Low Tone
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+
+            } else if (type === 'attention') {
+                // High Ping
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.5);
+            }
+        }
+
+        // API Calls
+        async function launchBrowser() {
+            try {
+                await fetch(`${API_URL}/launch_browser`, { method: 'POST' });
+                log("Command sent: Launch Browser");
+            } catch (e) { log("Error: " + e); }
+        }
+
+        async function startBot() {
+            const testMode = document.getElementById('test-mode').checked;
+            const headless = document.getElementById('headless-mode').checked;
+            try {
+                const res = await fetch(`${API_URL}/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ headless, test_mode: testMode })
+                });
+                const data = await res.json();
+                if (data.status === 'started') {
+                    updateStatus(true);
+                    log("Command sent: Start");
+                } else {
+                    log("Info: " + data.status);
+                }
+            } catch (e) { log("Error: " + e); }
+        }
+
+        async function startSingleTest() {
+            const testMode = document.getElementById('test-mode').checked;
+            const headless = document.getElementById('headless-mode').checked;
+            const targetId = document.getElementById('single-order-id').value.trim();
+
+            if (!targetId) {
+                alert("请输入订单号或商品ID！");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ headless, test_mode: testMode, target_order_id: targetId })
+                });
+                const data = await res.json();
+                if (data.status === 'started') {
+                    updateStatus(true);
+                    log(`Command sent: Start Single Test for ${targetId}`);
+                } else {
+                    log("Info: " + data.status);
+                }
+            } catch (e) { log("Error: " + e); }
+        }
+
+        async function stopBot() {
+            try {
+                await fetch(`${API_URL}/stop`, { method: 'POST' });
+                updateStatus(false);
+                log("Command sent: Stop");
+            } catch (e) { log("Error: " + e); }
+        }
+
+        async function checkStatus() {
+            try {
+                const res = await fetch(`${API_URL}/status`);
+                const data = await res.json();
+                updateStatus(data.running);
+            } catch (e) { }
+        }
+
+        async function checkScreenshotOrders() {
+            try {
+                const res = await fetch(`${API_URL}/screenshot_orders`);
+                const data = await res.json();
+                const list = data.orders || [];
+                const panel = document.getElementById('screenshot-alert-panel');
+                const ul = document.getElementById('screenshot-list');
+
+                if (list.length > 0) {
+                    panel.style.display = 'block';
+                    ul.innerHTML = '';
+                    list.forEach(oid => {
+                        const li = document.createElement('li');
+                        li.textContent = `订单号: ${oid}`;
+                        ul.appendChild(li);
+                    });
+                } else {
+                    panel.style.display = 'none';
+                }
+            } catch (e) { }
+        }
+
+        // --- Risk Management JS ---
+        async function fetchRiskHistory() {
+            try {
+                // Manage Date Filter
+                const dateInput = document.getElementById('risk-date-filter');
+                if (!dateInput.value) {
+                    // Default to Today (Local Time)
+                    const today = new Date();
+                    const yyyy = today.getFullYear();
+                    const mm = String(today.getMonth() + 1).padStart(2, '0');
+                    const dd = String(today.getDate()).padStart(2, '0');
+                    dateInput.value = `${yyyy}-${mm}-${dd}`;
+                }
+                const filterDate = dateInput.value;
+
+                const res = await fetch(`${API_URL}/risk/history`);
+                const data = await res.json();
+                const tbody = document.querySelector('#risk-history-table tbody');
+                tbody.innerHTML = ''; // Clear current
+
+                // Reverse to show newest first
+                let history = (data.history || []).slice().reverse();
+
+                // Filter by Date
+                if (filterDate) {
+                    history = history.filter(item => item.timestamp.startsWith(filterDate));
+                }
+
+                if (history.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td colspan="5" style="text-align:center; color:#999;">无该日期的拦截记录</td>`;
+                    tbody.appendChild(tr);
+                } else {
+                    history.forEach(item => {
+                        const tr = document.createElement('tr');
+                        const isProcessed = item.status === "Processed";
+                        const statusColor = isProcessed ? "green" : "#ff4d4f";
+                        const statusText = isProcessed ? "已处理" : "未处理";
+
+                        // Action Button
+                        let actionHtml = '';
+                        if (isProcessed) {
+                            actionHtml = '<span style="color: green; margin-right: 10px;">✓</span>';
+                        } else {
+                            actionHtml = `<button onclick="checkStatusForOrder('${item.order_id}', this)" class="btn-default" style="padding: 2px 8px; font-size: 12px; margin-right: 8px;">检测</button>`;
+                        }
+                        // Add Delete Button
+                        actionHtml += `<button onclick="deleteRiskOrder('${item.order_id}')" title="删除记录" style="border: none; background: none; cursor: pointer; font-size: 14px;">🗑️</button>`;
+
+                        tr.innerHTML = `
+                            <td>${item.timestamp}</td>
+                            <td>${item.order_id}</td>
+                            <td style="color: #cf1322;">${item.reason}</td>
+                            <td style="color: ${statusColor}; font-weight: bold;" id="status-${item.order_id}">${statusText}</td>
+                            <td>${actionHtml}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (e) { }
+        }
+
+        async function deleteRiskOrder(orderId) {
+            if (!confirm(`确定要删除订单 ${orderId} 的拦截记录吗？\n删除后，机器人将重新把该订单视为新任务处理。`)) return;
+
+            try {
+                const res = await fetch(`${API_URL}/risk/delete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: orderId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert("删除成功！");
+                    fetchRiskHistory(); // Refresh table
+                } else {
+                    alert("删除失败: " + data.error);
+                }
+            } catch (e) {
+                alert("请求错误: " + e);
+            }
+        }
+
+        async function checkStatusForOrder(orderId, btn, silent = false) {
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = "检测中...";
+            }
+            try {
+                const res = await fetch(`${API_URL}/risk/check_status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: orderId })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    const isProcessed = data.status === "Processed";
+                    const statusCell = document.getElementById(`status-${orderId}`);
+
+                    if (isProcessed) {
+                        if (statusCell) {
+                            statusCell.textContent = "已处理";
+                            statusCell.style.color = "green";
+                        }
+                        if (btn) {
+                            // Replace button with checkmark
+                            const span = document.createElement('span');
+                            span.style.color = 'green';
+                            span.textContent = '✓';
+                            btn.parentNode.replaceChild(span, btn);
+                        }
+                        if (!silent) alert(`订单 ${orderId} 检测结果：已购买 (已更新状态)`);
+                    } else {
+                        if (statusCell) {
+                            statusCell.textContent = "未处理";
+                            statusCell.style.color = "#ff4d4f";
+                        }
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.textContent = "检测";
+                        }
+                        if (!silent) alert(`订单 ${orderId} 检测结果：${data.detail || '未购买'}`);
+                    }
+                    return isProcessed;
+                } else {
+                    if (!silent) alert('检测失败: ' + (data.error || 'Unknown Error'));
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = "检测";
+                    }
+                    return false;
+                }
+            } catch (e) {
+                if (!silent) alert('请求错误: ' + e);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = "检测";
+                }
+                return false;
+            }
+        }
+
+        async function batchCheckStatus() {
+            const rows = document.querySelectorAll('#risk-history-table tbody tr');
+            let pendingBtns = [];
+
+            // Collect all "Check" buttons that are not disabled
+            rows.forEach(row => {
+                const btn = row.querySelector('button');
+                if (btn && !btn.disabled && btn.textContent === "检测") {
+                    // Extract onClick to get ID? Or better, store ID in attribute
+                    // Currently: onclick="checkStatusForOrder('ID', this)"
+                    // Parse ID from onclick string is hacky but works.
+                    const onclickStr = btn.getAttribute('onclick');
+                    const match = onclickStr.match(/'([^']+)'/);
+                    if (match) {
+                        pendingBtns.push({ id: match[1], btn: btn });
+                    }
+                }
+            });
+
+            if (pendingBtns.length === 0) {
+                alert("没有需要检测的订单 (或列表为空)。");
+                return;
+            }
+
+            if (!confirm(`确定要批量检测 ${pendingBtns.length} 个订单吗？这可能需要一些时间。`)) return;
+
+            let processedCount = 0;
+            for (let i = 0; i < pendingBtns.length; i++) {
+                const item = pendingBtns[i];
+                // Update specific button to indicate current activity
+                item.btn.textContent = `(${i + 1}/${pendingBtns.length}) 检测中...`;
+
+                await checkStatusForOrder(item.id, item.btn, true); // silent=true
+
+                // Small delay to prevent overwhelming
+                await new Promise(r => setTimeout(r, 1000));
+            }
+
+            alert("批量检测完成！");
+        }
+
+        async function fetchKeywords() {
+            try {
+                const res = await fetch(`${API_URL}/risk/keywords`);
+                const data = await res.json();
+                renderKeywords(data.keywords || []);
+            } catch (e) { }
+        }
+
+        function renderKeywords(keywords) {
+            const container = document.getElementById('keyword-list');
+            container.innerHTML = '';
+            keywords.forEach(kw => {
+                const tag = document.createElement('div');
+                tag.className = 'tag';
+                tag.innerHTML = `
+                    <span>${kw}</span>
+                    <span class="tag-remove" onclick="removeKeyword('${kw}')">×</span>
+                `;
+                container.appendChild(tag);
+            });
+        }
+
+        async function addKeyword() {
+            const input = document.getElementById('new-keyword-input');
+            const keyword = input.value.trim();
+            if (!keyword) return;
+
+            try {
+                const res = await fetch(`${API_URL}/risk/keywords`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ keyword })
+                });
+                const data = await res.json();
+                renderKeywords(data.keywords);
+                input.value = ''; // Clear input
+            } catch (e) { log("Error adding keyword: " + e); }
+        }
+
+        async function removeKeyword(keyword) {
+            if (!confirm(`确定要移除违禁词 "${keyword}" 吗?`)) return;
+            try {
+                const res = await fetch(`${API_URL}/risk/keywords`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ keyword })
+                });
+                const data = await res.json();
+                renderKeywords(data.keywords);
+            } catch (e) { log("Error removing keyword: " + e); }
+        }
+
+        // --- Seller Messages ---
+        let msgTranslated = false; // 翻译状态标记，防止自动刷新覆盖翻译结果
+        async function loadMessageDates() {
+            try {
+                const res = await fetch(`${API_URL}/api/seller_messages/dates`);
+                const data = await res.json();
+                const select = document.getElementById('msg-date-select');
+                // 保留第一个"今天"选项
+                select.innerHTML = '<option value="">今天</option>';
+                (data.dates || []).forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d;
+                    opt.textContent = d;
+                    select.appendChild(opt);
+                });
+            } catch (e) { console.error('loadMessageDates error:', e); }
+        }
+
+        async function fetchSellerMessages(force = false) {
+            // NOTE: 如果已翻译且非强制刷新，跳过自动刷新以保留翻译内容
+            if (msgTranslated && !force) return;
+            try {
+                const dateVal = document.getElementById('msg-date-select').value;
+                const url = dateVal
+                    ? `${API_URL}/api/seller_messages?date=${dateVal}`
+                    : `${API_URL}/api/seller_messages`;
+                const res = await fetch(url);
+                const data = await res.json();
+                const tbody = document.querySelector('#seller-messages-table tbody');
+                tbody.innerHTML = '';
+
+                const items = data.messages || [];
+                if (items.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #999;">暂无留言</td></tr>';
+                    return;
+                }
+
+                items.forEach(item => {
+                    const tr = document.createElement('tr');
+                    const typeColor = item.seller_type === '店铺' ? '#722ed1' : '#1890ff';
+                    const allMsgs = (item.messages || []).map(m => {
+                        let prefix = m.sender ? `[${m.sender}]` : '';
+                        let time = m.time ? ` (${m.time})` : '';
+                        return `${prefix}${time} ${m.text}`;
+                    }).join('\n---\n');
+                    const preview = allMsgs.length > 200 ? allMsgs.substring(0, 200) + '...' : allMsgs;
+
+                    tr.innerHTML = `
+                        <td style="font-size: 11px; white-space: nowrap;">${item.timestamp}</td>
+                        <td style="font-weight: bold;">${item.order_id}</td>
+                        <td><span style="color: ${typeColor}; font-weight: bold;">${item.seller_type}</span></td>
+                        <td style="font-size: 12px; white-space: pre-wrap; max-width: 400px; word-break: break-all; cursor: pointer;" 
+                            title="点击查看完整内容"
+                            onclick="alert(this.getAttribute('data-full'))"
+                            data-full="${allMsgs.replace(/"/g, '&quot;').replace(/\n/g, '\\n')}">${preview.replace(/\n/g, '<br>')}</td>
+                        <td><button onclick="deleteSellerMessage('${item.order_id}')" style="background: none; border: none; cursor: pointer; color: #999; font-size: 14px;" title="删除">🗑</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) { console.error('fetchSellerMessages error:', e); }
+        }
+
+        async function deleteSellerMessage(orderId) {
+            if (!confirm(`确定删除订单 ${orderId} 的留言?`)) return;
+            try {
+                await fetch(`${API_URL}/api/seller_messages/delete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: orderId })
+                });
+                msgTranslated = false;
+                fetchSellerMessages(true);
+            } catch (e) { console.error('deleteSellerMessage error:', e); }
+        }
+
+        function exportSellerMessages() {
+            const dateVal = document.getElementById('msg-date-select').value;
+            const url = dateVal
+                ? `${API_URL}/api/seller_messages/export?date=${dateVal}`
+                : `${API_URL}/api/seller_messages/export`;
+            window.open(url, '_blank');
+        }
+
+        function manualRefreshMessages() {
+            // 手动刷新时重置翻译状态
+            msgTranslated = false;
+            fetchSellerMessages(true);
+        }
+
+        async function translateSellerMessages() {
+            const btn = document.getElementById('btn-translate');
+            btn.disabled = true;
+            btn.textContent = '⏳ 翻译中...';
+
+            try {
+                // 找到所有留言内容单元格（第4列）
+                const cells = document.querySelectorAll('#seller-messages-table tbody td:nth-child(4)');
+                for (const cell of cells) {
+                    // 跳过已翻译的和空状态行
+                    if (cell.getAttribute('data-translated') === 'true') continue;
+                    if (cell.colSpan > 1) continue;
+
+                    const originalText = cell.getAttribute('data-full') || cell.innerText;
+                    if (!originalText || originalText.length < 3) continue;
+
+                    try {
+                        const res = await fetch(`${API_URL}/api/translate`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ text: originalText.replace(/\\n/g, '\n') })
+                        });
+                        const data = await res.json();
+                        if (data.translated) {
+                            // 在原文下方追加翻译内容
+                            const divider = document.createElement('div');
+                            divider.style.cssText = 'border-top: 1px dashed #91d5ff; margin-top: 6px; padding-top: 6px; color: #1890ff; font-size: 12px;';
+                            divider.innerHTML = '📝 <b>中文翻译:</b><br>' + data.translated.replace(/\n/g, '<br>');
+                            cell.appendChild(divider);
+                            cell.setAttribute('data-translated', 'true');
+                        }
+                    } catch (e) { console.error('Translate single error:', e); }
+                }
+            } catch (e) { console.error('translateSellerMessages error:', e); }
+            finally {
+                btn.disabled = false;
+                btn.textContent = '🌐 翻译';
+                // NOTE: 标记已翻译，阻止自动刷新覆盖
+                msgTranslated = true;
+            }
+        }
+
+        // --- 店铺黑名单 ---
+        async function fetchBlacklist() {
+            try {
+                const res = await fetch(`${API_URL}/api/blacklist`);
+                const data = await res.json();
+                const tbody = document.querySelector('#blacklist-table tbody');
+                const items = data.blacklist || [];
+                document.getElementById('blacklist-count').textContent = `共 ${items.length} 个`;
+
+                if (items.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">暂无黑名单</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = '';
+                items.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="font-size: 11px; word-break: break-all;">${item.seller_id}</td>
+                        <td style="font-size: 12px;">${item.note || '-'}</td>
+                        <td style="font-size: 11px; white-space: nowrap;">${item.added_time || ''}</td>
+                        <td><button onclick="removeFromBlacklist('${item.seller_id}')" style="background: none; border: none; cursor: pointer; color: #999; font-size: 14px;" title="移除">❌</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) { console.error('fetchBlacklist error:', e); }
+        }
+
+        async function addToBlacklist() {
+            const sellerId = document.getElementById('bl-seller-id').value.trim();
+            if (!sellerId) { alert('请输入卖家ID'); return; }
+            const note = document.getElementById('bl-note').value.trim();
+            try {
+                const res = await fetch(`${API_URL}/api/blacklist/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ seller_id: sellerId, note: note })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('bl-seller-id').value = '';
+                    document.getElementById('bl-note').value = '';
+                    fetchBlacklist();
+                } else {
+                    alert('该卖家已在黑名单中');
+                }
+            } catch (e) { console.error('addToBlacklist error:', e); }
+        }
+
+        async function removeFromBlacklist(sellerId) {
+            if (!confirm(`确定将 ${sellerId} 从黑名单移除?`)) return;
+            try {
+                await fetch(`${API_URL}/api/blacklist/remove`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ seller_id: sellerId })
+                });
+                fetchBlacklist();
+            } catch (e) { console.error('removeFromBlacklist error:', e); }
+        }
+
+        function updateStatus(running) {
+            isRunning = running;
+            const badge = document.getElementById('status-badge');
+            if (running) {
+                badge.textContent = "运行中";
+                badge.className = "status-badge status-running";
+            } else {
+                badge.textContent = "已停止";
+                badge.className = "status-badge status-stopped";
+            }
+        }
+
+        function log(msg) {
+            const div = document.createElement('div');
+            div.className = 'log-line';
+            div.textContent = `[UI] ${msg}`;
+            logContainer.appendChild(div);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // Poll status every 3s
+        setInterval(checkStatus, 3000);
+        setInterval(checkScreenshotOrders, 3000); // Check orders every 3s
+        setInterval(fetchRiskHistory, 3000);      // Check risk history every 3s
+        setInterval(fetchSellerMessages, 5000);   // Check seller messages every 5s
+
+        // Initial Load
+        checkStatus();
+        loadMessageDates();
+        fetchSellerMessages();
+        fetchKeywords();
+        fetchBlacklist();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,11 @@
+user_data/
+logs/
+seller_messages/
+error_snapshots/
+__pycache__/
+_restore/
+*.pyc
+.venv/
+venv/
+*.log
+risk_history.json
