@@ -557,8 +557,13 @@
         // API Calls
         async function launchBrowser() {
             try {
-                await fetch(`${API_URL}/launch_browser`, { method: 'POST' });
-                log("Command sent: Launch Browser");
+                const res = await fetch(`${API_URL}/launch_browser`, { method: 'POST' });
+                const data = await res.json();
+                if (data.status === "error") {
+                    log("启动浏览器失败: " + (data.error || "unknown"));
+                } else {
+                    log("Command sent: Launch Browser");
+                }
             } catch (e) { log("Error: " + e); }
         }
 

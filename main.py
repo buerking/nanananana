@@ -122,8 +122,11 @@ async def get_screenshot_orders():
 @app.post("/launch_browser")
 async def launch_browser():
     """Launch browser for manual login"""
-    await bot.start_browser(headless=False, for_login=True)
-    return {"status": "browser launched"}
+    try:
+        await bot.start_browser(headless=False, for_login=True)
+        return {"status": "browser launched"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
 
 
 @app.websocket("/ws/logs")
