@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import shutil
 import subprocess
 
 from playwright.async_api import async_playwright
@@ -17,7 +18,7 @@ DEFAULT_BROWSER_CONFIG = {
 
 
 class BrowserMixin:
-    """mode=cdp：使用本机 Chrome 的 Profile 14（已登录），不是项目 user_data。"""
+    """mode=cdp：用系统 Chrome 的 Profile 14 登录态，只启动一次，不再循环杀进程。"""
 
     def load_browser_config(self):
         cfg = dict(DEFAULT_BROWSER_CONFIG)
@@ -55,35 +56,38 @@ class BrowserMixin:
         )
 
     async def start_browser(self, headless=False, for_login=False):
-        if self.browser_context:
-            await self.log("Browser already open.")
-            return
-        self.browser_config = self.load_browser_config()
-        mode = (self.browser_config.get("mode") or "playwright").strip().lower()
-        await self.log(f"正在启动浏览器... 模式={mode}")
-        try:
-            self.playwright = await async_playwright().start()
-            if mode == "cdp":
-                if headless:
-                    await self.log("CDP 模式忽略无头选项，使用已登录的系统 Chrome。", "WARNING")
-                await self._start_system_chrome()
-            else:
-                await self._start_playwright_profile(headless=headless)
-            await self._ensure_yahoo_and_backend_tabs()
-            if for_login:
-                await self.log(
-                    f"浏览器已打开。当前应是系统 Chrome Profile 14 的登录态。\n"
-                    f"1. 雅虎拍卖\n2. 后台系统 ({self.BACKEND_URL})"
-                )
-        except Exception as e:
-            await self.log(f"Failed to launch browser: {e}", "ERROR")
-            if self.playwright and not self.browser_context:
-                try:
-                    await self.playwright.stop()
-                except Exception:
-                    pass
-                self.playwright = None
-            raise
+        if self._browser_lock is None:
+            self._browser_lock = asyncio.Lock()
+        async with self._browser_lock:
+            if self.browser_context:
+                await self.log("Browser already open.")
+                return
+            self.browser_config = self.load_browser_config()
+            mode = (self.browser_config.get("mode") or "playwright").strip().lower()
+            await self.log(f"正在启动浏览器... 模式={mode}")
+            try:
+                self.playwright = await async_playwright().start()
+                if mode == "cdp":
+                    if headless:
+                        await self.log("CDP 模式忽略无头选项，使用已登录的系统 Chrome。", "WARNING")
+                    await self._start_system_chrome()
+                else:
+                    await self._start_playwright_profile(headless=headless)
+                await self._ensure_yahoo_and_backend_tabs()
+                if for_login:
+                    await self.log(
+                        f"浏览器已打开。当前应是系统 Chrome Profile 14 的登录态。\n"
+                        f"1. 雅虎拍卖\n2. 后台系统 ({self.BACKEND_URL})"
+                    )
+            except Exception as e:
+                await self.log(f"Failed to launch browser: {e}", "ERROR")
+                if self.playwright and not self.browser_context:
+                    try:
+                        await self.playwright.stop()
+                    except Exception:
+                        pass
+                    self.playwright = None
+                raise
 
     async def _start_playwright_profile(self, headless=False):
         self.attached_cdp = False
@@ -103,19 +107,28 @@ class BrowserMixin:
         cdp_url = cfg.get("cdp_url") or "http://127.0.0.1:9222"
         self._cdp_browser = await self._try_connect_cdp(cdp_url, retries=1, delay=0.2)
         if self._cdp_browser is not None:
-            contexts = self._cdp_browser.contexts
-            if not contexts:
-                raise RuntimeError("已连上 Chrome，但没有可用的 BrowserContext。")
-            self.browser_context = contexts[0]
-            self.attached_cdp = True
-            await self.log(f"已接管当前 Chrome（{cdp_url}）。")
+            await self._bind_cdp_context(cdp_url)
             return
 
-        await self._close_running_chrome()
-        await self._start_chrome_persistent_profile()
+        await self._close_running_chrome_once()
+        await self._launch_profile14_with_cdp(cfg)
+        self._cdp_browser = await self._try_connect_cdp(cdp_url, retries=20, delay=1.0)
+        if self._cdp_browser is None:
+            raise RuntimeError(
+                "Chrome 已启动，但还连不上调试端口。请只点一次「启动浏览器」，不要反复点。"
+            )
+        await self._bind_cdp_context(cdp_url)
 
-    async def _close_running_chrome(self):
-        await self.log("Chrome 正在占用 Profile 14，先关掉再按已登录配置重新打开（不会清账号）。")
+    async def _bind_cdp_context(self, cdp_url):
+        contexts = self._cdp_browser.contexts
+        if not contexts:
+            raise RuntimeError("已连上 Chrome，但没有可用的 BrowserContext。")
+        self.browser_context = contexts[0]
+        self.attached_cdp = True
+        await self.log(f"已接管系统 Chrome Profile 14（{cdp_url}），登录态保留。")
+
+    async def _close_running_chrome_once(self):
+        await self.log("关闭当前 Chrome（只关这一次），随后用 Profile 14 重新打开。")
         subprocess.run(
             ["taskkill", "/F", "/IM", "chrome.exe"],
             capture_output=True,
@@ -124,42 +137,70 @@ class BrowserMixin:
         )
         await asyncio.sleep(2)
 
-    async def _start_chrome_persistent_profile(self):
-        cfg = self.browser_config
+    def _prepare_cdp_user_data(self, profile_dir):
+        """新版 Chrome 只有非默认 user-data-dir 才开 9222。用目录联接指向 Profile 14，不复制账号。"""
+        cdp_root = os.path.join(os.environ.get("LOCALAPPDATA", ""), "YahooAutoBot", "ChromeUD")
+        os.makedirs(cdp_root, exist_ok=True)
+        src_state = os.path.join(os.path.dirname(profile_dir), "Local State")
+        dst_state = os.path.join(cdp_root, "Local State")
+        if os.path.exists(src_state):
+            try:
+                shutil.copy2(src_state, dst_state)
+            except Exception:
+                pass
+        default_dir = os.path.join(cdp_root, "Default")
+        self._ensure_junction(default_dir, profile_dir)
+        return cdp_root
+
+    def _ensure_junction(self, link, target):
+        if os.path.exists(link):
+            try:
+                if os.path.samefile(link, target):
+                    return
+            except Exception:
+                pass
+            subprocess.run(["cmd", "/c", "rmdir", link], capture_output=True, check=False)
+            if os.path.exists(link) and os.path.isdir(link) and not os.listdir(link):
+                os.rmdir(link)
+            elif os.path.exists(link) and not os.path.isdir(link):
+                os.remove(link)
+        result = subprocess.run(
+            f'mklink /J "{link}" "{target}"',
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0 and not os.path.exists(link):
+            raise RuntimeError(f"无法关联 Profile 14: {result.stderr or result.stdout}")
+
+    async def _launch_profile14_with_cdp(self, cfg):
         chrome_path = self._resolve_chrome_path(cfg)
         user_data_root = self._chrome_user_data_root(cfg)
         profile = cfg.get("profile_directory") or "Profile 14"
         profile_dir = os.path.join(user_data_root, profile)
+        cdp_url = cfg.get("cdp_url") or "http://127.0.0.1:9222"
+        port = cdp_url.rsplit(":", 1)[-1] if ":" in cdp_url.rsplit("/", 1)[-1] else "9222"
         if not chrome_path or not os.path.exists(chrome_path):
             raise RuntimeError(f"找不到 Chrome: {chrome_path}")
         if not os.path.isdir(profile_dir):
             raise RuntimeError(f"找不到已登录配置: {profile_dir}")
-        await self.log(f"正在打开系统 Chrome：{profile}（{profile_dir}）")
-        self.attached_cdp = False
-        last_error = None
-        launch_kwargs = {
-            "user_data_dir": user_data_root,
-            "channel": "chrome",
-            "headless": False,
-            "args": [
-                f"--profile-directory={profile}",
-                "--start-maximized",
-                "--disable-blink-features=AutomationControlled",
-            ],
-            "ignore_default_args": ["--enable-automation"],
-        }
-        for attempt in range(1, 4):
-            try:
-                self.browser_context = await self.playwright.chromium.launch_persistent_context(
-                    **launch_kwargs
-                )
-                await self.log("已用系统 Chrome Profile 14 启动，沿用该配置里的雅虎/后台登录。")
-                return
-            except Exception as e:
-                last_error = e
-                await self.log(f"启动 Profile 14 失败 ({attempt}/3): {e}", "WARNING")
-                await self._close_running_chrome()
-        raise RuntimeError(f"无法打开已登录的 Chrome Profile 14: {last_error}")
+        cdp_root = self._prepare_cdp_user_data(profile_dir)
+        args = [
+            chrome_path,
+            f"--user-data-dir={cdp_root}",
+            f"--remote-debugging-port={port}",
+            "--remote-allow-origins=*",
+            "--no-first-run",
+            "--no-default-browser-check",
+            "--start-maximized",
+        ]
+        await self.log(f"正在打开已登录的 Profile 14（调试端口 {port}）")
+        subprocess.Popen(
+            args,
+            cwd=os.path.dirname(chrome_path),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
     async def _try_connect_cdp(self, cdp_url, retries=8, delay=1.0):
         last_error = None

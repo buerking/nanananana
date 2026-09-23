@@ -555,7 +555,13 @@
         }
 
         // API Calls
+        let launchingBrowser = false;
         async function launchBrowser() {
+            if (launchingBrowser) {
+                log("浏览器正在启动，请稍候，不要反复点。");
+                return;
+            }
+            launchingBrowser = true;
             try {
                 const res = await fetch(`${API_URL}/launch_browser`, { method: 'POST' });
                 const data = await res.json();
@@ -565,6 +571,7 @@
                     log("Command sent: Launch Browser");
                 }
             } catch (e) { log("Error: " + e); }
+            launchingBrowser = false;
         }
 
         async function startBot() {
