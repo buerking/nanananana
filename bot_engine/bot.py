@@ -14,6 +14,7 @@ from .constants import (
     SUCCESS_STATUSES,
 )
 from .exceptions import BotStopped
+from .gates import GatesMixin
 from .logging_utils import LoggingMixin
 from .orders import OrderMixin
 from .qbt import QbtMixin
@@ -26,6 +27,7 @@ class YahooAutoBot(
     LoggingMixin,
     StorageMixin,
     BrowserMixin,
+    GatesMixin,
     QbtMixin,
     YahooCheckoutMixin,
     YahooPurchaseMixin,

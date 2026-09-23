@@ -1,3 +1,4 @@
+"""结算 Pipeline 步骤：地址、配送、投放、信用卡、CVV、待运费地址。"""
 import asyncio
 import re
 
@@ -5,8 +6,6 @@ from playwright.async_api import Page
 
 
 class YahooCheckoutMixin:
-    """结算页：地址后缀、配送、投放、信用卡、CVV、待运费地址。"""
-
     async def _fill_cvv(self, page: Page, cvv_code=None):
         """尝试填写 CVV 安全码，返回是否成功填写"""
         if cvv_code is None:
@@ -22,21 +21,25 @@ class YahooCheckoutMixin:
             await self.log(f"CVV 填写异常: {e}", "DEBUG")
         return False
 
-    async def _uncheck_store_newsletter(self, yahoo_page: Page):
-        newsletter = yahoo_page.locator("input[name='mailDeliveryCheckBox']")
+    async def step_uncheck_newsletter(self, ctx):
+        newsletter = ctx.yahoo_page.locator("input[name='mailDeliveryCheckBox']")
         try:
             if await newsletter.count():
                 await self.log("店铺：取消勾选新闻订阅 (Force/JS)...")
-                await yahoo_page.evaluate(
+                await ctx.yahoo_page.evaluate(
                     "document.querySelector(\"input[name='mailDeliveryCheckBox']\") && "
                     "document.querySelector(\"input[name='mailDeliveryCheckBox']\").click()"
                 )
                 await self.log("店铺：已取消勾选新闻订阅。")
         except Exception as e:
             await self.log(f"Store Newsletter Warning: {e}", "DEBUG")
+        return None
 
-    async def _ensure_checkout_address(self, yahoo_page: Page, order_info, suffix):
-        """地址后缀 = 订单号后5位 + 室。失败时返回 status dict。"""
+    async def step_address(self, ctx):
+        """地址后缀 = 订单号后5位 + 室。失败时提前结束。"""
+        yahoo_page = ctx.yahoo_page
+        suffix = ctx.suffix
+        order_info = ctx.order_info
         try:
             addr_ok = suffix in (await yahoo_page.content())
             if addr_ok:
@@ -85,8 +88,11 @@ class YahooCheckoutMixin:
             return {"status": "ADDRESS_FAIL"}
         return None
 
-    async def _select_shipping_option(self, yahoo_page: Page, order_info, need_track):
-        """优先可追踪配送，排除到店自提。失败时返回 status dict。"""
+    async def step_shipping(self, ctx):
+        """优先可追踪配送，排除到店自提。"""
+        yahoo_page = ctx.yahoo_page
+        order_info = ctx.order_info
+        need_track = ctx.need_track
         try:
             pickup_keywords = ("店頭受取", "店頭受け取り", "来店", "手渡し")
             radios = await yahoo_page.locator("input[type='radio']").all()
@@ -126,9 +132,9 @@ class YahooCheckoutMixin:
             await self.log(f"店铺配送选择异常: {e}", "DEBUG")
         return None
 
-    async def _disable_okihai(self, yahoo_page: Page):
+    async def step_okihai(self, ctx):
         try:
-            okihai_select = yahoo_page.locator(
+            okihai_select = ctx.yahoo_page.locator(
                 "select[name='okihaiTypeYamato'], select[name='okihaiTypeSelect'], #ymtokhi select"
             )
             if await okihai_select.count():
@@ -141,8 +147,11 @@ class YahooCheckoutMixin:
                     await okihai_select.first.select_option(index=1)
         except Exception as e:
             await self.log(f"Okihai setting error (Non-critical): {e}", "DEBUG")
+        return None
 
-    async def _force_credit_card(self, yahoo_page: Page, order_info):
+    async def step_credit_card(self, ctx):
+        yahoo_page = ctx.yahoo_page
+        order_info = ctx.order_info
         try:
             cc_radio = yahoo_page.locator(
                 "input[value='card'], input[id*='card'], label:has-text('クレジットカード')"
@@ -183,7 +192,7 @@ class YahooCheckoutMixin:
         return None
 
     async def handle_personal_address_only(self, yahoo_page: Page, order_info):
-        """Helper to edit address when status is Wait for Shipping"""
+        """待运费：只改地址后早退，仍属主流程分支。"""
         order_id = order_info.get("order_id", "00000")
         suffix = f"{str(order_id)[-5:]}室"
 

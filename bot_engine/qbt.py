@@ -132,37 +132,7 @@ class QbtMixin:
             await self.log(f"单单测试: 未能在扫描结果中找到订单 {target_order_id}。")
             return []
 
-        bundles = {}
-        for item in scanned_items:
-            key = f"{item.get('seller_id')}_{item.get('storage_code', '')}"
-            bundles.setdefault(key, []).append(item)
-
-        process_queue = []
-        for key, items in bundles.items():
-            if len(items) <= 1:
-                process_queue.extend(items)
-                continue
-            is_manual_bundle = any(itm.get("has_split_btn") for itm in items) and all(
-                "待确认" in str(itm.get("status", "")) for itm in items
-            )
-            valid_in_bundle = [itm for itm in items if "未购买" in str(itm.get("status", ""))]
-            if is_manual_bundle and valid_in_bundle:
-                main_item = valid_in_bundle[0]
-                await self.log(
-                    f"发现已确认同捆组 (卖家: {main_item.get('seller_id')}, 用户: {key}, "
-                    f"数量: {len(valid_in_bundle)})。优先处理首项 ID: {main_item.get('order_id')}"
-                )
-                process_queue.append(main_item)
-            else:
-                bundle_sig = key
-                if bundle_sig not in self.warned_bundles:
-                    self.warned_bundles.add(bundle_sig)
-                    await self.log(
-                        f"同捆风控: 发现来自同一卖家 ({items[0].get('seller_id')}) 的 "
-                        f"{len(items)} 笔订单，但未识别为‘已确认同捆’(无拆分按钮)。已跳过以防误操作。",
-                        "WARNING",
-                    )
-        return process_queue
+        return await self.assemble_process_queue(scanned_items)
 
     async def backfill_order(self, backend_page: Page, yahoo_result, backend_total=0, test_mode=True):
         await self.log("Stage 4: Backfilling Data to Backend...")
