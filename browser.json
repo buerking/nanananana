@@ -1,0 +1,7 @@
+{
+  "mode": "cdp",
+  "cdp_url": "http://127.0.0.1:9222",
+  "chrome_path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "profile_directory": "Profile 14",
+  "launch_if_needed": true
+}

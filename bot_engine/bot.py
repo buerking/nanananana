@@ -46,6 +46,9 @@ class YahooAutoBot(
         self.playwright = None
         self.browser_context = None
         self.page = None
+        self.attached_cdp = False
+        self._cdp_browser = None
+        self.browser_config = None
         if getattr(sys, "frozen", False):
             self.BASE_DIR = os.path.dirname(sys.executable)
             self.BUNDLE_DIR = getattr(sys, "_MEIPASS", self.BASE_DIR)

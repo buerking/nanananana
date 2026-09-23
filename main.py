@@ -86,6 +86,7 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 bot = YahooAutoBot(log_callback=manager.broadcast)
+print("Browser: system Chrome Profile 14 (CDP)")
 
 
 class BotConfig(BaseModel):
