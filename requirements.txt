@@ -1,5 +1,6 @@
 ﻿fastapi
-uvicorn
+uvicorn[standard]
+websockets
 aiofiles
 playwright
 pydantic
