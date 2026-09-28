@@ -86,7 +86,6 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 bot = YahooAutoBot(log_callback=manager.broadcast)
-print("Browser: system Chrome Profile 14 (CDP)")
 
 
 class BotConfig(BaseModel):
@@ -122,11 +121,8 @@ async def get_screenshot_orders():
 @app.post("/launch_browser")
 async def launch_browser():
     """Launch browser for manual login"""
-    try:
-        await bot.start_browser(headless=False, for_login=True)
-        return {"status": "browser launched"}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    await bot.start_browser(headless=False, for_login=True)
+    return {"status": "browser launched"}
 
 
 @app.websocket("/ws/logs")

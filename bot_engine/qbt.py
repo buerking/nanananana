@@ -93,9 +93,23 @@ class QbtMixin:
                     if id_match:
                         order_id = id_match.group(1)
                         break
-                is_match = (not target_order_id) or (str(target_order_id) == str(order_id))
-                if target_order_id and is_match:
-                    await self.log(f"🎯 单单测试模式: 匹配到目标订单 {order_id}")
+                product_id = ""
+                auction_link = row.locator("a[href*='/auction/']")
+                if await auction_link.count() > 0:
+                    href = await auction_link.first.get_attribute("href") or ""
+                    pid_match = re.search(r"/auction/([a-zA-Z]\d+)", href)
+                    if pid_match:
+                        product_id = pid_match.group(1)
+                    else:
+                        product_id = (await auction_link.first.inner_text()).strip()
+                if target_order_id:
+                    target = str(target_order_id).strip()
+                    if target != str(order_id) and target.lower() != product_id.lower():
+                        continue
+                    await self.log(
+                        f"🎯 单单测试模式: 匹配到后台ID {order_id}"
+                        + (f" / 商品ID {product_id}" if product_id else "")
+                    )
                 row_text = (await row.inner_text()).strip()
                 onclick_val = await purchase_link.first.get_attribute("onclick") or ""
                 match = re.search(r"key_a?(\d+)", onclick_val)
@@ -112,6 +126,7 @@ class QbtMixin:
                         "purchase_link": purchase_link.first,
                         "seller_id": seller_id,
                         "order_id": order_id,
+                        "product_id": product_id,
                         "status": status_text,
                         "has_split_btn": has_split_btn,
                         "option_info": option_info,
@@ -123,8 +138,12 @@ class QbtMixin:
 
         if target_order_id:
             found_target_bundle = None
+            target = str(target_order_id).strip()
             for item in scanned_items:
-                if str(item.get("order_id")) == str(target_order_id):
+                if str(item.get("order_id")) == target:
+                    found_target_bundle = item
+                    break
+                if target.lower() == str(item.get("product_id") or "").lower():
                     found_target_bundle = item
                     break
             if found_target_bundle:

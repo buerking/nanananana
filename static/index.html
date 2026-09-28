@@ -355,8 +355,8 @@
     </div>
 
     <script>
-        const API_URL = "http://localhost:8000";
-        const WS_URL = "ws://localhost:8000/ws/logs";
+        const API_URL = "";
+        const WS_URL = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws/logs`;
         let isRunning = false;
 
         // --- History Log Logic ---
@@ -555,23 +555,11 @@
         }
 
         // API Calls
-        let launchingBrowser = false;
         async function launchBrowser() {
-            if (launchingBrowser) {
-                log("浏览器正在启动，请稍候，不要反复点。");
-                return;
-            }
-            launchingBrowser = true;
             try {
-                const res = await fetch(`${API_URL}/launch_browser`, { method: 'POST' });
-                const data = await res.json();
-                if (data.status === "error") {
-                    log("启动浏览器失败: " + (data.error || "unknown"));
-                } else {
-                    log("Command sent: Launch Browser");
-                }
+                await fetch(`${API_URL}/launch_browser`, { method: 'POST' });
+                log("Command sent: Launch Browser");
             } catch (e) { log("Error: " + e); }
-            launchingBrowser = false;
         }
 
         async function startBot() {
