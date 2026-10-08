@@ -234,58 +234,91 @@ class YahooPurchaseMixin:
             wait_locator="h2:has-text('お届け先'), input[name='address2'], input[name='home_address2']",
         )
 
-    async def _dismiss_bundle_choice_page(self, yahoo_page: Page):
+    def _checkout_like_url(self, url):
+        u = url or ""
+        return any(
+            p in u
+            for p in (
+                "buyer/edit",
+                "buyer/payment",
+                "buyer/top",
+                "buyer/preview",
+                "/payment/input",
+            )
+        )
+
+    async def _adopt_checkout_tab(self, ctx, timeout=12000):
+        deadline = asyncio.get_running_loop().time() + timeout / 1000
+        while asyncio.get_running_loop().time() < deadline:
+            for page in list(ctx.yahoo_page.context.pages):
+                if page.is_closed():
+                    continue
+                if self._checkout_like_url(page.url):
+                    ctx.yahoo_page = page
+                    await page.bring_to_front()
+                    await self.log(f"已切换到结算/地址页: {page.url}")
+                    return page
+            await asyncio.sleep(0.4)
+        return None
+
+    async def _dismiss_bundle_choice_page(self, ctx):
         """新版取引ナビ会先问まとめて还是单品。按既有策略走单品，不申请同捆。"""
-        single_btn = yahoo_page.locator("button:has-text('単品で取引する'), a:has-text('単品で取引する')")
+        yahoo_page = ctx.yahoo_page
+        if self._checkout_like_url(yahoo_page.url):
+            return None
+        adopted = await self._adopt_checkout_tab(ctx, timeout=1500)
+        if adopted:
+            return None
+        page_btn = yahoo_page.locator("main button:has-text('単品で取引する'), main a:has-text('単品で取引する')")
+        if await page_btn.count() == 0:
+            page_btn = yahoo_page.locator("button:has-text('単品で取引する'), a:has-text('単品で取引する')")
         bundle_start = yahoo_page.locator(
             "a:has-text('まとめて取引をはじめる'), button:has-text('まとめて取引をはじめる')"
         )
         bundle_hint = yahoo_page.locator("text=この商品はまとめて取引が可能です")
+        modal_title = yahoo_page.locator("h2:has-text('本当に単品で取引しますか')")
         try:
-            has_single = await single_btn.count() > 0
+            has_single = await page_btn.count() > 0
             has_bundle_ui = (await bundle_hint.count() > 0) or (await bundle_start.count() > 0)
+            modal_visible = await modal_title.is_visible()
         except Exception:
             return None
-        if not has_single and not has_bundle_ui:
+        if not has_single and not has_bundle_ui and not modal_visible:
             return None
-        if not has_single:
+        if not has_single and not modal_visible:
             await self.log("检测到新版まとめて取引页，但没有「単品で取引する」。转人工。", "ERROR")
             return {"status": "SKIPPED_COMBINED_SHIPPING"}
-        await self.log("检测到新版同捆选择页。点击「単品で取引する」（不申请まとめて取引）。")
-        await single_btn.first.click()
-        await asyncio.sleep(0.5)
         confirm = yahoo_page.locator(
-            "dialog[open] button.gv-Button--primary:has-text('単品で取引する'), "
-            "#modalArea dialog[open] button:has-text('単品で取引する')"
-        ).last
-        try:
-            await yahoo_page.locator("h2:has-text('本当に単品で取引しますか')").wait_for(
-                state="visible", timeout=8000
-            )
+            "#modalArea dialog[open] button.gv-Button--primary, "
+            "dialog[open] button.gv-Button--primary:has-text('単品で取引する')"
+        )
+        if not modal_visible:
+            await self.log("检测到新版同捆选择页。点击「単品で取引する」（不申请まとめて取引）。")
+            await page_btn.first.click(force=True)
+            try:
+                await modal_title.wait_for(state="visible", timeout=8000)
+            except Exception:
+                pass
+        if await modal_title.is_visible() or await confirm.count():
             await self.log("确认弹窗：本当に単品で取引しますか？ 点击确定。")
-            await confirm.click()
-            await asyncio.sleep(0.8)
-        except Exception:
-            if await confirm.count():
-                await self.log("发现单品确认弹窗，点击确定。")
-                await confirm.click()
-                await asyncio.sleep(0.8)
-        try:
-            await yahoo_page.locator("h2:has-text('本当に単品で取引しますか')").wait_for(
-                state="hidden", timeout=8000
-            )
-        except Exception:
-            pass
-        try:
-            await yahoo_page.wait_for_load_state("domcontentloaded")
-        except Exception:
-            pass
+            pages_before = list(yahoo_page.context.pages)
+            await confirm.last.click(force=True)
+            await asyncio.sleep(1)
+            new_pages = [p for p in yahoo_page.context.pages if p not in pages_before and not p.is_closed()]
+            if new_pages:
+                ctx.yahoo_page = new_pages[-1]
+                await ctx.yahoo_page.bring_to_front()
+            await self._adopt_checkout_tab(ctx, timeout=8000)
+            await self.log(f"单品确认后当前页: {ctx.yahoo_page.url}")
         return None
 
     async def _continue_personal_checkout(self, ctx):
         yahoo_page = ctx.yahoo_page
-        if "buyer/payment" in (yahoo_page.url or ""):
-            await self.log(f"已在购买手续页: {yahoo_page.url}")
+        if self._checkout_like_url(yahoo_page.url):
+            await self.log(f"已在结算/地址页: {yahoo_page.url}")
+            return None
+        adopted = await self._adopt_checkout_tab(ctx, timeout=8000)
+        if adopted:
             return None
         await self.log("等待新版取引ナビ异步渲染「購入手続きをする」...")
         link = await self._adopt_page_matching(
@@ -372,10 +405,25 @@ class YahooPurchaseMixin:
             if product_id or nav_count > 0:
                 ctx.is_personal = True
                 if product_id:
-                    trade_url = YAHOO_TRADE_TOP_URL.format(product_id=product_id)
-                    await self.log(f"直接打开取引ナビ: {trade_url}")
-                    await yahoo_page.goto(trade_url, wait_until="domcontentloaded", timeout=30000)
-                    await self.log(f"点击后当前页: {yahoo_page.url}")
+                    cur = yahoo_page.url or ""
+                    if product_id in cur and (
+                        "trade/top" in cur or self._checkout_like_url(cur)
+                    ):
+                        await self.log(f"已在取引相关页，跳过重复打开: {cur}")
+                    else:
+                        trade_url = YAHOO_TRADE_TOP_URL.format(product_id=product_id)
+                        await self.log(f"直接打开取引ナビ: {trade_url}")
+                        try:
+                            await yahoo_page.goto(trade_url, wait_until="commit", timeout=20000)
+                            try:
+                                await yahoo_page.wait_for_load_state(
+                                    "domcontentloaded", timeout=12000
+                                )
+                            except Exception:
+                                pass
+                        except Exception as e:
+                            await self.log(f"取引ナビ打开超时，继续用当前页: {yahoo_page.url} ({e})", "WARNING")
+                        await self.log(f"点击后当前页: {yahoo_page.url}")
                 else:
                     await self.log("检测到个人卖家。正在点击 '取引ナビ'...")
                     nav_link = nav_candidates.first
@@ -398,7 +446,7 @@ class YahooPurchaseMixin:
                 rejected = await self.gate_seller_bundle_rejected(ctx)
                 if rejected:
                     return rejected
-                choice = await self._dismiss_bundle_choice_page(yahoo_page)
+                choice = await self._dismiss_bundle_choice_page(ctx)
                 if choice:
                     self.add_risk_history_entry(order_info.get("order_id"), "人工处理: 发现同捆提示")
                     return choice
@@ -418,9 +466,9 @@ class YahooPurchaseMixin:
 
     async def step_new_trade_choice(self, ctx):
         """进入取引ナビ后若仍停在新版同捆选择页，再点一次单品。"""
-        if "buyer/payment" in (ctx.yahoo_page.url or ""):
+        if self._checkout_like_url(ctx.yahoo_page.url):
             return None
-        choice = await self._dismiss_bundle_choice_page(ctx.yahoo_page)
+        choice = await self._dismiss_bundle_choice_page(ctx)
         if choice:
             self.add_risk_history_entry(ctx.order_info.get("order_id"), "人工处理: 发现同捆提示")
             return choice
@@ -432,9 +480,12 @@ class YahooPurchaseMixin:
 
     async def step_wait_checkout_form(self, ctx):
         yahoo_page = ctx.yahoo_page
+        if self._checkout_like_url(yahoo_page.url):
+            await self.log(f"已进入结算/地址页。等待表单... {yahoo_page.url}")
+            return None
         form = yahoo_page.locator(
-            "h2:has-text('お届け先'), h1:has-text('お届け先'), "
-            "input[name='address2'], input[name='home_address2']"
+            "h2:has-text('お届け先'), h2:has-text('お届け先住所'), h2:has-text('落札者情報'), "
+            "form[name='tradeForm'], input[name='address2'], input[name='home_address2'], #mBoxConfBt"
         )
         try:
             await form.first.wait_for(state="visible", timeout=10000)
@@ -448,6 +499,9 @@ class YahooPurchaseMixin:
             ctx.body_text = await ctx.yahoo_page.locator("body").inner_text()
         except Exception:
             ctx.body_text = ""
+        if "出品者から送料の連絡があります" in ctx.body_text or "送料連絡待ち" in ctx.body_text:
+            ctx.is_wait_for_shipping = True
+            await self.log("本页需先提交交易信息，之后等待卖家联系运费。")
         return await self.gate_payment_unsupported(ctx)
 
     async def step_mark_cod(self, ctx):
@@ -463,6 +517,24 @@ class YahooPurchaseMixin:
     async def step_click_pay(self, ctx):
         yahoo_page = ctx.yahoo_page
         test_mode = ctx.test_mode
+        classic_confirm = yahoo_page.locator("#mBoxConfBt")
+        if await classic_confirm.count() and await classic_confirm.first.is_visible():
+            await self.log("发现旧版取引ナビ「決定する」(#mBoxConfBt)")
+            if test_mode:
+                await self.log("[TestMode] 模拟点击决定（不提交，也不点弹窗「確定する」）...")
+                return None
+            await classic_confirm.first.click()
+            try:
+                await yahoo_page.locator("#confSubmitBtn, #mBoxConf").wait_for(
+                    state="visible", timeout=8000
+                )
+                confirm = yahoo_page.locator("#confSubmitBtn")
+                if await confirm.count():
+                    await self.log("确认弹窗：取引情報を確定しますか？ 点击確定する。")
+                    await confirm.first.click()
+            except Exception as e:
+                await self.log(f"旧版确定弹窗未出现: {e}", "WARNING")
+            return None
         for sel in PAY_BTN_SELECTORS:
             btn = yahoo_page.locator(sel).first
             try:

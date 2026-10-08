@@ -87,7 +87,16 @@ class BrowserMixin:
                 await page.bring_to_front()
                 return page
         page = await context.new_page()
-        await page.goto(url, wait_until="domcontentloaded", timeout=timeout)
+        try:
+            await page.goto(url, wait_until="commit", timeout=timeout)
+            try:
+                await page.wait_for_load_state("domcontentloaded", timeout=min(timeout, 15000))
+            except Exception:
+                pass
+        except Exception:
+            if hint and hint in (page.url or "").lower():
+                return page
+            raise
         return page
 
     async def close_browser(self):
