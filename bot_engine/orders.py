@@ -4,7 +4,7 @@ import re
 
 from playwright.async_api import Page
 
-from .constants import BACKEND_DETAIL_URL, YAHOO_AUCTION_URL
+from .constants import YAHOO_AUCTION_URL
 from .flow import OrderContext, run_chain
 
 
@@ -47,33 +47,13 @@ class OrderMixin:
 
     async def step_open_detail(self, ctx):
         backend_page = ctx.backend_page
-        order_id = ctx.order.get("order_id")
-        detail_url = BACKEND_DETAIL_URL.format(order_id=order_id)
-        ctx.is_new_tab = False
-        try:
-            already = "auction-buy" in (backend_page.url or "") and f"id={order_id}" in (
-                backend_page.url or ""
-            )
-            if ctx.order.get("_opened_detail") and already:
-                ctx.detail_page = backend_page
-            else:
-                await self.log(f"直接打开后台详情: {detail_url}")
-                await backend_page.goto(detail_url, wait_until="domcontentloaded", timeout=30000)
-                ctx.detail_page = backend_page
-            await ctx.detail_page.wait_for_selector(".active_form", timeout=15000)
-            await self.log("已进入后台详情页")
-            return None
-        except Exception as e:
-            purchase_link = ctx.order.get("purchase_link")
-            if purchase_link is None:
-                await self.log(f"阶段2失败 (读取详情/打开雅虎): {e}", "ERROR")
-                return {"status": "DETAIL_PAGE_ERROR"}
-            await self.log(f"后台详情直达失败，回退点击购买: {e}", "WARNING")
+        purchase_link = ctx.order["purchase_link"]
         pages_before = len(backend_page.context.pages)
-        await ctx.order["purchase_link"].click()
+        await purchase_link.click()
         await asyncio.sleep(1)
         pages_after = len(backend_page.context.pages)
         ctx.detail_page = backend_page
+        ctx.is_new_tab = False
         if pages_after > pages_before:
             ctx.detail_page = backend_page.context.pages[-1]
             await ctx.detail_page.wait_for_load_state("domcontentloaded")
@@ -146,12 +126,12 @@ class OrderMixin:
         return None
 
     async def mw_cleanup_detail_tab(self, ctx):
+        if not ctx.is_new_tab:
+            return
         try:
-            if ctx.is_new_tab and ctx.detail_page and not ctx.detail_page.is_closed():
+            if ctx.detail_page and not ctx.detail_page.is_closed():
                 await self.log("Cleanup: Closing Backend Detail Page (Tab).")
                 await ctx.detail_page.close()
-            page = ctx.backend_page
-            if page and not page.is_closed() and "get-auction-not-buy-list" not in (page.url or ""):
-                await page.goto(self.BACKEND_URL, wait_until="domcontentloaded", timeout=30000)
+                await ctx.backend_page.goto(self.BACKEND_URL, wait_until="domcontentloaded")
         except Exception:
             pass
