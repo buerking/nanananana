@@ -106,9 +106,21 @@ class OrderMixin:
             await self.log("Product link not found!", "ERROR")
             return {"status": "PRODUCT_LINK_NOT_FOUND"}
         try:
-            async with detail_page.expect_page() as new_page_info:
-                await product_link.click()
-            ctx.yahoo_page = await new_page_info.value
+            context = detail_page.context
+            pages_before = list(context.pages)
+            try:
+                async with context.expect_page(timeout=15000) as new_page_info:
+                    await product_link.click()
+                ctx.yahoo_page = await new_page_info.value
+            except Exception:
+                pages_after = list(context.pages)
+                new_pages = [p for p in pages_after if p not in pages_before]
+                if new_pages:
+                    ctx.yahoo_page = new_pages[-1]
+                elif "yahoo" in (detail_page.url or "").lower():
+                    ctx.yahoo_page = detail_page
+                else:
+                    raise
             await ctx.yahoo_page.wait_for_load_state("domcontentloaded")
             await self.log(f"已打开雅虎页面: {ctx.yahoo_page.url}")
         except Exception as e:
