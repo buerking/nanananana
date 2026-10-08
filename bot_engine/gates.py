@@ -90,7 +90,7 @@ class GatesMixin:
         await self.log("正在检测同捆发货弹窗...")
         try:
             modal = ctx.yahoo_page.locator("text=まとめて購入手続きができます").first
-            await modal.wait_for(state="visible", timeout=3000)
+            await modal.wait_for(state="visible", timeout=1200)
             if await modal.count() and await modal.is_visible():
                 text = await modal.inner_text()
                 await self.log(f"发现同捆发货提示: {text[:80]}", "WARNING")

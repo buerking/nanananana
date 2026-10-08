@@ -2,7 +2,7 @@ import re
 
 from playwright.async_api import Page
 
-from .constants import RISK_STATUS_SEARCH_URL
+from .constants import BACKEND_DETAIL_URL, RISK_STATUS_SEARCH_URL
 
 
 class QbtMixin:
@@ -62,9 +62,65 @@ class QbtMixin:
             if page:
                 await page.close()
 
+    async def _try_direct_backend_order(self, page: Page, target_order_id):
+        """单单测试：有后台数字 ID 时直接打开详情页，不扫整张未购买表。"""
+        target = str(target_order_id).strip()
+        if not re.fullmatch(r"\d{5,8}", target):
+            return None
+        url = BACKEND_DETAIL_URL.format(order_id=target)
+        await self.log(f"单单测试：直接打开后台详情 {url}")
+        try:
+            await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            await page.wait_for_selector(".active_form", timeout=12000)
+        except Exception as e:
+            await self.log(f"直接打开后台详情失败，回退列表扫描: {e}", "WARNING")
+            try:
+                await page.goto(self.BACKEND_URL, wait_until="domcontentloaded", timeout=30000)
+            except Exception:
+                pass
+            return None
+        product_id = ""
+        auction_link = page.locator("a[href*='/auction/']")
+        if await auction_link.count() > 0:
+            href = await auction_link.first.get_attribute("href") or ""
+            pid_match = re.search(r"/auction/([a-zA-Z]\d+)", href)
+            product_id = pid_match.group(1) if pid_match else (await auction_link.first.inner_text()).strip()
+        seller_id = "UNKNOWN"
+        seller_input = page.locator("input.yahoo-store")
+        if await seller_input.count() > 0:
+            seller_id = await seller_input.first.get_attribute("value") or "UNKNOWN"
+        row_text = ""
+        try:
+            row_text = await page.locator("body").inner_text()
+        except Exception:
+            pass
+        option_info = "普通快递（有快递单号可追踪）"
+        if "普通快递" in row_text or "有快递单号" in row_text or "可追踪" in row_text:
+            option_info = "普通快递（有快递单号可追踪）"
+        await self.log(
+            f"🎯 单单测试模式: 匹配到后台ID {target}"
+            + (f" / 商品ID {product_id}" if product_id else "")
+        )
+        return {
+            "row": None,
+            "purchase_link": None,
+            "seller_id": seller_id,
+            "order_id": target,
+            "product_id": product_id,
+            "status": "未购买",
+            "has_split_btn": False,
+            "option_info": option_info,
+            "storage_code": "",
+            "_opened_detail": True,
+        }
+
     async def scan_backend_list(self, page: Page, target_order_id=None):
         """Scans the table for processable orders (Stage 1)"""
         await page.bring_to_front()
+        if target_order_id:
+            direct = await self._try_direct_backend_order(page, target_order_id)
+            if direct:
+                return [direct]
         orders = []
         rows = await page.locator("table.public_table tr").all()
         scanned_items = []

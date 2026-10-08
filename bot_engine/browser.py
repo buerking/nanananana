@@ -56,16 +56,15 @@ class BrowserMixin:
             pages = self.browser_context.pages
             self.page = pages[0] if pages else await self.browser_context.new_page()
             try:
-                await self.page.goto(
-                    YAHOO_HOME_URL,
-                    timeout=60000,
-                    wait_until="domcontentloaded",
-                )
+                await self.page.goto(YAHOO_HOME_URL, timeout=12000, wait_until="commit")
             except Exception as e:
-                await self.log(f"Warning: Failed to load Yahoo Auctions (Timeout): {e}", "WARNING")
+                await self.log(
+                    f"雅虎首页未快速就绪（将按商品URL直接打开）: {e}",
+                    "WARNING",
+                )
             backend_page = await self.browser_context.new_page()
             try:
-                await backend_page.goto(self.BACKEND_URL, timeout=60000, wait_until="domcontentloaded")
+                await backend_page.goto(self.BACKEND_URL, timeout=30000, wait_until="domcontentloaded")
             except Exception as e:
                 await self.log(f"Warning: Failed to load Backend (Timeout): {e}", "WARNING")
             if for_login:
@@ -73,6 +72,23 @@ class BrowserMixin:
         except Exception as e:
             await self.log(f"Failed to launch browser: {e}", "ERROR")
             raise
+
+    async def reuse_or_goto(self, context, url, url_hint="", timeout=30000):
+        """已打开相同商品/后台页则复用，否则直接 goto，不模拟点击等新标签。"""
+        hint = (url_hint or "").lower()
+        for page in context.pages:
+            if page.is_closed():
+                continue
+            current = (page.url or "").lower()
+            if hint and hint in current:
+                await page.bring_to_front()
+                return page
+            if url.lower().split("?")[0] in current.split("?")[0] and current.startswith("http"):
+                await page.bring_to_front()
+                return page
+        page = await context.new_page()
+        await page.goto(url, wait_until="domcontentloaded", timeout=timeout)
+        return page
 
     async def close_browser(self):
         if self.browser_context:

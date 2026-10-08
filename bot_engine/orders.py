@@ -4,6 +4,7 @@ import re
 
 from playwright.async_api import Page
 
+from .constants import BACKEND_DETAIL_URL, YAHOO_AUCTION_URL
 from .flow import OrderContext, run_chain
 
 
@@ -46,13 +47,33 @@ class OrderMixin:
 
     async def step_open_detail(self, ctx):
         backend_page = ctx.backend_page
-        purchase_link = ctx.order["purchase_link"]
+        order_id = ctx.order.get("order_id")
+        detail_url = BACKEND_DETAIL_URL.format(order_id=order_id)
+        ctx.is_new_tab = False
+        try:
+            already = "auction-buy" in (backend_page.url or "") and f"id={order_id}" in (
+                backend_page.url or ""
+            )
+            if ctx.order.get("_opened_detail") and already:
+                ctx.detail_page = backend_page
+            else:
+                await self.log(f"直接打开后台详情: {detail_url}")
+                await backend_page.goto(detail_url, wait_until="domcontentloaded", timeout=30000)
+                ctx.detail_page = backend_page
+            await ctx.detail_page.wait_for_selector(".active_form", timeout=15000)
+            await self.log("已进入后台详情页")
+            return None
+        except Exception as e:
+            purchase_link = ctx.order.get("purchase_link")
+            if purchase_link is None:
+                await self.log(f"阶段2失败 (读取详情/打开雅虎): {e}", "ERROR")
+                return {"status": "DETAIL_PAGE_ERROR"}
+            await self.log(f"后台详情直达失败，回退点击购买: {e}", "WARNING")
         pages_before = len(backend_page.context.pages)
-        await purchase_link.click()
+        await ctx.order["purchase_link"].click()
         await asyncio.sleep(1)
         pages_after = len(backend_page.context.pages)
         ctx.detail_page = backend_page
-        ctx.is_new_tab = False
         if pages_after > pages_before:
             ctx.detail_page = backend_page.context.pages[-1]
             await ctx.detail_page.wait_for_load_state("domcontentloaded")
@@ -100,28 +121,24 @@ class OrderMixin:
         return None
 
     async def step_open_yahoo(self, ctx):
-        detail_page = ctx.detail_page
-        product_link = detail_page.locator("a.goods_name").first
-        if await product_link.count() == 0:
+        product_id = (ctx.order.get("product_id") or "").strip()
+        if not product_id:
+            link = ctx.detail_page.locator("a[href*='/auction/'], a.goods_name").first
+            if await link.count():
+                href = (await link.get_attribute("href")) or ""
+                pid_match = re.search(r"/auction/([a-zA-Z]\d+)", href)
+                if pid_match:
+                    product_id = pid_match.group(1)
+                    ctx.order["product_id"] = product_id
+        if not product_id:
             await self.log("Product link not found!", "ERROR")
             return {"status": "PRODUCT_LINK_NOT_FOUND"}
+        url = YAHOO_AUCTION_URL.format(product_id=product_id)
         try:
-            context = detail_page.context
-            pages_before = list(context.pages)
-            try:
-                async with context.expect_page(timeout=15000) as new_page_info:
-                    await product_link.click()
-                ctx.yahoo_page = await new_page_info.value
-            except Exception:
-                pages_after = list(context.pages)
-                new_pages = [p for p in pages_after if p not in pages_before]
-                if new_pages:
-                    ctx.yahoo_page = new_pages[-1]
-                elif "yahoo" in (detail_page.url or "").lower():
-                    ctx.yahoo_page = detail_page
-                else:
-                    raise
-            await ctx.yahoo_page.wait_for_load_state("domcontentloaded")
+            await self.log(f"直接打开雅虎拍品页: {url}")
+            ctx.yahoo_page = await self.reuse_or_goto(
+                ctx.detail_page.context, url, url_hint=f"/auction/{product_id}"
+            )
             await self.log(f"已打开雅虎页面: {ctx.yahoo_page.url}")
         except Exception as e:
             await self.log(f"阶段2失败 (读取详情/打开雅虎): {e}", "ERROR")
@@ -129,12 +146,12 @@ class OrderMixin:
         return None
 
     async def mw_cleanup_detail_tab(self, ctx):
-        if not ctx.is_new_tab:
-            return
         try:
-            if ctx.detail_page and not ctx.detail_page.is_closed():
+            if ctx.is_new_tab and ctx.detail_page and not ctx.detail_page.is_closed():
                 await self.log("Cleanup: Closing Backend Detail Page (Tab).")
                 await ctx.detail_page.close()
-                await ctx.backend_page.goto(self.BACKEND_URL, wait_until="domcontentloaded")
+            page = ctx.backend_page
+            if page and not page.is_closed() and "get-auction-not-buy-list" not in (page.url or ""):
+                await page.goto(self.BACKEND_URL, wait_until="domcontentloaded", timeout=30000)
         except Exception:
             pass

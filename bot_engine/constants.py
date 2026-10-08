@@ -16,6 +16,9 @@ DEFAULT_RISK_KEYWORDS = [
     "西濃",
 ]
 BACKEND_URL = "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list"
+BACKEND_DETAIL_URL = "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id={order_id}"
 RISK_STATUS_SEARCH_URL = "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-order-list"
 YAHOO_HOME_URL = "https://auctions.yahoo.co.jp/"
+YAHOO_AUCTION_URL = "https://auctions.yahoo.co.jp/jp/auction/{product_id}"
+YAHOO_TRADE_TOP_URL = "https://contact.auctions.yahoo.co.jp/trade/top?aid={product_id}"
 SUCCESS_STATUSES = ("PURCHASED", "TEST_SUCCESS", "WAIT_SHIPPING", "WAIT_SHIPPING_CONTACT")

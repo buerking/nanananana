@@ -7,6 +7,7 @@ import re
 
 from playwright.async_api import Page
 
+from .constants import YAHOO_TRADE_TOP_URL
 from .exceptions import BotStopped
 from .flow import OrderContext, run_chain
 
@@ -347,27 +348,34 @@ class YahooPurchaseMixin:
             else:
                 await self.log("未提取到即决价格，无法核对。跳过立即购买。")
         else:
+            product_id = (order_info.get("product_id") or "").strip()
             nav_candidates = yahoo_page.locator("a:has-text('取引ナビ'), button:has-text('取引ナビ')")
             nav_count = await nav_candidates.count()
-            if nav_count > 0:
+            if product_id or nav_count > 0:
                 ctx.is_personal = True
-                nav_link = nav_candidates.first
-                for i in range(nav_count):
-                    href = (await nav_candidates.nth(i).get_attribute("href")) or ""
-                    if any(k in href.lower() for k in ("trade", "closeduser", "navi")):
-                        nav_link = nav_candidates.nth(i)
-                        break
-                await self.log("检测到个人卖家。正在点击 '取引ナビ'...")
-                await self._follow_click(
-                    ctx,
-                    nav_link,
-                    wait_locator=(
-                        "h1:has-text('取引ナビ'), "
-                        "a[href*='buyer/payment/input'], "
-                        "a:has-text('購入手続きをする'), "
-                        "button:has-text('単品で取引する')"
-                    ),
-                )
+                if product_id:
+                    trade_url = YAHOO_TRADE_TOP_URL.format(product_id=product_id)
+                    await self.log(f"直接打开取引ナビ: {trade_url}")
+                    await yahoo_page.goto(trade_url, wait_until="domcontentloaded", timeout=30000)
+                    await self.log(f"点击后当前页: {yahoo_page.url}")
+                else:
+                    await self.log("检测到个人卖家。正在点击 '取引ナビ'...")
+                    nav_link = nav_candidates.first
+                    for i in range(nav_count):
+                        href = (await nav_candidates.nth(i).get_attribute("href")) or ""
+                        if any(k in href.lower() for k in ("trade", "closeduser", "navi")):
+                            nav_link = nav_candidates.nth(i)
+                            break
+                    await self._follow_click(
+                        ctx,
+                        nav_link,
+                        wait_locator=(
+                            "h1:has-text('取引ナビ'), "
+                            "a[href*='buyer/payment/input'], "
+                            "a:has-text('購入手続きをする'), "
+                            "button:has-text('単品で取引する')"
+                        ),
+                    )
                 yahoo_page = ctx.yahoo_page
                 rejected = await self.gate_seller_bundle_rejected(ctx)
                 if rejected:
