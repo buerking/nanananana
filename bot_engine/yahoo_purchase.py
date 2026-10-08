@@ -253,13 +253,31 @@ class YahooPurchaseMixin:
             return {"status": "SKIPPED_COMBINED_SHIPPING"}
         await self.log("检测到新版同捆选择页。点击「単品で取引する」（不申请まとめて取引）。")
         await single_btn.first.click()
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.5)
+        confirm = yahoo_page.locator(
+            "dialog[open] button.gv-Button--primary:has-text('単品で取引する'), "
+            "#modalArea dialog[open] button:has-text('単品で取引する')"
+        ).last
         try:
-            await yahoo_page.wait_for_load_state("domcontentloaded")
+            await yahoo_page.locator("h2:has-text('本当に単品で取引しますか')").wait_for(
+                state="visible", timeout=8000
+            )
+            await self.log("确认弹窗：本当に単品で取引しますか？ 点击确定。")
+            await confirm.click()
+            await asyncio.sleep(0.8)
+        except Exception:
+            if await confirm.count():
+                await self.log("发现单品确认弹窗，点击确定。")
+                await confirm.click()
+                await asyncio.sleep(0.8)
+        try:
+            await yahoo_page.locator("h2:has-text('本当に単品で取引しますか')").wait_for(
+                state="hidden", timeout=8000
+            )
         except Exception:
             pass
         try:
-            await yahoo_page.wait_for_load_state("networkidle", timeout=8000)
+            await yahoo_page.wait_for_load_state("domcontentloaded")
         except Exception:
             pass
         return None
