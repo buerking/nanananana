@@ -147,6 +147,92 @@ class YahooPurchaseMixin:
             await self.log(f"同捆验证流程异常: {e}", "ERROR")
             return {"status": "BUNDLE_EXCEPTION"}
 
+    async def _follow_click(self, ctx, locator, wait_locator=None, timeout=15000):
+        """点击可能打开新标签的链接，并切到新页。避免还停在拍品页找按钮。"""
+        page = ctx.yahoo_page
+        context = page.context
+        pages_before = list(context.pages)
+        clicked = False
+        try:
+            async with context.expect_page(timeout=8000) as new_page_info:
+                await locator.click()
+                clicked = True
+            ctx.yahoo_page = await new_page_info.value
+        except Exception:
+            if not clicked:
+                await locator.click()
+            new_pages = [p for p in context.pages if p not in pages_before]
+            if new_pages:
+                ctx.yahoo_page = new_pages[-1]
+        page = ctx.yahoo_page
+        try:
+            await page.wait_for_load_state("domcontentloaded")
+        except Exception:
+            pass
+        await page.bring_to_front()
+        await self.log(f"点击后当前页: {page.url}")
+        if wait_locator:
+            try:
+                await page.locator(wait_locator).first.wait_for(state="visible", timeout=timeout)
+            except Exception:
+                await self.log(f"点击后未等到目标元素。URL={page.url}", "WARNING")
+        return page
+
+    async def _adopt_page_matching(self, ctx, url_parts, selector, timeout=25000):
+        """新版取引ナビ是 Next.js 异步渲染，按钮可能后出现；也可能在另一个标签。"""
+        deadline = asyncio.get_running_loop().time() + timeout / 1000
+        last_urls = []
+        while asyncio.get_running_loop().time() < deadline:
+            pages = list(ctx.yahoo_page.context.pages) if ctx.yahoo_page else []
+            last_urls = [p.url for p in pages if not p.is_closed()]
+            for page in pages:
+                if page.is_closed():
+                    continue
+                url = page.url or ""
+                if any(part in url for part in url_parts):
+                    ctx.yahoo_page = page
+                    loc = page.locator(selector)
+                    try:
+                        await loc.first.wait_for(state="visible", timeout=2000)
+                        await page.bring_to_front()
+                        return loc.first
+                    except Exception:
+                        pass
+                loc = page.locator(selector)
+                try:
+                    if await loc.count():
+                        ctx.yahoo_page = page
+                        await page.bring_to_front()
+                        return loc.first
+                except Exception:
+                    continue
+            await asyncio.sleep(0.5)
+        await self.log(f"未找到目标页/按钮。已打开标签: {last_urls}", "WARNING")
+        return None
+
+    async def _goto_purchase_procedure(self, ctx, link):
+        href = ""
+        try:
+            href = (await link.get_attribute("href")) or ""
+        except Exception:
+            href = ""
+        if href:
+            if href.startswith("/"):
+                href = "https://contact.auctions.yahoo.co.jp" + href
+            await self.log(f"进入购买手续页: {href}")
+            await ctx.yahoo_page.goto(href, wait_until="domcontentloaded", timeout=60000)
+            try:
+                await ctx.yahoo_page.wait_for_url("**/buyer/payment/**", timeout=15000)
+            except Exception:
+                pass
+            await self.log(f"购买手续页当前 URL: {ctx.yahoo_page.url}")
+            return
+        await self._follow_click(
+            ctx,
+            link,
+            wait_locator="h2:has-text('お届け先'), input[name='address2'], input[name='home_address2']",
+        )
+
     async def _dismiss_bundle_choice_page(self, yahoo_page: Page):
         """新版取引ナビ会先问まとめて还是单品。按既有策略走单品，不申请同捆。"""
         single_btn = yahoo_page.locator("button:has-text('単品で取引する'), a:has-text('単品で取引する')")
@@ -179,25 +265,39 @@ class YahooPurchaseMixin:
 
     async def _continue_personal_checkout(self, ctx):
         yahoo_page = ctx.yahoo_page
-        purchase_btn = yahoo_page.locator(PURCHASE_PROCEDURE_LOCATOR)
-        if await purchase_btn.count():
-            await self.log("发现个人卖家「購入手続きをする」。正在点击...")
-            await purchase_btn.first.click()
-            try:
-                await yahoo_page.wait_for_url("**/buyer/payment/**", timeout=15000)
-            except Exception:
-                await asyncio.sleep(1)
-            try:
-                await yahoo_page.wait_for_load_state("domcontentloaded")
-            except Exception:
-                pass
+        if "buyer/payment" in (yahoo_page.url or ""):
+            await self.log(f"已在购买手续页: {yahoo_page.url}")
+            return None
+        await self.log("等待新版取引ナビ异步渲染「購入手続きをする」...")
+        link = await self._adopt_page_matching(
+            ctx,
+            url_parts=("contact.auctions.yahoo.co.jp", "/trade/top", "buyer/payment"),
+            selector="a[href*='buyer/payment/input']",
+            timeout=25000,
+        )
+        if link is None:
+            link = await self._adopt_page_matching(
+                ctx,
+                url_parts=("contact.auctions.yahoo.co.jp", "/trade/top"),
+                selector=PURCHASE_PROCEDURE_LOCATOR,
+                timeout=8000,
+            )
+        if link is None:
+            await self.log(
+                f"取引ナビ页没有「購入手続きをする」。URL={ctx.yahoo_page.url}",
+                "WARNING",
+            )
+        else:
+            await self.log("发现个人卖家「購入手続きをする」。正在进入支付页...")
+            await self._goto_purchase_procedure(ctx, link)
+        yahoo_page = ctx.yahoo_page
         kantan_btn = yahoo_page.locator(
             "a:has-text('Yahoo!かんたん決済で支払う'), button:has-text('Yahoo!かんたん決済で支払う')"
         )
         if await kantan_btn.count():
             await self.log("发现 'Yahoo!かんたん決済' 按钮。正在点击...")
-            await kantan_btn.first.click()
-            await asyncio.sleep(0.5)
+            await self._follow_click(ctx, kantan_btn.first)
+            yahoo_page = ctx.yahoo_page
         body_text = await yahoo_page.locator("body").inner_text()
         if "送料連絡待ち" in body_text or "送料の連絡があります" in body_text:
             ctx.is_wait_for_shipping = True
@@ -247,15 +347,28 @@ class YahooPurchaseMixin:
             else:
                 await self.log("未提取到即决价格，无法核对。跳过立即购买。")
         else:
-            nav_link = yahoo_page.locator("a:has-text('取引ナビ'), button:has-text('取引ナビ')")
-            if await nav_link.count() > 0:
+            nav_candidates = yahoo_page.locator("a:has-text('取引ナビ'), button:has-text('取引ナビ')")
+            nav_count = await nav_candidates.count()
+            if nav_count > 0:
                 ctx.is_personal = True
+                nav_link = nav_candidates.first
+                for i in range(nav_count):
+                    href = (await nav_candidates.nth(i).get_attribute("href")) or ""
+                    if any(k in href.lower() for k in ("trade", "closeduser", "navi")):
+                        nav_link = nav_candidates.nth(i)
+                        break
                 await self.log("检测到个人卖家。正在点击 '取引ナビ'...")
-                await nav_link.first.click()
-                try:
-                    await yahoo_page.wait_for_load_state("networkidle")
-                except Exception:
-                    pass
+                await self._follow_click(
+                    ctx,
+                    nav_link,
+                    wait_locator=(
+                        "h1:has-text('取引ナビ'), "
+                        "a[href*='buyer/payment/input'], "
+                        "a:has-text('購入手続きをする'), "
+                        "button:has-text('単品で取引する')"
+                    ),
+                )
+                yahoo_page = ctx.yahoo_page
                 rejected = await self.gate_seller_bundle_rejected(ctx)
                 if rejected:
                     return rejected
@@ -279,6 +392,8 @@ class YahooPurchaseMixin:
 
     async def step_new_trade_choice(self, ctx):
         """进入取引ナビ后若仍停在新版同捆选择页，再点一次单品。"""
+        if "buyer/payment" in (ctx.yahoo_page.url or ""):
+            return None
         choice = await self._dismiss_bundle_choice_page(ctx.yahoo_page)
         if choice:
             self.add_risk_history_entry(ctx.order_info.get("order_id"), "人工处理: 发现同捆提示")

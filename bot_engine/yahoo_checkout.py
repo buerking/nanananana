@@ -72,6 +72,22 @@ class YahooCheckoutMixin:
                         break
                     await self.log(f"地址输入框未找到 (第 {i + 1}/3 次)，等待页面继续加载...")
                     await asyncio.sleep(1)
+                if not input_found and hasattr(self, "_continue_personal_checkout"):
+                    if "trade/top" in (yahoo_page.url or "") or await yahoo_page.locator(
+                        "a[href*='buyer/payment/input']"
+                    ).count():
+                        await self.log("仍停在取引ナビ，补进购买手续页后再找地址框...")
+                        await self._continue_personal_checkout(ctx)
+                        yahoo_page = ctx.yahoo_page
+                        inp = yahoo_page.locator("input[name='address2'], input[name='home_address2']")
+                        for i in range(5):
+                            if await inp.count():
+                                await inp.first.fill("")
+                                await inp.first.fill(suffix)
+                                await inp.first.blur()
+                                input_found = True
+                                break
+                            await asyncio.sleep(1)
                 if not input_found:
                     await self.log(
                         "严重拦截：无法确认个人买家页面的地址准确性。为防止发错货已强制停止。",
