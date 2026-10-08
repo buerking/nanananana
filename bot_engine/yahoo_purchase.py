@@ -11,6 +11,16 @@ from .exceptions import BotStopped
 from .flow import OrderContext, run_chain
 
 
+# 旧版「購入手続きする」与新版「購入手続きをする」并存。
+PURCHASE_PROCEDURE_SELECTORS = (
+    "a[href*='buyer/payment/input']",
+    "a:has-text('購入手続きをする')",
+    "button:has-text('購入手続きをする')",
+    "a:has-text('購入手続きする')",
+    "button:has-text('購入手続きする')",
+)
+PURCHASE_PROCEDURE_LOCATOR = ", ".join(PURCHASE_PROCEDURE_SELECTORS)
+
 PAY_BTN_SELECTORS = [
     "input[value='確認する']",
     "button:has-text('確認する')",
@@ -125,7 +135,7 @@ class YahooPurchaseMixin:
             else:
                 await self.log("未找到 '返回交易导航' 按钮。", "ERROR")
                 return {"status": "nav_ERROR"}
-            check_buy_btn = yahoo_page.locator("a:has-text('購入手続きする')")
+            check_buy_btn = yahoo_page.locator(PURCHASE_PROCEDURE_LOCATOR)
             try:
                 await check_buy_btn.first.wait_for(state="visible", timeout=5000)
             except Exception:
@@ -169,13 +179,18 @@ class YahooPurchaseMixin:
 
     async def _continue_personal_checkout(self, ctx):
         yahoo_page = ctx.yahoo_page
-        purchase_btn = yahoo_page.locator(
-            "a:has-text('購入手続きする'), button:has-text('購入手続きする')"
-        )
+        purchase_btn = yahoo_page.locator(PURCHASE_PROCEDURE_LOCATOR)
         if await purchase_btn.count():
-            await self.log("发现个人卖家 '购买手续' (蓝色按钮)。正在点击...")
+            await self.log("发现个人卖家「購入手続きをする」。正在点击...")
             await purchase_btn.first.click()
-            await asyncio.sleep(0.5)
+            try:
+                await yahoo_page.wait_for_url("**/buyer/payment/**", timeout=15000)
+            except Exception:
+                await asyncio.sleep(1)
+            try:
+                await yahoo_page.wait_for_load_state("domcontentloaded")
+            except Exception:
+                pass
         kantan_btn = yahoo_page.locator(
             "a:has-text('Yahoo!かんたん決済で支払う'), button:has-text('Yahoo!かんたん決済で支払う')"
         )
@@ -251,10 +266,10 @@ class YahooPurchaseMixin:
                 continued = await self._continue_personal_checkout(ctx)
                 if continued:
                     return continued
-            elif await yahoo_page.locator("a:has-text('購入手続きする'), button:has-text('購入手続きする')").count():
+            elif await yahoo_page.locator(PURCHASE_PROCEDURE_LOCATOR).count():
                 ctx.is_store = True
                 await self.log("发现中间页店铺 '购买手续' 按钮。正在点击...")
-                await yahoo_page.locator("a:has-text('購入手続きする'), button:has-text('購入手続きする')").first.click()
+                await yahoo_page.locator(PURCHASE_PROCEDURE_LOCATOR).first.click()
             else:
                 await self.log(
                     f"未找到購入手続きへ / 今すぐ落札 / 取引ナビ。当前 URL: {yahoo_page.url}",
