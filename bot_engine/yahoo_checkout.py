@@ -45,6 +45,13 @@ class YahooCheckoutMixin:
             if addr_ok:
                 await self.log(f"地址检查: 页面已包含正确地址后缀 '{suffix}'，跳过修改。")
             else:
+                if hasattr(self, "_dismiss_bundle_choice_page"):
+                    choice = await self._dismiss_bundle_choice_page(yahoo_page)
+                    if choice:
+                        self.add_risk_history_entry(
+                            order_info.get("order_id"), "人工处理: 发现同捆提示"
+                        )
+                        return choice
                 change_btn = yahoo_page.locator("h2:has-text('お届け先')").locator("a:has-text('変更')")
                 edit_btn = yahoo_page.locator(
                     "a:has-text('編集する'), input[value='編集する'], button:has-text('編集する')"

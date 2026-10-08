@@ -2,6 +2,7 @@
 
 同捆校验、待运费地址是主流程上的分支，不是另一套产品。
 """
+import asyncio
 import re
 
 from playwright.async_api import Page
@@ -61,6 +62,7 @@ class YahooPurchaseMixin:
                 self.gate_combined_shipping,
                 self.step_bundle_interstitial,
                 self.step_enter_purchase,
+                self.step_new_trade_choice,
                 self.step_wait_checkout_form,
                 self.step_capture_body_and_payment_gate,
                 self.step_uncheck_newsletter,
@@ -135,13 +137,66 @@ class YahooPurchaseMixin:
             await self.log(f"同捆验证流程异常: {e}", "ERROR")
             return {"status": "BUNDLE_EXCEPTION"}
 
+    async def _dismiss_bundle_choice_page(self, yahoo_page: Page):
+        """新版取引ナビ会先问まとめて还是单品。按既有策略走单品，不申请同捆。"""
+        single_btn = yahoo_page.locator("button:has-text('単品で取引する'), a:has-text('単品で取引する')")
+        bundle_start = yahoo_page.locator(
+            "a:has-text('まとめて取引をはじめる'), button:has-text('まとめて取引をはじめる')"
+        )
+        bundle_hint = yahoo_page.locator("text=この商品はまとめて取引が可能です")
+        try:
+            has_single = await single_btn.count() > 0
+            has_bundle_ui = (await bundle_hint.count() > 0) or (await bundle_start.count() > 0)
+        except Exception:
+            return None
+        if not has_single and not has_bundle_ui:
+            return None
+        if not has_single:
+            await self.log("检测到新版まとめて取引页，但没有「単品で取引する」。转人工。", "ERROR")
+            return {"status": "SKIPPED_COMBINED_SHIPPING"}
+        await self.log("检测到新版同捆选择页。点击「単品で取引する」（不申请まとめて取引）。")
+        await single_btn.first.click()
+        await asyncio.sleep(1)
+        try:
+            await yahoo_page.wait_for_load_state("domcontentloaded")
+        except Exception:
+            pass
+        try:
+            await yahoo_page.wait_for_load_state("networkidle", timeout=8000)
+        except Exception:
+            pass
+        return None
+
+    async def _continue_personal_checkout(self, ctx):
+        yahoo_page = ctx.yahoo_page
+        purchase_btn = yahoo_page.locator(
+            "a:has-text('購入手続きする'), button:has-text('購入手続きする')"
+        )
+        if await purchase_btn.count():
+            await self.log("发现个人卖家 '购买手续' (蓝色按钮)。正在点击...")
+            await purchase_btn.first.click()
+            await asyncio.sleep(0.5)
+        kantan_btn = yahoo_page.locator(
+            "a:has-text('Yahoo!かんたん決済で支払う'), button:has-text('Yahoo!かんたん決済で支払う')"
+        )
+        if await kantan_btn.count():
+            await self.log("发现 'Yahoo!かんたん決済' 按钮。正在点击...")
+            await kantan_btn.first.click()
+            await asyncio.sleep(0.5)
+        body_text = await yahoo_page.locator("body").inner_text()
+        if "送料連絡待ち" in body_text or "送料の連絡があります" in body_text:
+            ctx.is_wait_for_shipping = True
+            await self.log("状态：等待运费联系 (2.2)。转入个人流程处理（地址+潜在物流选择）。")
+            return await self.handle_personal_address_only(yahoo_page, ctx.order_info)
+        return None
+
     async def step_enter_purchase(self, ctx):
         """一口价 / 今すぐ落札 / 取引ナビ。待运费在此早退。"""
         yahoo_page = ctx.yahoo_page
         order_info = ctx.order_info
         test_mode = ctx.test_mode
-        buy_now_btn = yahoo_page.locator("button:has-text('購入手続きへ')")
-        buy_now_auction_btn = yahoo_page.locator("button:has-text('今すぐ落札')")
+        buy_now_btn = yahoo_page.locator("button:has-text('購入手続きへ'), a:has-text('購入手続きへ')")
+        buy_now_auction_btn = yahoo_page.locator("button:has-text('今すぐ落札'), a:has-text('今すぐ落札')")
         if await buy_now_btn.count() > 0:
             await self.log("检测到一口价/即决订单 (購入手続きへ)。正在点击...")
             ctx.is_store = True
@@ -177,7 +232,7 @@ class YahooPurchaseMixin:
             else:
                 await self.log("未提取到即决价格，无法核对。跳过立即购买。")
         else:
-            nav_link = yahoo_page.locator("a:has-text('取引ナビ')")
+            nav_link = yahoo_page.locator("a:has-text('取引ナビ'), button:has-text('取引ナビ')")
             if await nav_link.count() > 0:
                 ctx.is_personal = True
                 await self.log("检测到个人卖家。正在点击 '取引ナビ'...")
@@ -189,33 +244,47 @@ class YahooPurchaseMixin:
                 rejected = await self.gate_seller_bundle_rejected(ctx)
                 if rejected:
                     return rejected
-                purchase_btn = yahoo_page.locator(
-                    "a:has-text('購入手続きする'), button:has-text('購入手続きする')"
-                )
-                if await purchase_btn.count():
-                    await self.log("发现个人卖家 '购买手续' (蓝色按钮)。正在点击...")
-                    await purchase_btn.first.click()
-                kantan_btn = yahoo_page.locator("a:has-text('Yahoo!かんたん決済で支払う')")
-                if await kantan_btn.count():
-                    await self.log("发现 'Yahoo!かんたん決済' 按钮。正在点击...")
-                    await kantan_btn.first.click()
-                body_text = await yahoo_page.locator("body").inner_text()
-                if "送料連絡待ち" in body_text or "送料の連絡があります" in body_text:
-                    ctx.is_wait_for_shipping = True
-                    await self.log("状态：等待运费联系 (2.2)。转入个人流程处理（地址+潜在物流选择）。")
-                    return await self.handle_personal_address_only(yahoo_page, order_info)
-            elif await yahoo_page.locator("a:has-text('購入手続きする')").count():
+                choice = await self._dismiss_bundle_choice_page(yahoo_page)
+                if choice:
+                    self.add_risk_history_entry(order_info.get("order_id"), "人工处理: 发现同捆提示")
+                    return choice
+                continued = await self._continue_personal_checkout(ctx)
+                if continued:
+                    return continued
+            elif await yahoo_page.locator("a:has-text('購入手続きする'), button:has-text('購入手続きする')").count():
                 ctx.is_store = True
                 await self.log("发现中间页店铺 '购买手续' 按钮。正在点击...")
-                await yahoo_page.locator("a:has-text('購入手続きする')").first.click()
+                await yahoo_page.locator("a:has-text('購入手続きする'), button:has-text('購入手続きする')").first.click()
+            else:
+                await self.log(
+                    f"未找到購入手続きへ / 今すぐ落札 / 取引ナビ。当前 URL: {yahoo_page.url}",
+                    "WARNING",
+                )
+        return None
+
+    async def step_new_trade_choice(self, ctx):
+        """进入取引ナビ后若仍停在新版同捆选择页，再点一次单品。"""
+        choice = await self._dismiss_bundle_choice_page(ctx.yahoo_page)
+        if choice:
+            self.add_risk_history_entry(ctx.order_info.get("order_id"), "人工处理: 发现同捆提示")
+            return choice
+        if ctx.is_personal:
+            continued = await self._continue_personal_checkout(ctx)
+            if continued:
+                return continued
         return None
 
     async def step_wait_checkout_form(self, ctx):
+        yahoo_page = ctx.yahoo_page
+        form = yahoo_page.locator(
+            "h2:has-text('お届け先'), h1:has-text('お届け先'), "
+            "input[name='address2'], input[name='home_address2']"
+        )
         try:
-            await ctx.yahoo_page.wait_for_selector("text=お届け先", timeout=8000)
+            await form.first.wait_for(state="visible", timeout=10000)
             await self.log("已进入购买输入页。等待表单...")
         except Exception:
-            await self.log("警告：未找到 'お届け先'，页面可能不同。继续...", "WARNING")
+            await self.log("警告：未找到 'お届け先' 表单，页面可能不同。继续...", "WARNING")
         return None
 
     async def step_capture_body_and_payment_gate(self, ctx):
