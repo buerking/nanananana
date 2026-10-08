@@ -288,10 +288,6 @@ class YahooPurchaseMixin:
         if not has_single and not modal_visible:
             await self.log("检测到新版まとめて取引页，但没有「単品で取引する」。转人工。", "ERROR")
             return {"status": "SKIPPED_COMBINED_SHIPPING"}
-        confirm = yahoo_page.locator(
-            "#modalArea dialog[open] button.gv-Button--primary, "
-            "dialog[open] button.gv-Button--primary:has-text('単品で取引する')"
-        )
         if not modal_visible:
             await self.log("检测到新版同捆选择页。点击「単品で取引する」（不申请まとめて取引）。")
             await page_btn.first.click(force=True)
@@ -299,10 +295,32 @@ class YahooPurchaseMixin:
                 await modal_title.wait_for(state="visible", timeout=8000)
             except Exception:
                 pass
-        if await modal_title.is_visible() or await confirm.count():
+        if await modal_title.is_visible():
             await self.log("确认弹窗：本当に単品で取引しますか？ 点击确定。")
             pages_before = list(yahoo_page.context.pages)
-            await confirm.last.click(force=True)
+            clicked_ok = False
+            confirm_btn = yahoo_page.locator("dialog[open]").get_by_role(
+                "button", name="単品で取引する"
+            )
+            try:
+                await confirm_btn.click(force=True, timeout=5000)
+                clicked_ok = True
+            except Exception:
+                clicked_ok = await yahoo_page.evaluate(
+                    """() => {
+                        const h2 = [...document.querySelectorAll('h2')]
+                            .find(h => (h.textContent || '').includes('本当に単品で取引しますか'));
+                        const scope = (h2 && (h2.closest('dialog') || h2.closest('section'))) || document;
+                        const ok = [...scope.querySelectorAll('button')]
+                            .find(b => (b.textContent || '').trim() === '単品で取引する');
+                        if (!ok) return false;
+                        ok.click();
+                        return true;
+                    }"""
+                )
+            if not clicked_ok:
+                await self.log("确认弹窗确定按钮未点到。", "ERROR")
+                return {"status": "ERROR", "error": "single_item_modal_click_failed"}
             await asyncio.sleep(1)
             new_pages = [p for p in yahoo_page.context.pages if p not in pages_before and not p.is_closed()]
             if new_pages:
