@@ -170,12 +170,67 @@ class StorageMixin:
         dates.sort(reverse=True)
         return dates
 
+    def _walk_trade_message_root(self, obj):
+        """在 Next.js 状态树里找到 top.message（含 messages 列表）。"""
+        if not isinstance(obj, dict):
+            return None
+        top = obj.get("top")
+        if isinstance(top, dict):
+            msg = top.get("message")
+            if isinstance(msg, dict) and isinstance(msg.get("messages"), list):
+                return msg
+        for val in obj.values():
+            if isinstance(val, dict):
+                found = self._walk_trade_message_root(val)
+                if found:
+                    return found
+        return None
+
+    def _messages_from_next_data_payload(self, payload):
+        """把 __NEXT_DATA__ 里按日分组的对话摊平成 [{sender, time, text}]。不必点「メッセージ」tab。"""
+        root = self._walk_trade_message_root(payload)
+        if not root:
+            return []
+        out = []
+        for day in root.get("messages") or []:
+            date = (day.get("date") or "").strip()
+            for item in day.get("dailyMessages") or []:
+                body = (item.get("body") or "").strip()
+                if not body:
+                    continue
+                if item.get("isSystem"):
+                    sender = "系统"
+                elif item.get("isOwn"):
+                    sender = "买家"
+                else:
+                    sender = (item.get("name") or "").strip() or "卖家"
+                time_str = " ".join(p for p in (date, (item.get("time") or "").strip()) if p)
+                out.append({"sender": sender, "time": time_str, "text": body})
+        return out
+
+    async def _messages_from_next_data(self, yahoo_page: Page):
+        """新版取引ナビ：对话在 #__NEXT_DATA__，第一个「取引」tab 的 DOM 里没有气泡。"""
+        try:
+            loc = yahoo_page.locator("#__NEXT_DATA__")
+            if await loc.count() == 0:
+                return []
+            raw = await loc.inner_text(timeout=3000)
+            if not raw or not raw.strip():
+                return []
+            return self._messages_from_next_data_payload(json.loads(raw))
+        except Exception:
+            return []
+
     async def extract_seller_messages(self, yahoo_page: Page, order_id, is_store: bool = False):
-        """从雅虎交易页面提取卖家留言"""
+        """从雅虎交易页提取卖家留言。新版优先读 __NEXT_DATA__，旧版再刮 #messagelist。"""
         messages = []
         seller_type = "店铺" if is_store else "个人"
+        source = ""
         try:
-            if is_store:
+            messages = await self._messages_from_next_data(yahoo_page)
+            if messages:
+                source = "__NEXT_DATA__"
+            elif is_store:
                 msg_header = yahoo_page.locator("h2:has-text('メッセージ'), h3:has-text('メッセージ')").first
                 if await msg_header.count() > 0:
                     msg_section = msg_header.locator("xpath=./ancestor::section")
@@ -197,6 +252,8 @@ class StorageMixin:
                         if sys_texts:
                             continue
                         messages.append({"sender": "卖家", "time": "", "text": text})
+                    if messages:
+                        source = "store-dom"
             else:
                 dl_elements = await yahoo_page.locator("#messagelist dl").all()
                 await self.log(f"个人留言: 找到 {len(dl_elements)} 个 dl 消息块", "DEBUG")
@@ -217,6 +274,9 @@ class StorageMixin:
                         body = (await body_loc.first.inner_text()).strip()
                     if body:
                         messages.append({"sender": sender, "time": time_str, "text": body})
+                if messages:
+                    source = "messagelist"
+            already = any(str(m.get("order_id")) == str(order_id) for m in self.seller_messages)
             if messages:
                 existing = [m for m in self.seller_messages if str(m.get("order_id")) == str(order_id)]
                 entry = {
@@ -231,11 +291,17 @@ class StorageMixin:
                     self.seller_messages.insert(0, entry)
                 self.save_seller_messages()
                 preview = messages[0].get("text", "")[:80]
+                via = f" via {source}" if source else ""
                 await self.log(
-                    f"卖家留言提取: 订单 {order_id} ({seller_type}) 发现 {len(messages)} 条留言",
+                    f"卖家留言提取: 订单 {order_id} ({seller_type}) 发现 {len(messages)} 条留言{via}",
                     "INFO",
                 )
                 await self.log(f"  留言内容: [{messages[0].get('sender', '')}] {preview}...")
+            elif already:
+                await self.log(
+                    f"卖家留言提取: 订单 {order_id} 本页无新气泡（沿用已保存记录）",
+                    "DEBUG",
+                )
             else:
                 await self.log(f"卖家留言提取: 订单 {order_id} ({seller_type}) 无留言")
         except Exception as e:

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <title>Yahoo!オークション - 購入確認（二次确认）</title>
+  <style>
+    body { margin: 0; font: 15px/1.6 "Yu Gothic", "Microsoft YaHei", sans-serif; background: #777; }
+    #fconfirm { max-width: 520px; margin: 24px auto; background: #fff; border-radius: 10px; padding: 0 0 16px; }
+    header { display: flex; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #eee; }
+    .pay { display: block; background: #ff0033; color: #fff; text-align: center; padding: 12px; margin: 12px 16px; border-radius: 6px; text-decoration: none; }
+    .gray { display: block; text-align: center; margin: 8px 16px; }
+    ul.buy { padding: 0 16px; list-style: none; }
+  </style>
+</head>
+<body>
+<!-- 活 DOM 2026-10-19 · 点「確認する」之后 · #fconfirm 开着 · お届け先已是 22697室 -->
+<div id="fconfirm">
+  <aside>
+    <header>
+      <span>購入を確定しますか？</span>
+      <a>閉じる</a>
+    </header>
+    <div id="scrollContainer">
+      <p style="padding:0 16px">落札ではなく購入となります。クレジットカード・PayPayは支払いがされます。</p>
+      <a class="pay sc-890c85a8-0 dLbrDN"><span>上記に同意のうえ</span><span>購入を確定する</span></a>
+      <h3>購入内容</h3>
+      <ul class="buy">
+        <li>お支払い方法：クレジットカード</li>
+        <li>お支払い金額（税込）：14,960円（送料：0円含む）</li>
+        <li>お届け先：田中 美幸　〒550-0022　大阪府 大阪市西区 本田4-1-7 3F 22697室</li>
+      </ul>
+      <a class="pay"><span>上記に同意のうえ</span><span>購入を確定する</span></a>
+      <a class="gray">購入内容の修正</a>
+    </div>
+  </aside>
+</div>
+</body>
+</html>

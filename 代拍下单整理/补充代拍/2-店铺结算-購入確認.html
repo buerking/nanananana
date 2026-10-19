@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <title>Yahoo!オークション - 購入確認</title>
+  <link rel="stylesheet" href="https://auction-buy.c.yimg.jp/assets/1.541.0/_next/static/css/767.css" />
+  <link rel="stylesheet" href="https://auction-buy.c.yimg.jp/assets/1.541.0/_next/static/css/1470.css" />
+  <link rel="stylesheet" href="https://auction-buy.c.yimg.jp/assets/1.541.0/_next/static/css/2083.css" />
+  <link rel="stylesheet" href="https://auction-buy.c.yimg.jp/assets/1.541.0/_next/static/css/3282.css" />
+  <link rel="stylesheet" href="https://auction-buy.c.yimg.jp/assets/1.541.0/_next/static/css/3770.css" />
+  <link rel="stylesheet" href="https://auction-buy.c.yimg.jp/assets/1.541.0/_next/static/css/8405.css" />
+  <style>
+    body { font: 15px/1.6 "Yu Gothic", "Microsoft YaHei", sans-serif; margin: 16px; background: #f4f4f4; }
+    main { max-width: 720px; margin: 0 auto; }
+    header.block { display: flex; justify-content: space-between; align-items: center; }
+    .card { background: #fff; padding: 14px 16px; margin: 0 0 12px; border-radius: 8px; }
+    .warn { background: #fff6dd; border: 1px solid #f0c36d; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+    a.change { color: #0b57d0; }
+    a.pay { display: inline-block; background: #ff0033; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none; }
+  </style>
+</head>
+<body>
+<!-- 活 DOM 2026-10-19 · /order/review?auctionId=h1248777777 · 点お届け先「変更」之前 -->
+<main>
+  <aside class="warn">
+    <strong>ご確認ください</strong>
+    <p>再ログイン認証により入力、選択された内容が一部変更されています。<br />再度、設定内容をご確認の上15分以内に購入手続きを進めてください。</p>
+    <a>閉じる</a>
+  </aside>
+  <h1>購入内容の確認</h1>
+  <div class="card" id="py">
+    <header class="block"><h2>お支払い方法</h2><a data-cl-params="_cl_link:paylk;_cl_position:1;" class="change">変更</a></header>
+    <h3>クレジットカード 一括払い</h3>
+    <p>Visa **** **** **** 1805　2029/01　14,960円</p>
+  </div>
+  <div class="card" id="dlvry">
+    <header class="block"><h2>配送方法</h2><a data-cl-params="_cl_link:dlvry;_cl_position:1;" class="change">変更</a></header>
+    <h3>ゆうパック</h3>
+    <p>0円 · お届け日指定なし</p>
+  </div>
+  <div class="card" id="address">
+    <header class="block">
+      <h2>お届け先</h2>
+      <a data-cl-nofollow="on" data-cl-params="_cl_link:address;_cl_position:1;" class="sc-7e25ff3a-3 djBRNM change">変更</a>
+    </header>
+    <ul>
+      <li>田中 美幸（タナカ ミユキ）</li>
+      <li>〒550-0022</li>
+      <li>大阪府大阪市西区本田4-1-7 3F</li>
+      <li>22696室</li>
+      <li>電話番号 08075358884</li>
+    </ul>
+  </div>
+  <div class="card" id="nl">
+    <h2>メール配信登録</h2>
+    <label><input type="checkbox" name="mailDeliveryCheckBox" value="mailDeliveryCheckBox" checked /> セカンドストリート ヤフオク!店からのストアニュースレター</label>
+  </div>
+  <div id="confirm">
+    <a data-cl-params="_cl_link:confirm;_cl_position:1;" class="pay">確認する</a>
+    <a class="pay">確認し購入を進める</a>
+  </div>
+</main>
+</body>
+</html>

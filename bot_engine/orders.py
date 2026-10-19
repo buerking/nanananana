@@ -4,14 +4,22 @@ import re
 
 from playwright.async_api import Page
 
-from .constants import YAHOO_AUCTION_URL
+from .constants import QBT_BROWSER_ACCOUNT, YAHOO_AUCTION_URL
 from .flow import OrderContext, run_chain
 
 
 class OrderMixin:
     async def process_order(self, order, backend_page: Page, test_mode=True):
+        """队列里每一项都当「一笔雅虎拍品」跑完：开 QBT 详情 → 打开该行 product_id → 下单 → 回填。
+
+        入队规则见 filter_buyable_orders：仅一对一。雅虎页开在对应出价账号的 Chrome。
+        """
         ctx = OrderContext(order=order, backend_page=backend_page, test_mode=test_mode)
-        await self.log(f"开始处理订单 (卖家: {order['seller_id']})")
+        await self.log(
+            f"开始处理订单 {order.get('order_id')} "
+            f"(卖家: {order.get('seller_id')}, 账号: {order.get('account_key') or '?'}, "
+            f"用户: {order.get('user_name') or '?'})"
+        )
 
         denied = await self.gate_blacklist(ctx)
         if denied:
@@ -114,11 +122,23 @@ class OrderMixin:
             await self.log("Product link not found!", "ERROR")
             return {"status": "PRODUCT_LINK_NOT_FOUND"}
         url = YAHOO_AUCTION_URL.format(product_id=product_id)
-        try:
-            await self.log(f"直接打开雅虎拍品页: {url}")
-            ctx.yahoo_page = await self.reuse_or_goto(
-                ctx.detail_page.context, url, url_hint=f"/auction/{product_id}"
+        account_key = ctx.order.get("account_key") or self.account_key_from_email(
+            ctx.order.get("bid_email")
+        )
+        yahoo_ctx = self.context_for_account(account_key)
+        if not yahoo_ctx:
+            await self.log(
+                f"没有对应的雅虎 Chrome: account={account_key or '(空)'} "
+                f"email={ctx.order.get('bid_email') or '(空)'}",
+                "ERROR",
             )
+            return {"status": "NO_YAHOO_BROWSER"}
+        try:
+            await self.log(f"切换雅虎浏览器 [{account_key or QBT_BROWSER_ACCOUNT}] 打开: {url}")
+            ctx.yahoo_page = await self.reuse_or_goto(
+                yahoo_ctx, url, url_hint=f"/auction/{product_id}"
+            )
+            await ctx.yahoo_page.bring_to_front()
             await self.log(f"已打开雅虎页面: {ctx.yahoo_page.url}")
         except Exception as e:
             await self.log(f"阶段2失败 (读取详情/打开雅虎): {e}", "ERROR")

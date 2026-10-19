@@ -2,7 +2,39 @@ import re
 
 from playwright.async_api import Page
 
-from .constants import RISK_STATUS_SEARCH_URL
+from .constants import QBT_BROWSER_ACCOUNT, RISK_STATUS_SEARCH_URL
+
+_CF_EMAIL_RE = re.compile(r"[\w.+-]+@yahoo\.co\.jp", re.I)
+_ROW_COLOR_JS = """
+(row) => {
+  const isColored = (node) => {
+    if (!node) return false;
+    const s = getComputedStyle(node);
+    const bg = (s.backgroundColor || "").trim();
+    if (!bg || bg === "transparent" || bg === "rgba(0, 0, 0, 0)") return false;
+    const m = bg.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);
+    if (!m) return true;
+    return !(+m[1] >= 248 && +m[2] >= 248 && +m[3] >= 248);
+  };
+  const link = row.querySelector("a[href*='/auction/']");
+  if (!link) return false;
+  const td = link.closest("td") || link;
+  if (isColored(td) || isColored(link)) return true;
+  return [...td.querySelectorAll("*")].some(isColored);
+}
+"""
+
+
+def decode_cf_email(cfemail):
+    raw = (cfemail or "").strip()
+    if len(raw) < 4:
+        return ""
+    try:
+        key = int(raw[:2], 16)
+        chars = [chr(int(raw[i : i + 2], 16) ^ key) for i in range(2, len(raw), 2)]
+        return "".join(chars)
+    except ValueError:
+        return ""
 
 
 class QbtMixin:
@@ -62,13 +94,73 @@ class QbtMixin:
             if page:
                 await page.close()
 
+    async def _row_has_qbt_color(self, row):
+        try:
+            return bool(await row.evaluate(_ROW_COLOR_JS))
+        except Exception:
+            return False
+
+    async def _extract_bid_email(self, row, row_text=""):
+        cf = row.locator("[data-cfemail], a.__cf_email__")
+        if await cf.count() > 0:
+            hexstr = await cf.first.get_attribute("data-cfemail") or ""
+            email = decode_cf_email(hexstr)
+            if email:
+                return email
+        match = _CF_EMAIL_RE.search(row_text or "")
+        return match.group(0) if match else ""
+
+    async def _extract_user_name(self, row, order_id, product_id, seller_id, bid_email):
+        named = row.locator("td.user-name, td.userName, .user-name")
+        if await named.count() > 0:
+            text = (await named.first.inner_text()).strip()
+            if text:
+                return text
+        skip = {
+            str(order_id or ""),
+            str(product_id or ""),
+            str(seller_id or ""),
+            str(bid_email or "").lower(),
+            "未购买",
+            "未购买待确认",
+            "查看详情",
+            "购买",
+            "拆分",
+            "否",
+            "是",
+        }
+        cells = await row.locator("td").all_text_contents()
+        for raw in cells:
+            text = (raw or "").strip().split("\n")[0].strip()
+            if not text or text in skip or text.lower() in skip:
+                continue
+            if "待确认" in text or "未购买" in text:
+                continue
+            if _CF_EMAIL_RE.search(text) or "@" in text:
+                continue
+            if re.fullmatch(r"\d{5,8}", text) or re.fullmatch(r"[\d,]+", text):
+                continue
+            if re.match(r"\d{4}-\d{2}-\d{2}", text):
+                continue
+            if re.match(r"ZY\d+", text, re.I):
+                continue
+            if re.fullmatch(r"[A-Za-z0-9_-]{16,}", text):
+                continue
+            if len(text) > 40:
+                continue
+            return text
+        return ""
+
     async def scan_backend_list(self, page: Page, target_order_id=None):
-        """Scans the table for processable orders (Stage 1)"""
+        """阶段1：从 QBT「未购买」表抽出可点「购买」的行，再筛成一对一可购买订单。
+
+        批量：去掉彩色行 → 跳过「未购买待确认」→ 按卖家分组审核，只留一对一。
+        单单测试：命中行直接返回（待确认仍跳过；彩色仅警告）。
+        """
         await page.bring_to_front()
-        orders = []
         rows = await page.locator("table.public_table tr").all()
         scanned_items = []
-        for i, row in enumerate(rows):
+        for row in rows:
             self.ensure_running()
             try:
                 if await row.locator("th").count() > 0:
@@ -111,15 +203,18 @@ class QbtMixin:
                         + (f" / 商品ID {product_id}" if product_id else "")
                     )
                 row_text = (await row.inner_text()).strip()
-                onclick_val = await purchase_link.first.get_attribute("onclick") or ""
-                match = re.search(r"key_a?(\d+)", onclick_val)
                 status_text = "未购买"
-                if "待确认" in status_text_check:
-                    status_text = "未购买 待确认"
+                if "待确认" in status_text_check or "待确认" in row_text:
+                    status_text = "未购买待确认"
                 option_info = "普通快递（有快递单号可追踪）"
                 if "普通快递" in row_text or "有快递单号" in row_text or "可追踪" in row_text:
                     option_info = "普通快递（有快递单号可追踪）"
-                storage_code = ""
+                bid_email = await self._extract_bid_email(row, row_text)
+                account_key = self.account_key_from_email(bid_email) or ""
+                user_name = await self._extract_user_name(
+                    row, order_id, product_id, seller_id, bid_email
+                )
+                has_color = await self._row_has_qbt_color(row)
                 scanned_items.append(
                     {
                         "row": row,
@@ -130,28 +225,131 @@ class QbtMixin:
                         "status": status_text,
                         "has_split_btn": has_split_btn,
                         "option_info": option_info,
-                        "storage_code": storage_code,
+                        "storage_code": "",
+                        "bid_email": bid_email,
+                        "account_key": account_key,
+                        "user_name": user_name,
+                        "has_color": has_color,
                     }
                 )
             except Exception:
                 continue
 
         if target_order_id:
-            found_target_bundle = None
+            found = None
             target = str(target_order_id).strip()
             for item in scanned_items:
                 if str(item.get("order_id")) == target:
-                    found_target_bundle = item
+                    found = item
                     break
                 if target.lower() == str(item.get("product_id") or "").lower():
-                    found_target_bundle = item
+                    found = item
                     break
-            if found_target_bundle:
-                return [found_target_bundle]
-            await self.log(f"单单测试: 未能在扫描结果中找到订单 {target_order_id}。")
-            return []
+            if not found:
+                await self.log(f"单单测试: 未能在扫描结果中找到订单 {target_order_id}。")
+                return []
+            if "待确认" in str(found.get("status") or ""):
+                await self.log(
+                    f"单单测试: 订单 {found.get('order_id')} 为「未购买待确认」，已跳过。",
+                    "WARNING",
+                )
+                return []
+            if found.get("has_color"):
+                await self.log(
+                    f"单单测试: 订单 {found.get('order_id')} 带后台颜色，仍按指定单处理。",
+                    "WARNING",
+                )
+            if not found.get("account_key"):
+                found["account_key"] = QBT_BROWSER_ACCOUNT
+                await self.log(
+                    f"单单测试: 未识别出价账号 {found.get('bid_email') or '(空)'}，"
+                    f"暂用 [{QBT_BROWSER_ACCOUNT}] 浏览器。",
+                    "WARNING",
+                )
+            return [found]
 
         return await self.assemble_process_queue(scanned_items)
+
+    async def filter_buyable_orders(self, scanned_items):
+        """先丢掉彩色行和待确认，再按卖家分组审核，只留一对一。
+
+        一对一：
+        - 1 商品 / 1 卖家 / 1 用户
+        - N 商品 / 1 用户 / N 卖家，且每个卖家在剩余列表里只出现一次
+        同一卖家出现 ≥2 行（2商品1卖家，或 2用户1卖家）一律不买。
+        """
+        dropped_color = []
+        dropped_pending = []
+        remaining = []
+        for item in scanned_items:
+            oid = item.get("order_id")
+            if item.get("has_color"):
+                dropped_color.append(oid)
+                continue
+            if "待确认" in str(item.get("status") or ""):
+                dropped_pending.append(oid)
+                continue
+            remaining.append(item)
+
+        if dropped_color:
+            await self.log(
+                f"去掉后台彩色行 {len(dropped_color)} 笔: {dropped_color}",
+                "INFO",
+            )
+        if dropped_pending:
+            await self.log(
+                f"跳过未购买待确认 {len(dropped_pending)} 笔: {dropped_pending}",
+                "INFO",
+            )
+
+        by_seller = {}
+        for item in remaining:
+            by_seller.setdefault(item.get("seller_id") or "UNKNOWN", []).append(item)
+
+        process_queue = []
+        skipped_multi = []
+        skipped_account = []
+        for seller_id, items in by_seller.items():
+            users = {str(it.get("user_name") or "").strip() for it in items}
+            users.discard("")
+            products = {str(it.get("product_id") or "").strip() for it in items}
+            products.discard("")
+            if len(items) != 1 or len(users) > 1:
+                skipped_multi.extend(it.get("order_id") for it in items)
+                sig = f"seller:{seller_id}"
+                if sig not in self.warned_bundles:
+                    self.warned_bundles.add(sig)
+                    await self.log(
+                        f"非一对一，已跳过卖家 {seller_id}："
+                        f"{len(items)} 单 / 用户 {sorted(users) or ['(未解析)']} / "
+                        f"商品 {sorted(products)}",
+                        "WARNING",
+                    )
+                continue
+            item = items[0]
+            if not item.get("account_key"):
+                skipped_account.append(item.get("order_id"))
+                await self.log(
+                    f"未识别出价账号，跳过订单 {item.get('order_id')} "
+                    f"email={item.get('bid_email') or '(空)'}",
+                    "WARNING",
+                )
+                continue
+            process_queue.append(item)
+
+        if skipped_account:
+            self.notify_feishu(
+                "有订单出价账号无法对应 ad/ym，已跳过: " + ", ".join(str(x) for x in skipped_account)
+            )
+        await self.log(
+            f"一对一可购买 {len(process_queue)} 笔"
+            + (
+                "（" + ", ".join(str(it.get("order_id")) for it in process_queue) + "）"
+                if process_queue
+                else ""
+            )
+        )
+        return process_queue
 
     async def backfill_order(self, backend_page: Page, yahoo_result, backend_total=0, test_mode=True):
         await self.log("Stage 4: Backfilling Data to Backend...")
@@ -220,6 +418,7 @@ class QbtMixin:
                 self.screenshot_pending_orders.add(str(oid))
                 await self.log(f"警告: 订单 {oid} 需要手动上传截图！请人工处理。", "WARNING")
                 await self.trigger_sound("attention")
+                self.notify_feishu(f"订单 {oid} 需要手动上传截图，请人工处理。")
 
             seller_id = yahoo_result.get("seller_id") or ""
             if seller_id in self.FORCE_SHIPPING_WARNING_SELLERS or yahoo_result.get("shipping_warning"):

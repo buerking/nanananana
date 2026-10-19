@@ -17,14 +17,54 @@ class YahooCheckoutMixin:
                 await cvv.first.blur()
                 await self.log(f"已填写 CVV: {cvv_code}")
                 return True
+            body = ""
+            try:
+                body = await page.locator("body").inner_text()
+            except Exception:
+                body = ""
+            if "セキュリティコード" in body or "セキュリティ番号" in body or "CVV" in body.upper():
+                await self.report_missing_yahoo_ui(
+                    page, "cvv_dummy_code", extra="页面提到安全码，但 input[name='dummy_code'] 不存在或不可见。",
+                )
         except Exception as e:
             await self.log(f"CVV 填写异常: {e}", "DEBUG")
         return False
 
+    async def _dismiss_reauth_note(self, page: Page):
+        """店铺结算「再ログイン認証」挡层，不关掉会挡住改地址/确认。"""
+        try:
+            note = page.locator("aside").filter(has_text="再ログイン認証")
+            if await note.count() == 0:
+                return
+            closer = note.locator("a:has-text('閉じる')")
+            if await closer.count():
+                await closer.first.click()
+                await self.log("已关闭「再ログイン認証」提示。")
+                await asyncio.sleep(0.3)
+        except Exception as e:
+            await self.log(f"关闭再登录提示失败: {e}", "DEBUG")
+
+    async def _visible_ship_address_text(self, page: Page):
+        """只看お届け先展示区或 address2 输入值，不用整页 HTML。"""
+        block = page.locator("#address")
+        try:
+            if await block.count():
+                return (await block.first.inner_text()) or ""
+        except Exception:
+            pass
+        inp = page.locator("input[name='address2'], input[name='home_address2']")
+        try:
+            if await inp.count():
+                return (await inp.first.input_value()) or ""
+        except Exception:
+            pass
+        return ""
+
     async def step_uncheck_newsletter(self, ctx):
+        await self._dismiss_reauth_note(ctx.yahoo_page)
         newsletter = ctx.yahoo_page.locator("input[name='mailDeliveryCheckBox']")
         try:
-            if await newsletter.count():
+            if await newsletter.count() and await newsletter.first.is_checked():
                 await self.log("店铺：取消勾选新闻订阅 (Force/JS)...")
                 await ctx.yahoo_page.evaluate(
                     "document.querySelector(\"input[name='mailDeliveryCheckBox']\") && "
@@ -41,75 +81,110 @@ class YahooCheckoutMixin:
         suffix = ctx.suffix
         order_info = ctx.order_info
         try:
-            addr_ok = suffix in (await yahoo_page.content())
-            if addr_ok:
-                await self.log(f"地址检查: 页面已包含正确地址后缀 '{suffix}'，跳过修改。")
-            else:
-                if hasattr(self, "_dismiss_bundle_choice_page"):
-                    choice = await self._dismiss_bundle_choice_page(ctx)
-                    if choice:
-                        self.add_risk_history_entry(
-                            order_info.get("order_id"), "人工处理: 发现同捆提示"
-                        )
-                        return choice
-                yahoo_page = ctx.yahoo_page
-                change_btn = yahoo_page.locator("h2:has-text('お届け先')").locator("a:has-text('変更')")
+            await self._dismiss_reauth_note(yahoo_page)
+            displayed = await self._visible_ship_address_text(yahoo_page)
+            addr_inp = yahoo_page.locator("input[name='address2'], input[name='home_address2']")
+            already_on_form = await addr_inp.count() > 0
+            if suffix in displayed and not already_on_form:
+                await self.log(f"地址检查: お届け先已包含正确后缀 '{suffix}'，跳过修改。")
+                return None
+            if hasattr(self, "_dismiss_bundle_choice_page"):
+                choice = await self._dismiss_bundle_choice_page(ctx)
+                if choice:
+                    self.add_risk_history_entry(
+                        order_info.get("order_id"), "人工处理: 发现同捆提示"
+                    )
+                    return choice
+            yahoo_page = ctx.yahoo_page
+            if not already_on_form:
+                # 现网店铺：「変更」是 h2 的兄弟节点，在 #address / header 里，不在 h2 内部。
+                change_btn = yahoo_page.locator(
+                    "#address a:has-text('変更'), "
+                    "header:has(h2:has-text('お届け先')) a:has-text('変更'), "
+                    "a[data-cl-params*='_cl_link:address']"
+                )
                 edit_btn = yahoo_page.locator(
                     "#elAdressEdit, a:has-text('編集する'), input[value='編集する'], "
                     "button:has-text('編集する')"
                 )
                 if await change_btn.count():
-                    await self.log("店铺：发现地址变更按钮。正在点击...")
+                    await self.log("店铺：发现お届け先「変更」。正在点击...")
                     await change_btn.first.click()
+                    try:
+                        await yahoo_page.wait_for_selector(
+                            "input[name='address2'], input[name='home_address2'], "
+                            "h1:has-text('お届け先編集')",
+                            timeout=10000,
+                        )
+                    except Exception:
+                        await asyncio.sleep(0.8)
                 elif await edit_btn.count():
                     await self.log("点击「編集する」展开地址表单...")
                     await edit_btn.first.click()
                     await asyncio.sleep(0.5)
-                input_found = False
-                for i in range(3):
+            input_found = False
+            for i in range(5):
+                inp = yahoo_page.locator("input[name='address2'], input[name='home_address2']")
+                if await inp.count():
+                    await inp.first.fill("")
+                    await inp.first.fill(suffix)
+                    await inp.first.blur()
+                    await self.log(f"已填写ビル名/室号: {suffix}")
+                    input_found = True
+                    break
+                await self.log(f"地址输入框未找到 (第 {i + 1}/5 次)，等待页面继续加载...")
+                await asyncio.sleep(1)
+            if not input_found and hasattr(self, "_continue_personal_checkout"):
+                if "trade/top" in (yahoo_page.url or "") or await yahoo_page.locator(
+                    "a[href*='buyer/payment/input']"
+                ).count():
+                    await self.log("仍停在取引ナビ，补进购买手续页后再找地址框...")
+                    await self._continue_personal_checkout(ctx)
+                    yahoo_page = ctx.yahoo_page
                     inp = yahoo_page.locator("input[name='address2'], input[name='home_address2']")
-                    if await inp.count():
-                        await inp.first.fill("")
-                        await inp.first.fill(suffix)
-                        await inp.first.blur()
-                        await self.log(f"已填写ビル名/室号: {suffix}")
-                        input_found = True
-                        break
-                    await self.log(f"地址输入框未找到 (第 {i + 1}/3 次)，等待页面继续加载...")
-                    await asyncio.sleep(1)
-                if not input_found and hasattr(self, "_continue_personal_checkout"):
-                    if "trade/top" in (yahoo_page.url or "") or await yahoo_page.locator(
-                        "a[href*='buyer/payment/input']"
-                    ).count():
-                        await self.log("仍停在取引ナビ，补进购买手续页后再找地址框...")
-                        await self._continue_personal_checkout(ctx)
-                        yahoo_page = ctx.yahoo_page
-                        inp = yahoo_page.locator("input[name='address2'], input[name='home_address2']")
-                        for i in range(5):
-                            if await inp.count():
-                                await inp.first.fill("")
-                                await inp.first.fill(suffix)
-                                await inp.first.blur()
-                                input_found = True
-                                break
-                            await asyncio.sleep(1)
-                if not input_found:
-                    await self.log(
-                        "严重拦截：无法确认个人买家页面的地址准确性。为防止发错货已强制停止。",
-                        "ERROR",
-                    )
-                    self.add_risk_history_entry(
-                        order_info.get("order_id"), "人工处理: 无法修改个人卖家收件地址"
-                    )
-                    await self.save_error_snapshot(yahoo_page, "personal_address_input_missing")
-                    return {"status": "ADDRESS_FAIL"}
-                save_btn = yahoo_page.locator(
-                    "a:has-text('変更する'), button:has-text('変更する'), input[value='変更する'], "
-                    "button:has-text('登録する')"
+                    for i in range(5):
+                        if await inp.count():
+                            await inp.first.fill("")
+                            await inp.first.fill(suffix)
+                            await inp.first.blur()
+                            input_found = True
+                            break
+                        await asyncio.sleep(1)
+            if not input_found:
+                await self.log(
+                    "严重拦截：无法确认个人买家页面的地址准确性。为防止发错货已强制停止。",
+                    "ERROR",
                 )
-                if await save_btn.count():
-                    await save_btn.first.click()
+                self.add_risk_history_entry(
+                    order_info.get("order_id"), "人工处理: 无法修改个人卖家收件地址"
+                )
+                await self.report_missing_yahoo_ui(
+                    yahoo_page, "address_edit", ctx,
+                    extra="结算页没有お届け先「変更」/「編集する」，也没有 address2/home_address2。",
+                )
+                return {"status": "ADDRESS_FAIL"}
+            save_btn = yahoo_page.locator(
+                "#confirm a:has-text('変更する'), "
+                "a[data-cl-params*='_cl_link:update'], "
+                "a:has-text('変更する'), button:has-text('変更する'), input[value='変更する'], "
+                "button:has-text('登録する')"
+            )
+            if await save_btn.count():
+                await save_btn.first.click()
+                try:
+                    await yahoo_page.wait_for_selector(
+                        "#address, h1:has-text('購入内容の確認')", timeout=10000
+                    )
+                except Exception:
+                    pass
+            after = await self._visible_ship_address_text(yahoo_page)
+            if suffix in after:
                 await self.log(f"店铺地址已修改并验证: {suffix}")
+            else:
+                await self.log(
+                    f"已提交改地址，但お届け先展示里还没看到 '{suffix}'。继续结算。",
+                    "WARNING",
+                )
         except Exception as e:
             await self.log(f"个人地址修改失败或异常: {e}", "ERROR")
             self.add_risk_history_entry(order_info.get("order_id"), "人工处理: 个人地址块异常宕机")
@@ -152,14 +227,23 @@ class YahooCheckoutMixin:
             if all_options_count > 0 and pickup_options_count == all_options_count:
                 await self.log("严重错误：仅有「到店自提(店頭受取)」这一种配送方式。请人工处理。", "ERROR")
                 self.add_risk_history_entry(order_info.get("order_id"), "人工处理: 仅支持到店自提")
-                await self.save_error_snapshot(yahoo_page, "store_pickup_only")
+                await self.report_missing_yahoo_ui(
+                    yahoo_page, "store_pickup", ctx,
+                    extra="配送选项全部是店頭受取/来店/手渡し，没有可追踪快递。",
+                )
                 return {"status": "STORE_PICKUP_ONLY_ERROR"}
+            if all_options_count == 0 and getattr(ctx, "is_store", False):
+                await self.report_missing_yahoo_ui(
+                    yahoo_page, "shipping_radios", ctx,
+                    extra="店铺结算页没有 input[name='shipMethodName']，也没有可识别的配送 radio。",
+                )
             if candidates:
                 best = sorted(candidates, key=lambda c: (0 if c["trackable"] else 1, c["price"]))[0]
                 await best["element"].evaluate(
                     "el => { el.checked = true; el.click(); "
                     "el.dispatchEvent(new Event('change', {bubbles: true})); }"
                 )
+                ctx.shipping_cost = int(best["price"] or 0)
                 await self.log(f"店铺：选择最佳配送: {best['text']} ({best['price']}円)")
         except Exception as e:
             await self.log(f"店铺配送选择异常: {e}", "DEBUG")
@@ -186,38 +270,55 @@ class YahooCheckoutMixin:
         yahoo_page = ctx.yahoo_page
         order_info = ctx.order_info
         try:
+            body = ctx.body_text or ""
+            if not body:
+                try:
+                    body = await yahoo_page.locator("body").inner_text()
+                except Exception:
+                    body = ""
             cc_radio = yahoo_page.locator(
                 "input[value='card'], input[id*='card'], label:has-text('クレジットカード')"
             )
-            if await cc_radio.count():
-                if (
-                    not await cc_radio.first.is_checked()
-                    if await cc_radio.first.evaluate("el => el.type === 'radio' || el.type === 'checkbox'")
-                    else True
-                ):
+            has_cc_control = await cc_radio.count() > 0
+            if "かんたん決済" in body and not has_cc_control:
+                await self.log("支付方式为 Yahoo!かんたん決済（个人取引ナビ），继续。")
+                return None
+            if has_cc_control:
+                is_input = await cc_radio.first.evaluate(
+                    "el => el.type === 'radio' || el.type === 'checkbox'"
+                )
+                if (not await cc_radio.first.is_checked()) if is_input else True:
                     await cc_radio.first.click()
                     await self.log("已成功切换为信用卡。")
             pay_header = yahoo_page.locator("h2:has-text('お支払い方法'), h3:has-text('お支払い方法')")
             if await pay_header.count():
-                current_payment_text = ""
-                try:
-                    current_payment_text = await yahoo_page.locator(
-                        ".acMdEntryPaymentMthd, #CkRdoPayment"
-                    ).first.inner_text(timeout=3000)
-                except Exception:
-                    try:
-                        current_payment_text = await pay_header.first.locator(
-                            "xpath=ancestor::section"
-                        ).inner_text(timeout=2000)
-                    except Exception:
-                        current_payment_text = await pay_header.first.inner_text()
-                if "かんたん決済" in current_payment_text:
+                current_payment_text = await pay_header.first.evaluate(
+                    """el => {
+                        const heading = (el.innerText || '').trim();
+                        let node = el.nextElementSibling;
+                        const parts = [heading];
+                        while (node && !/^H[1-6]$/i.test(node.tagName || '')) {
+                            parts.push(node.innerText || '');
+                            node = node.nextElementSibling;
+                        }
+                        return parts.join('\\n');
+                    }"""
+                )
+                if "かんたん決済" in (current_payment_text or ""):
                     await self.log("支付方式为 Yahoo!かんたん決済（个人取引ナビ），继续。")
-                elif "クレジットカード" not in current_payment_text:
+                elif "クレジットカード" not in (current_payment_text or ""):
                     await self.log(
-                        f"支付方式非信用卡 (检测到: {current_payment_text[:40]}...)。尝试切换..."
+                        f"支付方式非信用卡 (检测到: {(current_payment_text or '')[:40]}...)。尝试切换..."
                     )
-                    change = yahoo_page.locator("a:has-text('変更する'), button:has-text('変更する')")
+                    change = pay_header.first.locator(
+                        "xpath=following-sibling::*[1]"
+                    ).locator("a:has-text('変更する'), button:has-text('変更する')")
+                    if await change.count() == 0:
+                        change = yahoo_page.locator(
+                            "h2:has-text('お支払い方法'), h3:has-text('お支払い方法')"
+                        ).locator("xpath=..").locator(
+                            "a:has-text('変更する'), button:has-text('変更する')"
+                        )
                     if await change.count():
                         await change.first.click()
                         label = yahoo_page.locator("label:has-text('クレジットカード')")
@@ -237,7 +338,7 @@ class YahooCheckoutMixin:
             await self.log(f"Payment Method Check Error: {e}", "DEBUG")
         return None
 
-    async def handle_personal_address_only(self, yahoo_page: Page, order_info):
+    async def handle_personal_address_only(self, yahoo_page: Page, order_info, test_mode=False):
         """待运费：只改地址后早退，仍属主流程分支。"""
         order_id = order_info.get("order_id", "00000")
         suffix = f"{str(order_id)[-5:]}室"
@@ -270,29 +371,46 @@ class YahooCheckoutMixin:
             if not filled:
                 filled = await safe_fill("input[name='address2']", suffix)
             save_clicked = False
-            for sel in (
-                "button:has-text('登録する')",
-                "input[value='登録する']",
-                "input[value='決定する'], button:has-text('決定する'), a:has-text('決定する')",
-                "input[value='変更する']",
-                "input[type='submit']",
-                "#confSubmitBtn",
-            ):
-                btn = yahoo_page.locator(sel)
-                if await btn.count():
-                    await btn.first.click()
-                    save_clicked = True
-                    break
-            if not save_clicked:
-                await self.log("Form Save/Decision button not found! Attempting generic submit...", "WARNING")
+            if test_mode:
+                await self.log("[TestMode] 待运费地址已填写，不提交「決定する」。")
+            else:
+                for sel in (
+                    "button:has-text('登録する')",
+                    "input[value='登録する']",
+                    "input[value='決定する'], button:has-text('決定する'), a:has-text('決定する'), #mBoxConfBt",
+                    "input[value='変更する']",
+                    "input[type='submit']",
+                ):
+                    btn = yahoo_page.locator(sel)
+                    if await btn.count():
+                        await btn.first.click(force=True)
+                        save_clicked = True
+                        break
+                if save_clicked:
+                    try:
+                        confirm = yahoo_page.locator("#confSubmitBtn")
+                        await confirm.wait_for(state="visible", timeout=8000)
+                        await self.log("确认弹窗：取引情報を確定しますか？ 点击確定する。")
+                        await confirm.first.click(force=True)
+                    except Exception:
+                        pass
+                else:
+                    await self.log("Form Save/Decision button not found! Attempting generic submit...", "WARNING")
             await yahoo_page.wait_for_load_state("domcontentloaded")
             body_text = await yahoo_page.locator("body").inner_text()
             if suffix in clean_str(body_text) or suffix in body_text:
                 await self.log(f"地址已验证 (待发货): {suffix}")
                 return {"status": "WAIT_SHIPPING_CONTACT", "shipping": 0, "total": 0}
             await self.log(f"地址验证失败！后缀 '{suffix}' 未找到。", "ERROR")
+            await self.report_missing_yahoo_ui(
+                yahoo_page, "wait_shipping_address", extra=f"待运费页填完后正文里没有后缀 {suffix}。",
+                order=order_info,
+            )
             return {"status": "ADDRESS_FAIL"}
         except Exception as e:
             await self.log(f"地址修改 (待发货) 失败: {e}", "ERROR")
-            await self.save_error_snapshot(yahoo_page, "address_mod_exception")
+            await self.report_missing_yahoo_ui(
+                yahoo_page, "wait_shipping_address", extra=f"待运费改地址异常: {e}",
+                order=order_info,
+            )
             return {"status": "ADDRESS_FAIL"}

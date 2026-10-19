@@ -10,15 +10,18 @@ from .constants import (
     DEFAULT_CVV,
     DEFAULT_RISK_KEYWORDS,
     FORCE_SHIPPING_WARNING_SELLERS,
+    QBT_BROWSER_ACCOUNT,
     REMARK_WHITELIST_PATTERNS,
     SUCCESS_STATUSES,
 )
+from .feishu import send_feishu_text
 from .exceptions import BotStopped
 from .gates import GatesMixin
 from .logging_utils import LoggingMixin
 from .orders import OrderMixin
 from .qbt import QbtMixin
 from .storage import StorageMixin
+from .ui_watch import YahooUiWatchMixin
 from .yahoo_checkout import YahooCheckoutMixin
 from .yahoo_purchase import YahooPurchaseMixin
 
@@ -27,6 +30,7 @@ class YahooAutoBot(
     LoggingMixin,
     StorageMixin,
     BrowserMixin,
+    YahooUiWatchMixin,
     GatesMixin,
     QbtMixin,
     YahooCheckoutMixin,
@@ -46,6 +50,8 @@ class YahooAutoBot(
         self.playwright = None
         self.browser_context = None
         self.page = None
+        self.yahoo_contexts = {}
+        self.qbt_account = QBT_BROWSER_ACCOUNT
         if getattr(sys, "frozen", False):
             self.BASE_DIR = os.path.dirname(sys.executable)
             self.BUNDLE_DIR = getattr(sys, "_MEIPASS", self.BASE_DIR)
@@ -55,7 +61,12 @@ class YahooAutoBot(
             self.BASE_DIR = os.path.dirname(package_dir)
             self.BUNDLE_DIR = self.BASE_DIR
 
-        self.USER_DATA_DIR = os.path.join(self.BASE_DIR, "user_data")
+        self.USER_DATA_DIRS = {
+            "ad": os.path.join(self.BASE_DIR, "user_data"),
+            "ym": os.path.join(self.BASE_DIR, "user_data_ym"),
+        }
+        self.USER_DATA_DIR = self.USER_DATA_DIRS["ad"]
+        self.ui_miss_reported = set()
         self.BACKEND_URL = BACKEND_URL
         self.RISK_KEYWORDS_FILE = os.path.join(self.BASE_DIR, "risk_keywords.json")
         internal_risk_keywords = os.path.join(self.BUNDLE_DIR, "risk_keywords.json")
@@ -84,6 +95,12 @@ class YahooAutoBot(
         self.seller_blacklist = self.load_seller_blacklist()
         self.load_seller_messages_today()
 
+    def notify_feishu(self, text):
+        try:
+            send_feishu_text(text)
+        except Exception:
+            pass
+
     def ensure_running(self):
         """Checks if bot should continue running, else raises BotStopped"""
         if not self.is_running:
@@ -101,11 +118,17 @@ class YahooAutoBot(
         self.is_running = True
         self.attempted_orders.clear()
         self.warned_bundles.clear()
+        self.ui_miss_reported = set()
         run_stats = {"total_processed": 0, "success": 0, "failed": 0, "skipped": 0, "details": []}
         start_time = datetime.datetime.now()
-        await self.start_browser(headless=headless)
-        await self.log("自动化任务已启动。")
         try:
+            await self.start_browser(headless=headless)
+            await self.log("自动化任务已启动。")
+            self.notify_feishu(
+                "YahooAutoBot 已启动"
+                + ("（测试模式）" if test_mode else "（正式模式）")
+                + (f"\n单单测试: {target_order_id}" if target_order_id else "")
+            )
             while self.is_running:
                 self.ensure_running()
                 backend_page = await self.find_backend_tab()
@@ -113,12 +136,13 @@ class YahooAutoBot(
                     await self.log("未找到后台标签页。尝试打开...", "WARNING")
                     backend_page = await self.browser_context.new_page()
                     await backend_page.goto(self.BACKEND_URL, wait_until="domcontentloaded")
+                # 批量：去颜色 → 跳过待确认 → 只留一对一；单单测试：命中行（待确认仍跳过）
                 orders = await self.scan_backend_list(backend_page, target_order_id)
                 if not orders:
                     if target_order_id:
                         await self.log(f"单单测试: 未找到目标订单 {target_order_id}。继续扫描...")
                     else:
-                        await self.log("未发现待处理订单，或触发同捆风控。休眠10秒...")
+                        await self.log("未发现可购买的一对一订单。休眠10秒...")
                     await asyncio.sleep(10)
                     continue
                 blocked_ids = {str(item.get("order_id")) for item in self.blocked_risk_orders}
@@ -146,12 +170,23 @@ class YahooAutoBot(
                         if status in SUCCESS_STATUSES:
                             run_stats["success"] += 1
                             run_stats["details"].append(f"[{order_id_str}] Success ({status})")
+                            if (not test_mode) and status in ("PURCHASED", "WAIT_SHIPPING", "WAIT_SHIPPING_CONTACT"):
+                                self.notify_feishu(f"订单 {order_id_str} 处理成功 ({status})")
                         elif str(status).startswith("SKIPPED"):
                             run_stats["skipped"] += 1
                             run_stats["details"].append(f"[{order_id_str}] Skipped ({status})")
                         else:
                             run_stats["failed"] += 1
                             run_stats["details"].append(f"[{order_id_str}] Failed ({status})")
+                            if status in (
+                                "PURCHASE_UNCONFIRMED",
+                                "ADDRESS_FAIL",
+                                "STORE_PICKUP_ONLY_ERROR",
+                                "PAYMENT_UNSUPPORTED",
+                                "NO_YAHOO_BROWSER",
+                                "DETAIL_PAGE_ERROR",
+                            ):
+                                self.notify_feishu(f"订单 {order_id_str} 需要人工: {status}")
                     except BotStopped:
                         raise
                     except Exception as e:
@@ -188,5 +223,6 @@ class YahooAutoBot(
             else:
                 summary += " - (无处理记录)\n"
             await self.log(summary)
+            self.notify_feishu(summary.strip())
             self.is_running = False
             await self.log("自动化已停止。")

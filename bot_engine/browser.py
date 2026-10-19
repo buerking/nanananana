@@ -2,7 +2,7 @@ import os
 
 from playwright.async_api import async_playwright
 
-from .constants import YAHOO_HOME_URL
+from .constants import ACCOUNT_EMAILS, QBT_BROWSER_ACCOUNT, YAHOO_HOME_URL
 
 
 def _system_chrome_path():
@@ -21,56 +21,91 @@ def _system_chrome_path():
 
 
 class BrowserMixin:
-    """Playwright 持久化浏览器：登录会话在项目 user_data。优先本机 Chrome。"""
+    """两套持久化 Chrome：ad=user_data，ym=user_data_ym。QBT 只开在 ad。"""
+
+    def context_for_account(self, account_key):
+        key = (account_key or QBT_BROWSER_ACCOUNT).strip().lower()
+        return self.yahoo_contexts.get(key) or self.browser_context
+
+    def account_key_from_email(self, email):
+        needle = (email or "").strip().lower()
+        if not needle or "@" not in needle:
+            return ""
+        for key, emails in ACCOUNT_EMAILS.items():
+            if needle in [e.lower() for e in emails]:
+                return key
+        return ""
+
+    async def _launch_account_context(self, account_key, headless, open_qbt=False):
+        chrome = _system_chrome_path()
+        data_dir = self.USER_DATA_DIRS[account_key]
+        os.makedirs(data_dir, exist_ok=True)
+        launch_kwargs = {
+            "user_data_dir": data_dir,
+            "headless": headless,
+            "args": ["--start-maximized", "--disable-blink-features=AutomationControlled"],
+            "viewport": {"width": 1920, "height": 1080},
+            "user_agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            ),
+        }
+        if chrome:
+            launch_kwargs["executable_path"] = chrome
+        context = await self.playwright.chromium.launch_persistent_context(**launch_kwargs)
+        pages = context.pages
+        page = pages[0] if pages else await context.new_page()
+        try:
+            await page.goto(YAHOO_HOME_URL, timeout=12000, wait_until="commit")
+        except Exception as e:
+            await self.log(f"[{account_key}] 雅虎首页未快速就绪: {e}", "WARNING")
+        if open_qbt:
+            backend_page = await context.new_page()
+            try:
+                await backend_page.goto(self.BACKEND_URL, timeout=30000, wait_until="domcontentloaded")
+            except Exception as e:
+                await self.log(f"[{account_key}] 后台打开失败: {e}", "WARNING")
+        emails = " / ".join(ACCOUNT_EMAILS.get(account_key) or [])
+        await self.log(f"已启动 Chrome [{account_key}] 目录={data_dir} 账号={emails}")
+        return context, page
 
     async def start_browser(self, headless=False, for_login=False):
-        """Launches the persistent browser context"""
-        if self.browser_context:
+        if self.yahoo_contexts:
             await self.log("Browser already open.")
             return
-        await self.log("正在启动浏览器...")
+        await self.log("正在启动 ad / ym 两套 Chrome...")
         try:
             self.playwright = await async_playwright().start()
-            launch_kwargs = {
-                "user_data_dir": self.USER_DATA_DIR,
-                "headless": headless,
-                "args": ["--start-maximized", "--disable-blink-features=AutomationControlled"],
-                "viewport": {"width": 1920, "height": 1080},
-                "user_agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                ),
-            }
             chrome = _system_chrome_path()
             if chrome:
-                launch_kwargs["executable_path"] = chrome
                 await self.log(f"使用本机 Chrome: {chrome}")
             else:
                 await self.log(
                     "未找到本机 Chrome，将使用 Playwright Chromium（需先 playwright install chromium）",
                     "WARNING",
                 )
-            self.browser_context = await self.playwright.chromium.launch_persistent_context(
-                **launch_kwargs
-            )
-            pages = self.browser_context.pages
-            self.page = pages[0] if pages else await self.browser_context.new_page()
-            try:
-                await self.page.goto(YAHOO_HOME_URL, timeout=12000, wait_until="commit")
-            except Exception as e:
-                await self.log(
-                    f"雅虎首页未快速就绪（将按商品URL直接打开）: {e}",
-                    "WARNING",
+            qbt_key = getattr(self, "qbt_account", QBT_BROWSER_ACCOUNT)
+            for key in ACCOUNT_EMAILS:
+                ctx, page = await self._launch_account_context(
+                    key, headless, open_qbt=(key == qbt_key)
                 )
-            backend_page = await self.browser_context.new_page()
-            try:
-                await backend_page.goto(self.BACKEND_URL, timeout=30000, wait_until="domcontentloaded")
-            except Exception as e:
-                await self.log(f"Warning: Failed to load Backend (Timeout): {e}", "WARNING")
+                self.yahoo_contexts[key] = ctx
+                if key == qbt_key:
+                    self.browser_context = ctx
+                    self.page = page
             if for_login:
-                await self.log(f"浏览器已打开，请手动登录。\n1. 雅虎拍卖\n2. 后台系统 ({self.BACKEND_URL})")
+                await self.log(
+                    "请分别登录：\n"
+                    f"1. Chrome [ad] 雅虎 {ACCOUNT_EMAILS['ad'][0]}\n"
+                    f"2. Chrome [ym] 雅虎 {ACCOUNT_EMAILS['ym'][0]}\n"
+                    f"3. QBT 后台固定在 [{qbt_key}] ({self.BACKEND_URL})"
+                )
         except Exception as e:
             await self.log(f"Failed to launch browser: {e}", "ERROR")
+            try:
+                await self.close_browser()
+            except Exception:
+                pass
             raise
 
     async def reuse_or_goto(self, context, url, url_hint="", timeout=30000):
@@ -100,9 +135,16 @@ class BrowserMixin:
         return page
 
     async def close_browser(self):
-        if self.browser_context:
-            await self.browser_context.close()
-            self.browser_context = None
+        for key, ctx in list((self.yahoo_contexts or {}).items()):
+            try:
+                if ctx:
+                    await ctx.close()
+            except Exception:
+                pass
+            self.yahoo_contexts[key] = None
+        self.yahoo_contexts = {}
+        self.browser_context = None
+        self.page = None
         if self.playwright:
             await self.playwright.stop()
             self.playwright = None

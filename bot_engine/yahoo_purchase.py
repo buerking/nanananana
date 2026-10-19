@@ -7,7 +7,7 @@ import re
 
 from playwright.async_api import Page
 
-from .constants import YAHOO_TRADE_TOP_URL
+from .constants import YAHOO_TRADE_NAV_URL, YAHOO_TRADE_TOP_URL
 from .exceptions import BotStopped
 from .flow import OrderContext, run_chain
 
@@ -25,12 +25,15 @@ PURCHASE_PROCEDURE_LOCATOR = ", ".join(PURCHASE_PROCEDURE_SELECTORS)
 PAY_BTN_SELECTORS = [
     "input[value='確認する']",
     "button:has-text('確認する')",
+    "#confirm a:has-text('確認する')",
+    "a:has-text('確認し購入を進める')",
     "a:has-text('確認する'):not([href*='paypay']):not([href*='campaign'])",
     "input[value='決定する']",
     "button:has-text('決定する')",
     "a:has-text('決定する')",
     "#mBoxConfBt",
     "a.gv-Button--primary",
+    "#fconfirm a:has-text('購入を確定する')",
     "a:has-text('購入を確定する')",
     "button:has-text('購入を確定する')",
 ]
@@ -118,6 +121,10 @@ class YahooPurchaseMixin:
             b_ids = {str(i.get("product_id")) for i in backend_items if i.get("product_id")}
             if not y_ids:
                 await self.log("同捆验证失败：无法提取商品ID。", "ERROR")
+                await self.report_missing_yahoo_ui(
+                    yahoo_page, "bundle_item_rows", ctx,
+                    extra="已点「まとめて取引する商品を見る」，但 div.sc-bbfc97d-2 没有商品行。",
+                )
                 return {"status": "BUNDLE_ERROR"}
             if b_ids and y_ids != b_ids:
                 await self.log(f"同捆不一致! 雅虎: {y_ids}, 后台: {b_ids}", "ERROR")
@@ -135,6 +142,10 @@ class YahooPurchaseMixin:
                 await yahoo_page.wait_for_load_state("domcontentloaded")
             else:
                 await self.log("未找到 '返回交易导航' 按钮。", "ERROR")
+                await self.report_missing_yahoo_ui(
+                    yahoo_page, "bundle_item_rows", ctx,
+                    extra="同捆列表页找不到「取引ナビに戻る」。",
+                )
                 return {"status": "nav_ERROR"}
             check_buy_btn = yahoo_page.locator(PURCHASE_PROCEDURE_LOCATOR)
             try:
@@ -244,8 +255,23 @@ class YahooPurchaseMixin:
                 "buyer/top",
                 "buyer/preview",
                 "/payment/input",
+                "/order/review",
+                "/order/change",
+                "buy.auctions.yahoo.co.jp/order",
             )
         )
+
+    def _is_trade_nav_url(self, url):
+        """已结束拍品页「取引ナビ」现网是 /top?aid=，旧版是 /trade/top。
+
+        不用 `.../top` 当子串，以免误匹配 `/topic`。
+        """
+        u = (url or "").lower()
+        if self._checkout_like_url(u):
+            return True
+        if "/trade/top" in u:
+            return True
+        return "/top?aid=" in u or "/top&aid=" in u
 
     async def _adopt_checkout_tab(self, ctx, timeout=12000):
         deadline = asyncio.get_running_loop().time() + timeout / 1000
@@ -262,7 +288,11 @@ class YahooPurchaseMixin:
         return None
 
     async def _dismiss_bundle_choice_page(self, ctx):
-        """新版取引ナビ会先问まとめて还是单品。按既有策略走单品，不申请同捆。"""
+        """新版取引ナビ会先问まとめて还是单品。
+
+        QBT「拆分」包裹入队后仍走这里：只买当前拍品，点「単品で取引する」，
+        绝不点「まとめて取引をはじめる」。后台同捆 ≠ 雅虎同捆购买。
+        """
         yahoo_page = ctx.yahoo_page
         if self._checkout_like_url(yahoo_page.url):
             return None
@@ -341,14 +371,19 @@ class YahooPurchaseMixin:
         await self.log("等待新版取引ナビ异步渲染「購入手続きをする」...")
         link = await self._adopt_page_matching(
             ctx,
-            url_parts=("contact.auctions.yahoo.co.jp", "/trade/top", "buyer/payment"),
+            url_parts=(
+                "contact.auctions.yahoo.co.jp",
+                "/trade/top",
+                "/top?aid=",
+                "buyer/payment",
+            ),
             selector="a[href*='buyer/payment/input']",
             timeout=25000,
         )
         if link is None:
             link = await self._adopt_page_matching(
                 ctx,
-                url_parts=("contact.auctions.yahoo.co.jp", "/trade/top"),
+                url_parts=("contact.auctions.yahoo.co.jp", "/trade/top", "/top?aid="),
                 selector=PURCHASE_PROCEDURE_LOCATOR,
                 timeout=8000,
             )
@@ -364,7 +399,8 @@ class YahooPurchaseMixin:
         kantan_btn = yahoo_page.locator(
             "a:has-text('Yahoo!かんたん決済で支払う'), button:has-text('Yahoo!かんたん決済で支払う')"
         )
-        if await kantan_btn.count():
+        has_kantan = await kantan_btn.count() > 0
+        if has_kantan:
             await self.log("发现 'Yahoo!かんたん決済' 按钮。正在点击...")
             await self._follow_click(ctx, kantan_btn.first)
             yahoo_page = ctx.yahoo_page
@@ -372,7 +408,14 @@ class YahooPurchaseMixin:
         if "送料連絡待ち" in body_text or "送料の連絡があります" in body_text:
             ctx.is_wait_for_shipping = True
             await self.log("状态：等待运费联系 (2.2)。转入个人流程处理（地址+潜在物流选择）。")
-            return await self.handle_personal_address_only(yahoo_page, ctx.order_info)
+            return await self.handle_personal_address_only(
+                yahoo_page, ctx.order_info, test_mode=ctx.test_mode
+            )
+        if link is None and not has_kantan:
+            await self.report_missing_yahoo_ui(
+                yahoo_page, "personal_purchase_procedure", ctx,
+                extra="已在取引ナビ，没有「購入手続きをする」，也没有かんたん決済。",
+            )
         return None
 
     async def step_enter_purchase(self, ctx):
@@ -380,14 +423,29 @@ class YahooPurchaseMixin:
         yahoo_page = ctx.yahoo_page
         order_info = ctx.order_info
         test_mode = ctx.test_mode
-        buy_now_btn = yahoo_page.locator("button:has-text('購入手続きへ'), a:has-text('購入手続きへ')")
-        buy_now_auction_btn = yahoo_page.locator("button:has-text('今すぐ落札'), a:has-text('今すぐ落札')")
+        # 新版拍品页稳定容器是 #bidButtonGroup；按钮 class 带哈希，只用按钮文字。
+        buy_now_btn = yahoo_page.locator(
+            "#bidButtonGroup button:has-text('購入手続きへ'), "
+            "#bidButtonGroup a:has-text('購入手続きへ'), "
+            "button:has-text('購入手続きへ'), a:has-text('購入手続きへ')"
+        )
+        buy_now_auction_btn = yahoo_page.locator(
+            "#bidButtonGroup button:has-text('今すぐ落札'), "
+            "button:has-text('今すぐ落札'), a:has-text('今すぐ落札')"
+        )
         if await buy_now_btn.count() > 0:
-            await self.log("检测到一口价/即决订单 (購入手続きへ)。正在点击...")
+            await self.log("检测到店铺结算入口 (購入手続きへ)。正在点击...")
             ctx.is_store = True
             await buy_now_btn.first.click()
         elif await buy_now_auction_btn.count() > 0:
-            await self.log("检测到竞拍/一口价共存订单 (今すぐ落札)。")
+            has_bid = await yahoo_page.locator(
+                "#bidButtonGroup button:has-text('入札'), #bidButtonGroup a:has-text('入札')"
+            ).count() > 0
+            await self.log(
+                "检测到拍品页一口价 (今すぐ落札)"
+                + ("，同时有入札入口" if has_bid else "，仅即決")
+                + "。"
+            )
             page_text = await yahoo_page.locator("body").inner_text()
             match = re.search(r"即決.*?([\d,]+)円", page_text)
             if match:
@@ -412,24 +470,71 @@ class YahooPurchaseMixin:
                             else:
                                 await win_btn.first.click()
                             await yahoo_page.wait_for_selector("text=おめでとうございます", timeout=15000)
+                        else:
+                            await self.report_missing_yahoo_ui(
+                                yahoo_page, "bid_confirm", ctx,
+                                extra="已进入确认页，但找不到「落札する」。",
+                            )
                     except Exception as e:
                         await self.log(f"立即购买流程出错: {e}", "WARNING")
+                        await self.report_missing_yahoo_ui(
+                            yahoo_page, "bid_confirm", ctx,
+                            extra=f"点「今すぐ落札」后未出现「入札内容の確認」或后续失败: {e}",
+                        )
             else:
                 await self.log("未提取到即决价格，无法核对。跳过立即购买。")
         else:
             product_id = (order_info.get("product_id") or "").strip()
-            nav_candidates = yahoo_page.locator("a:has-text('取引ナビ'), button:has-text('取引ナビ')")
+            closed_nav = yahoo_page.locator("#closedNotice a:has-text('取引ナビ')")
+            nav_candidates = yahoo_page.locator(
+                "#closedNotice a:has-text('取引ナビ'), "
+                "a:has-text('取引ナビ'), button:has-text('取引ナビ')"
+            )
             nav_count = await nav_candidates.count()
+            closed_count = await closed_nav.count()
             if product_id or nav_count > 0:
                 ctx.is_personal = True
-                if product_id:
-                    cur = yahoo_page.url or ""
-                    if product_id in cur and (
-                        "trade/top" in cur or self._checkout_like_url(cur)
-                    ):
-                        await self.log(f"已在取引相关页，跳过重复打开: {cur}")
+                cur = yahoo_page.url or ""
+                if self._is_trade_nav_url(cur) and (not product_id or product_id in cur):
+                    await self.log(f"已在取引相关页，跳过重复打开: {cur}")
+                elif closed_count > 0:
+                    href = (await closed_nav.first.get_attribute("href")) or ""
+                    await self.log("已结束拍品页 #closedNotice「取引ナビ」。")
+                    if href:
+                        if href.startswith("/"):
+                            href = "https://contact.auctions.yahoo.co.jp" + href
+                        await self.log(f"打开取引ナビ: {href}")
+                        try:
+                            await yahoo_page.goto(href, wait_until="commit", timeout=20000)
+                            try:
+                                await yahoo_page.wait_for_load_state(
+                                    "domcontentloaded", timeout=12000
+                                )
+                            except Exception:
+                                pass
+                        except Exception as e:
+                            await self.log(
+                                f"取引ナビ打开超时，继续用当前页: {yahoo_page.url} ({e})",
+                                "WARNING",
+                            )
                     else:
-                        trade_url = YAHOO_TRADE_TOP_URL.format(product_id=product_id)
+                        await self._follow_click(
+                            ctx,
+                            closed_nav.first,
+                            wait_locator=(
+                                "h1:has-text('取引ナビ'), "
+                                "a[href*='buyer/payment/input'], "
+                                "a:has-text('購入手続きをする'), "
+                                "button:has-text('単品で取引する')"
+                            ),
+                        )
+                    await self.log(f"点击后当前页: {ctx.yahoo_page.url}")
+                elif product_id:
+                    opened = False
+                    for trade_url in (
+                        YAHOO_TRADE_NAV_URL.format(product_id=product_id),
+                        YAHOO_TRADE_TOP_URL.format(product_id=product_id),
+                    ):
                         await self.log(f"直接打开取引ナビ: {trade_url}")
                         try:
                             await yahoo_page.goto(trade_url, wait_until="commit", timeout=20000)
@@ -439,15 +544,26 @@ class YahooPurchaseMixin:
                                 )
                             except Exception:
                                 pass
+                            opened = True
+                            break
                         except Exception as e:
-                            await self.log(f"取引ナビ打开超时，继续用当前页: {yahoo_page.url} ({e})", "WARNING")
-                        await self.log(f"点击后当前页: {yahoo_page.url}")
+                            await self.log(
+                                f"取引ナビ打开超时: {trade_url} ({e})",
+                                "WARNING",
+                            )
+                    if not opened:
+                        await self.log(f"取引ナビ打开失败，继续用当前页: {yahoo_page.url}", "WARNING")
+                    await self.log(f"点击后当前页: {yahoo_page.url}")
                 else:
                     await self.log("检测到个人卖家。正在点击 '取引ナビ'...")
                     nav_link = nav_candidates.first
                     for i in range(nav_count):
                         href = (await nav_candidates.nth(i).get_attribute("href")) or ""
-                        if any(k in href.lower() for k in ("trade", "closeduser", "navi")):
+                        href_l = href.lower()
+                        if any(
+                            k in href_l
+                            for k in ("trade", "closeduser", "navi", "/top?aid=", "contact.auctions")
+                        ):
                             nav_link = nav_candidates.nth(i)
                             break
                     await self._follow_click(
@@ -461,6 +577,8 @@ class YahooPurchaseMixin:
                         ),
                     )
                 yahoo_page = ctx.yahoo_page
+                # 新版对话在 trade/top 的 __NEXT_DATA__；点単品后会离开此页，须先抓
+                await self.extract_seller_messages(yahoo_page, ctx.order_id, is_store=False)
                 rejected = await self.gate_seller_bundle_rejected(ctx)
                 if rejected:
                     return rejected
@@ -479,6 +597,10 @@ class YahooPurchaseMixin:
                 await self.log(
                     f"未找到購入手続きへ / 今すぐ落札 / 取引ナビ。当前 URL: {yahoo_page.url}",
                     "WARNING",
+                )
+                await self.report_missing_yahoo_ui(
+                    yahoo_page, "auction_entry", ctx,
+                    extra="拍品页三个入口都没找到。",
                 )
         return None
 
@@ -510,6 +632,10 @@ class YahooPurchaseMixin:
             await self.log("已进入购买输入页。等待表单...")
         except Exception:
             await self.log("警告：未找到 'お届け先' 表单，页面可能不同。继续...", "WARNING")
+            await self.report_missing_yahoo_ui(
+                yahoo_page, "checkout_address_form", ctx,
+                extra="已进入结算相关 URL，但地址表单约定选择器都没命中。",
+            )
         return None
 
     async def step_capture_body_and_payment_gate(self, ctx):
@@ -532,26 +658,71 @@ class YahooPurchaseMixin:
         await self.extract_seller_messages(ctx.yahoo_page, ctx.order_id, is_store=ctx.is_store)
         return None
 
+    async def _click_store_purchase_confirm(self, yahoo_page, test_mode):
+        """店铺二次确认 #fconfirm「購入を確定しますか？」→「購入を確定する」。"""
+        fconfirm = yahoo_page.locator("#fconfirm")
+        buy = fconfirm.locator("a:has-text('購入を確定する'), button:has-text('購入を確定する')")
+        try:
+            if await fconfirm.count() == 0:
+                return False
+            if await buy.count() == 0:
+                buy = yahoo_page.locator("#fconfirm >> text=購入を確定する")
+            if await buy.count() == 0:
+                return False
+            await self.log("发现店铺二次确认弹窗「購入を確定しますか？」")
+            if test_mode:
+                await self.log("[TestMode] 二次确认弹窗已出现，不点「購入を確定する」。")
+                return True
+            await buy.first.click(force=True)
+            return True
+        except Exception as e:
+            await self.log(f"店铺二次确认点击失败: {e}", "DEBUG")
+            return False
+
     async def step_click_pay(self, ctx):
         yahoo_page = ctx.yahoo_page
         test_mode = ctx.test_mode
+        if hasattr(self, "_dismiss_reauth_note"):
+            await self._dismiss_reauth_note(yahoo_page)
+        if await self._click_store_purchase_confirm(yahoo_page, test_mode):
+            if not test_mode:
+                ctx.trade_info_submitted = True
+            return None
         classic_confirm = yahoo_page.locator("#mBoxConfBt")
         if await classic_confirm.count() and await classic_confirm.first.is_visible():
             await self.log("发现旧版取引ナビ「決定する」(#mBoxConfBt)")
             if test_mode:
                 await self.log("[TestMode] 模拟点击决定（不提交，也不点弹窗「確定する」）...")
                 return None
-            await classic_confirm.first.click()
+            await classic_confirm.first.click(force=True)
             try:
                 await yahoo_page.locator("#confSubmitBtn, #mBoxConf").wait_for(
                     state="visible", timeout=8000
                 )
                 confirm = yahoo_page.locator("#confSubmitBtn")
+                if await confirm.count() == 0:
+                    confirm = yahoo_page.locator(
+                        "#mBoxConf button:has-text('確定する'), "
+                        "#mBoxConf input[value='確定する']"
+                    )
                 if await confirm.count():
                     await self.log("确认弹窗：取引情報を確定しますか？ 点击確定する。")
-                    await confirm.first.click()
+                    await confirm.first.click(force=True)
+                    ctx.trade_info_submitted = True
+                    try:
+                        await confirm.first.wait_for(state="hidden", timeout=10000)
+                    except Exception:
+                        pass
+                    try:
+                        await yahoo_page.wait_for_load_state("domcontentloaded", timeout=10000)
+                    except Exception:
+                        pass
             except Exception as e:
                 await self.log(f"旧版确定弹窗未出现: {e}", "WARNING")
+                await self.report_missing_yahoo_ui(
+                    yahoo_page, "pay_confirm_button", ctx,
+                    extra=f"已点 #mBoxConfBt，弹窗 #confSubmitBtn / #mBoxConf 未出现: {e}",
+                )
             return None
         for sel in PAY_BTN_SELECTORS:
             btn = yahoo_page.locator(sel).first
@@ -565,28 +736,73 @@ class YahooPurchaseMixin:
                     await self.log("正在点击 (REAL BUY)...")
                     await btn.click()
                     await self._fill_cvv(yahoo_page, self.DEFAULT_CVV)
+                    try:
+                        await yahoo_page.locator("#fconfirm").wait_for(
+                            state="visible", timeout=8000
+                        )
+                    except Exception:
+                        pass
+                    if await self._click_store_purchase_confirm(yahoo_page, test_mode):
+                        ctx.trade_info_submitted = True
                     break
             except Exception:
                 continue
+        else:
+            if not (await classic_confirm.count() and await classic_confirm.first.is_visible()):
+                await self.report_missing_yahoo_ui(
+                    yahoo_page, "pay_confirm_button", ctx,
+                    extra="结算页找不到 #mBoxConfBt / 確認する / 決定する / 購入を確定する。",
+                )
         return None
 
     async def step_finish(self, ctx):
-        is_success = False
         yahoo_page = ctx.yahoo_page
+        title = ""
+        url = ""
+        body_snippet = ""
         try:
             title = await yahoo_page.title()
             url = yahoo_page.url or ""
-            body_snippet = ""
             try:
                 body_snippet = await yahoo_page.locator("body").inner_text()
             except Exception:
                 body_snippet = ""
-            if any(t in url or t in title or t in body_snippet for t in SUCCESS_TOKENS):
-                is_success = True
-                await self.log(f"快速检测到成功状态 (URL/Title): {title} {url}")
-                await self.trigger_sound("success")
         except Exception as e:
             await self.log(f"Success Detection Failed with Error: {e}", "DEBUG")
+
+        is_success = any(t in url or t in title or t in body_snippet for t in SUCCESS_TOKENS)
+        if is_success:
+            await self.log(f"快速检测到成功状态 (URL/Title): {title} {url}")
+            await self.trigger_sound("success")
+
+        payload = {
+            "shipping": ctx.shipping_cost,
+            "total": ctx.yahoo_total,
+            "is_cod": ctx.early_cod,
+            "shipping_warning": ctx.early_cod,
+        }
+        if ctx.is_wait_for_shipping:
+            if ctx.test_mode:
+                return {"status": "WAIT_SHIPPING_CONTACT", **payload}
+            decide_still_open = False
+            try:
+                decide = yahoo_page.locator("#mBoxConfBt")
+                decide_still_open = await decide.count() > 0 and await decide.first.is_visible()
+            except Exception:
+                decide_still_open = False
+            submitted = bool(getattr(ctx, "trade_info_submitted", False))
+            if submitted or not decide_still_open:
+                await self.log("待卖家联系运费：交易信息已提交（此类订单没有「購入完了」页）。")
+                return {"status": "WAIT_SHIPPING_CONTACT", **payload}
+            await self.log("待运费单：决定按钮仍在，交易信息可能未提交。", "WARNING")
+            self.add_risk_history_entry(
+                ctx.order_info.get("order_id"), "人工处理: 待运费单未提交交易信息"
+            )
+            await self.report_missing_yahoo_ui(
+                yahoo_page, "pay_confirm_button", ctx,
+                extra="待运费单：#mBoxConfBt 仍在，交易信息可能未提交。",
+            )
+            return {"status": "PURCHASE_UNCONFIRMED", **payload}
 
         if not is_success and not ctx.test_mode:
             await self.log(
@@ -594,20 +810,11 @@ class YahooPurchaseMixin:
                 "WARNING",
             )
             self.add_risk_history_entry(ctx.order_info.get("order_id"), "人工处理: 未检测到购买成功页面")
-            await self.save_error_snapshot(yahoo_page, "purchase_unconfirmed")
-            return {
-                "status": "PURCHASE_UNCONFIRMED",
-                "shipping": ctx.shipping_cost,
-                "total": ctx.yahoo_total,
-            }
+            await self.report_missing_yahoo_ui(
+                yahoo_page, "purchase_success_page", ctx,
+                extra="正式模式已点确认，但 URL/标题/正文都没有 thank-you、購入完了。",
+            )
+            return {"status": "PURCHASE_UNCONFIRMED", **payload}
 
         status = "TEST_SUCCESS" if ctx.test_mode else "PURCHASED"
-        if ctx.is_wait_for_shipping:
-            status = "WAIT_SHIPPING_CONTACT"
-        return {
-            "status": status,
-            "shipping": ctx.shipping_cost,
-            "total": ctx.yahoo_total,
-            "is_cod": ctx.early_cod,
-            "shipping_warning": ctx.early_cod,
-        }
+        return {"status": status, **payload}

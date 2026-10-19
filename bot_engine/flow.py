@@ -28,6 +28,7 @@ class OrderContext:
     is_store: bool = False
     is_personal: bool = False
     is_wait_for_shipping: bool = False
+    trade_info_submitted: bool = False
     early_cod: bool = False
     shipping_cost: int = 0
     yahoo_total: int = 0

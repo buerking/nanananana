@@ -61,6 +61,10 @@ class GatesMixin:
         await self.log("严重错误：雅虎未登录！停止运行。", "ERROR")
         await self.trigger_sound("error")
         self.is_running = False
+        self.notify_feishu(
+            f"雅虎未登录，已停止。订单 {ctx.order.get('order_id', '')} "
+            f"账号 {ctx.order.get('account_key') or ctx.order.get('bid_email') or ''}"
+        )
         return deny("YAHOO_NOT_LOGGED_IN")
 
     async def gate_risk_keywords(self, ctx):
@@ -103,7 +107,9 @@ class GatesMixin:
         """雅虎同捆弹窗：发现则转人工。超时视为没有弹窗。"""
         try:
             if await self._combined_shipping_visible(ctx):
-                self.add_risk_history_entry(ctx.order_info.get("order_id"), "人工处理: 发现同捆提示")
+                oid = ctx.order_info.get("order_id")
+                self.add_risk_history_entry(oid, "人工处理: 发现同捆提示")
+                self.notify_feishu(f"订单 {oid} 出现雅虎同捆提示，已跳过转人工。")
                 return deny("SKIPPED_COMBINED_SHIPPING")
         except Exception as e:
             await self.log(f"同捆验证异常: {e}", "DEBUG")
@@ -150,35 +156,5 @@ class GatesMixin:
         return deny("REDIRECT_PAYPAY_CARD")
 
     async def assemble_process_queue(self, scanned_items):
-        """扫单后的同捆门卫：未确认同捆整组不入队；已确认同捆只留第一单。"""
-        bundles = {}
-        for item in scanned_items:
-            key = f"{item.get('seller_id')}_{item.get('storage_code', '')}"
-            bundles.setdefault(key, []).append(item)
-
-        process_queue = []
-        for key, items in bundles.items():
-            if len(items) <= 1:
-                process_queue.extend(items)
-                continue
-            is_manual_bundle = any(itm.get("has_split_btn") for itm in items) and all(
-                "待确认" in str(itm.get("status", "")) for itm in items
-            )
-            valid_in_bundle = [itm for itm in items if "未购买" in str(itm.get("status", ""))]
-            if is_manual_bundle and valid_in_bundle:
-                main_item = valid_in_bundle[0]
-                await self.log(
-                    f"发现已确认同捆组 (卖家: {main_item.get('seller_id')}, 用户: {key}, "
-                    f"数量: {len(valid_in_bundle)})。优先处理首项 ID: {main_item.get('order_id')}"
-                )
-                process_queue.append(main_item)
-            else:
-                bundle_sig = key
-                if bundle_sig not in self.warned_bundles:
-                    self.warned_bundles.add(bundle_sig)
-                    await self.log(
-                        f"同捆风控: 发现来自同一卖家 ({items[0].get('seller_id')}) 的 "
-                        f"{len(items)} 笔订单，但未识别为‘已确认同捆’(无拆分按钮)。已跳过以防误操作。",
-                        "WARNING",
-                    )
-        return process_queue
+        """简化版：去掉彩色行、跳过待确认，只留一对一可购买订单。"""
+        return await self.filter_buyable_orders(scanned_items)
