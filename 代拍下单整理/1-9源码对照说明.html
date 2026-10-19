@@ -221,6 +221,12 @@
           <td>不用再交。不是第 9 项购买完成</td>
         </tr>
         <tr>
+          <td>2s</td><td>店铺落札后取引ナビ</td>
+          <td><span class="badge ok">已完成</span></td>
+          <td>补充代拍/2s-店铺取引ナビ-order-status.html</td>
+          <td>#pap「購入手続きする」→ /order/review。勿开 /trade/top</td>
+        </tr>
+        <tr>
           <td>2</td><td>店铺一口价结算（購入確認）</td>
           <td><span class="badge ok">已完成</span></td>
           <td>补充代拍/2-店铺结算-購入確認.html</td>
@@ -292,6 +298,7 @@
     <nav class="toc">
       <a href="#item-1"><span class="num">1</span>入札内容の確認<span class="badge ok">已完成</span><span class="need">1-入札内容の確認.html</span></a>
       <a href="#item-1b"><span class="num">1后</span>落札完了<span class="badge ok">已完成</span><span class="need">1b-落札完了.html</span></a>
+      <a href="#item-2s"><span class="num">2s</span>店铺落札取引ナビ<span class="badge ok">已完成</span><span class="need">2s-店铺取引ナビ-order-status.html</span></a>
       <a href="#item-2"><span class="num">2</span>店铺購入確認<span class="badge ok">已完成</span><span class="need">2-店铺结算-購入確認.html</span></a>
       <a href="#item-2b"><span class="num">2b</span>店铺改地址<span class="badge ok">已完成</span><span class="need">2b-店铺改地址.html</span></a>
       <a href="#item-2b"><span class="num">2c</span>店铺二次确认<span class="badge ok">已完成</span><span class="need">2c-店铺购买确定弹窗.html</span></a>
@@ -328,9 +335,25 @@
       <iframe class="preview" sandbox="" height="520" src="补充代拍/1b-落札完了.html" title="第1后落札完了"></iframe>
     </section>
 
+    <section class="item" id="item-2s">
+      <h2>2s. 店铺落札后取引ナビ <span class="badge ok">已完成</span></h2>
+      <p class="req">店铺<strong>已经落札</strong>、拍品页没有「購入手続きへ」时：
+        <code>buy.auctions.yahoo.co.jp/order/status?auctionId=</code>。
+        按钮文案是「購入手続きする」（没有「を」），在 <code>#pap</code> 里，href 指向
+        <code>/order/review?auctionId=</code>。点进去才是第 2 项结算页。</p>
+      <p class="okbox">
+        文件 <code>补充代拍/2s-店铺取引ナビ-order-status.html</code>（aid=t1248467838，ECO BASEヤフー店）。
+        <strong>不要</strong>打开个人 <code>contact.auctions.yahoo.co.jp/trade/top</code>，会变成
+        「取引ナビにアクセスできません」（403，账号不符页，见
+        <code>补充代拍/_preview-trade-top-id不符.html</code>）。
+      </p>
+      <iframe class="preview" sandbox="" height="420" src="补充代拍/2s-店铺取引ナビ-order-status.html" title="第2s项店铺取引ナビ"></iframe>
+      <iframe class="preview" sandbox="" height="280" src="补充代拍/_preview-trade-top-id不符.html" title="误开个人trade/top报错"></iframe>
+    </section>
+
     <section class="item" id="item-2">
       <h2>2. 店铺一口价结算页 <span class="badge ok">已完成</span></h2>
-      <p class="req">店铺点「購入手続きへ」之后：<code>buy.auctions.yahoo.co.jp/order/review</code>。お届け先旁「変更」、信用卡、「確認する」。改完地址见 2b，点确认后弹窗见 2c。</p>
+      <p class="req">店铺点「購入手続きへ」之后：<code>buy.auctions.yahoo.co.jp/order/review</code>。お届け先旁「変更」、信用卡、「確認する」。改完地址见 2b，点确认后弹窗见 2c。已落札店铺从 2s 点「購入手続きする」也会进这一页。</p>
       <p class="okbox">
         文件 <code>补充代拍/2-店铺结算-購入確認.html</code>（aid=h1248777777，セカンドストリート）。
         关键点：<code>#address</code> 里 <code>h2</code>「お届け先」和「変更」是<strong>兄弟</strong>，不是套在 h2 里面；
@@ -540,7 +563,7 @@
   <footer class="page">
     对照日期 2026-10-19 · 源码预览在 <code>补充代拍/</code>。
     人工优先补：<strong>5 単品で取引する</strong>、<strong>7b 个人改地址表单</strong>。
-    店铺改地址（2 / 2b / 2c）已齐。打开本文件请用浏览器，并保持与 <code>补充代拍</code> 文件夹在同一层。
+    店铺改地址（2s / 2 / 2b / 2c）已齐。打开本文件请用浏览器，并保持与 <code>补充代拍</code> 文件夹在同一层。
   </footer>
 </body>
 </html>

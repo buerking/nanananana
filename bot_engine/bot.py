@@ -185,6 +185,7 @@ class YahooAutoBot(
                                 "PAYMENT_UNSUPPORTED",
                                 "NO_YAHOO_BROWSER",
                                 "DETAIL_PAGE_ERROR",
+                                "YAHOO_ID_MISMATCH",
                             ):
                                 self.notify_feishu(f"订单 {order_id_str} 需要人工: {status}")
                     except BotStopped:

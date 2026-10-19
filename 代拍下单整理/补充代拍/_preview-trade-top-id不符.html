@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>取引ナビにアクセスできません（误开 /trade/top）</title>
+<style>
+  body { font-family: sans-serif; margin: 16px; background: #f6f6f6; }
+  .err { background: #fdecea; border: 1px solid #e74c3c; padding: 16px; }
+  .note { background: #fff3cd; border: 1px solid #e6c35c; padding: 10px 12px; margin-bottom: 12px; font-size: 14px; }
+  code { background: #eee; padding: 0 4px; }
+</style>
+</head>
+<body>
+<div class="note">
+  实页：<code>https://contact.auctions.yahoo.co.jp/trade/top?aid=t1248467838</code><br>
+  这是<strong>个人</strong>取引ナビ。店铺已落札单打开这里会 403
+  <code>tradebff-e-Http-Resource-TradeAddressSearchUsertypeRequestError</code>。
+  页面文案「取引ナビにアクセスできません」/「異なるYahoo! JAPAN ID」。
+  正确入口是店铺 <code>/order/status</code> →「購入手続きする」。
+</div>
+<div class="err" aria-label="error">
+  <h1>取引ナビ</h1>
+  <div><strong>ご確認ください</strong></div>
+  <p>取引ナビにアクセスできません。<br>
+  入札、出品時のYahoo! JAPAN IDとは異なるYahoo! JAPAN IDでログインしている可能性があります。
+  下部のリンクから、入札・出品時のIDでログインしなおしてください。</p>
+  <ul>
+    <li><a href="https://login.yahoo.co.jp/config/login">入札・出品時のIDでログインする</a></li>
+    <li><a href="https://support.yahoo-net.jp/PccAuctions/s/article/H000013707">取引ナビにアクセスできない場合</a></li>
+  </ul>
+</div>
+</body>
+</html>

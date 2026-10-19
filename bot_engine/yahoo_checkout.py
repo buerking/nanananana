@@ -135,9 +135,15 @@ class YahooCheckoutMixin:
                 await self.log(f"地址输入框未找到 (第 {i + 1}/5 次)，等待页面继续加载...")
                 await asyncio.sleep(1)
             if not input_found and hasattr(self, "_continue_personal_checkout"):
-                if "trade/top" in (yahoo_page.url or "") or await yahoo_page.locator(
-                    "a[href*='buyer/payment/input']"
-                ).count():
+                url_now = yahoo_page.url or ""
+                still_on_navi = (
+                    "trade/top" in url_now
+                    or "/order/status" in url_now
+                    or await yahoo_page.locator("a[href*='buyer/payment/input']").count()
+                    or await yahoo_page.locator("a[href*='/order/review']").count()
+                    or await yahoo_page.locator("#pap a:has-text('購入手続き')").count()
+                )
+                if still_on_navi:
                     await self.log("仍停在取引ナビ，补进购买手续页后再找地址框...")
                     await self._continue_personal_checkout(ctx)
                     yahoo_page = ctx.yahoo_page

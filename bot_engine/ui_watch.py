@@ -78,6 +78,25 @@ YAHOO_CHECKPOINTS = {
             "button:has-text('購入手続きする')",
         ],
     },
+    "store_won_trade_nav": {
+        "page_name": "店铺落札后取引ナビ /order/status",
+        "path": "已结束店铺拍品（没有「購入手続きへ」）→ buy.auctions.yahoo.co.jp/order/status?auctionId= → 点「購入手続きする」→ /order/review。不要打开 contact.auctions /trade/top",
+        "looking_for": "店铺取引ナビ「購入手続きする」（href 含 /order/review）",
+        "selectors": [
+            "a[href*='/order/review']",
+            "#pap a:has-text('購入手続きする')",
+            "a:has-text('購入手続きする')",
+        ],
+    },
+    "trade_nav_id_mismatch": {
+        "page_name": "取引ナビ账号不符",
+        "path": "误开 contact.auctions.yahoo.co.jp/trade/top 或登录 ID 不是入札账号时，页面报「取引ナビにアクセスできません」",
+        "looking_for": "错误文案「取引ナビにアクセスできません」/「異なるYahoo! JAPAN ID」",
+        "selectors": [
+            "text=取引ナビにアクセスできません",
+            "text=異なるYahoo! JAPAN ID",
+        ],
+    },
     "checkout_address_form": {
         "page_name": "结算/地址页",
         "path": "店铺：購入手続きへ后的结算页；个人：/top 或 /trade/top 点購入手続きをする后的 buyer/payment 或落札者情報",

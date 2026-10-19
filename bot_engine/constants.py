@@ -33,6 +33,10 @@ YAHOO_HOME_URL = "https://auctions.yahoo.co.jp/"
 YAHOO_AUCTION_URL = "https://auctions.yahoo.co.jp/jp/auction/{product_id}"
 # 已结束拍品页 #closedNotice「取引ナビ」的现网地址；缺 seller/buyer 参数时 Yahoo 会按登录态补全。
 YAHOO_TRADE_NAV_URL = "https://contact.auctions.yahoo.co.jp/top?aid={product_id}"
-# 旧版取引ナビ；点不到页面链接时的回退。
+# 旧版取引ナビ；点不到页面链接时的回退。店铺已落札切勿走这条，会 403。
 YAHOO_TRADE_TOP_URL = "https://contact.auctions.yahoo.co.jp/trade/top?aid={product_id}"
+# 店铺已落札后的取引ナビ；点「購入手続きする」进 /order/review。
+YAHOO_STORE_TRADE_STATUS_URL = (
+    "https://buy.auctions.yahoo.co.jp/order/status?auctionId={product_id}"
+)
 SUCCESS_STATUSES = ("PURCHASED", "TEST_SUCCESS", "WAIT_SHIPPING", "WAIT_SHIPPING_CONTACT")
