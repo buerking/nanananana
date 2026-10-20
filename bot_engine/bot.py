@@ -94,6 +94,12 @@ class YahooAutoBot(
         self.BLACKLIST_FILE = os.path.join(self.BASE_DIR, "seller_blacklist.json")
         self.seller_blacklist = self.load_seller_blacklist()
         self.load_seller_messages_today()
+        self.run_mode = "normal"
+        self.waiting_confirm = False
+        self.pending_order_id = ""
+        self.gated_queue = []
+        self.confirm_action = None
+        self.confirm_event = asyncio.Event()
 
     def notify_feishu(self, text):
         try:
@@ -109,13 +115,125 @@ class YahooAutoBot(
     async def stop(self):
         """Stops the bot loop"""
         self.is_running = False
+        self.confirm_action = "stop"
+        try:
+            self.confirm_event.set()
+        except Exception:
+            pass
         await self.log("正在停止机器人...")
 
-    async def run_loop(self, headless=False, test_mode=True, target_order_id=None):
+    def submit_operator_action(self, action):
+        raw = (action or "").strip().lower()
+        if raw not in ("y", "n", "stop"):
+            return False
+        self.confirm_action = raw
+        try:
+            self.confirm_event.set()
+        except Exception:
+            pass
+        return True
+
+    def _queue_public(self, orders):
+        out = []
+        for o in orders or []:
+            out.append(
+                {
+                    "order_id": str(o.get("order_id") or ""),
+                    "product_id": str(o.get("product_id") or ""),
+                    "seller_id": str(o.get("seller_id") or ""),
+                    "account_key": str(o.get("account_key") or ""),
+                    "user_name": str(o.get("user_name") or ""),
+                    "bid_email": str(o.get("bid_email") or ""),
+                    "backend_total": int(o.get("backend_total") or 0),
+                }
+            )
+        return out
+
+    async def wait_operator(self, prompt, pending_order_id="", timeout=1800):
+        self.ensure_running()
+        self.confirm_event = asyncio.Event()
+        self.confirm_action = None
+        self.waiting_confirm = True
+        self.pending_order_id = str(pending_order_id or "")
+        await self.log(prompt, "WARNING")
+        try:
+            await asyncio.wait_for(self.confirm_event.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            await self.log("等待确认超时（30分钟）。结束本批。", "WARNING")
+            self.confirm_action = "stop"
+        finally:
+            self.waiting_confirm = False
+        if not self.is_running:
+            return "stop"
+        return self.confirm_action or "stop"
+
+    async def _log_gated_queue(self, orders):
+        lines = ["运行成功，以下订单可以处理:"]
+        for i, o in enumerate(orders, 1):
+            oid = o.get("order_id")
+            pid = o.get("product_id") or "-"
+            acc = o.get("account_key") or "?"
+            user = o.get("user_name") or "?"
+            seller = o.get("seller_id") or "?"
+            total = o.get("backend_total") or 0
+            lines.append(
+                f"  {i}. {oid} / {pid} / 卖家 {seller} / 账号 {acc} / 用户 {user}"
+                + (f" / 后台金额 {total}" if total else "")
+            )
+        await self.log("\n".join(lines))
+
+    def _verdict_line(self, status):
+        if status == "PURCHASED":
+            return "本单自动购买是否成功: 是（雅虎購入完了）"
+        if status in ("WAIT_SHIPPING", "WAIT_SHIPPING_CONTACT"):
+            return "本单自动购买是否成功: 流程成功，待卖家运费"
+        if status == "PURCHASE_UNCONFIRMED":
+            return "本单自动购买是否成功: 未确认（已点确认但未见成功页，请人工核对是否扣款）"
+        if str(status).startswith("SKIPPED"):
+            return f"本单自动购买是否成功: 跳过（{status}）"
+        if status == "TEST_SUCCESS":
+            return "本单自动购买是否成功: 测试模式模拟成功（未真实下单）"
+        return f"本单自动购买是否成功: 否（{status}）"
+
+    async def _record_order_result(self, run_stats, order_id_str, status, test_mode, gated=False):
+        if status in SUCCESS_STATUSES:
+            run_stats["success"] += 1
+            run_stats["details"].append(f"[{order_id_str}] Success ({status})")
+            if (not test_mode or gated) and status in (
+                "PURCHASED",
+                "WAIT_SHIPPING",
+                "WAIT_SHIPPING_CONTACT",
+            ):
+                self.notify_feishu(f"订单 {order_id_str} 处理成功 ({status})")
+        elif str(status).startswith("SKIPPED"):
+            run_stats["skipped"] += 1
+            run_stats["details"].append(f"[{order_id_str}] Skipped ({status})")
+        else:
+            run_stats["failed"] += 1
+            run_stats["details"].append(f"[{order_id_str}] Failed ({status})")
+            if status in (
+                "PURCHASE_UNCONFIRMED",
+                "ADDRESS_FAIL",
+                "STORE_PICKUP_ONLY_ERROR",
+                "PAYMENT_UNSUPPORTED",
+                "NO_YAHOO_BROWSER",
+                "DETAIL_PAGE_ERROR",
+                "YAHOO_ID_MISMATCH",
+            ):
+                self.notify_feishu(f"订单 {order_id_str} 需要人工: {status}")
+
+    async def run_loop(self, headless=False, test_mode=True, target_order_id=None, run_mode="normal"):
         """Main automation loop"""
         if self.is_running:
             return
+        gated = (run_mode or "normal") == "gated_live"
+        if gated:
+            test_mode = False
+        self.run_mode = "gated_live" if gated else "normal"
         self.is_running = True
+        self.waiting_confirm = False
+        self.pending_order_id = ""
+        self.gated_queue = []
         self.attempted_orders.clear()
         self.warned_bundles.clear()
         self.ui_miss_reported = set()
@@ -124,11 +242,16 @@ class YahooAutoBot(
         try:
             await self.start_browser(headless=headless)
             await self.log("自动化任务已启动。")
-            self.notify_feishu(
-                "YahooAutoBot 已启动"
-                + ("（测试模式）" if test_mode else "（正式模式）")
-                + (f"\n单单测试: {target_order_id}" if target_order_id else "")
-            )
+            if gated:
+                self.notify_feishu("YahooAutoBot 已启动（逐单实购，真实下单）")
+            else:
+                self.notify_feishu(
+                    "YahooAutoBot 已启动"
+                    + ("（测试模式）" if test_mode else "（正式模式）")
+                    + (f"\n单单测试: {target_order_id}" if target_order_id else "")
+                )
+            buy_next_immediately = False
+            skip_next_head = False
             while self.is_running:
                 self.ensure_running()
                 backend_page = await self.find_backend_tab()
@@ -136,10 +259,10 @@ class YahooAutoBot(
                     await self.log("未找到后台标签页。尝试打开...", "WARNING")
                     backend_page = await self.browser_context.new_page()
                     await backend_page.goto(self.BACKEND_URL, wait_until="domcontentloaded")
-                # 批量：去颜色 → 跳过待确认 → 只留一对一；单单测试：命中行（待确认仍跳过）
-                orders = await self.scan_backend_list(backend_page, target_order_id)
+                scan_target = None if gated else target_order_id
+                orders = await self.scan_backend_list(backend_page, scan_target)
                 if not orders:
-                    if target_order_id:
+                    if target_order_id and not gated:
                         await self.log(f"单单测试: 未找到目标订单 {target_order_id}。继续扫描...")
                     else:
                         await self.log("未发现可购买的一对一订单。休眠10秒...")
@@ -158,6 +281,63 @@ class YahooAutoBot(
                     )
                     await asyncio.sleep(10)
                     continue
+                if gated:
+                    self.gated_queue = self._queue_public(valid_orders)
+                    await self._log_gated_queue(valid_orders)
+                    head = valid_orders[0]
+                    order_id_str = str(head.get("order_id", "Unknown"))
+                    if skip_next_head:
+                        skip_next_head = False
+                        self.attempted_orders.add(order_id_str)
+                        run_stats["skipped"] += 1
+                        run_stats["details"].append(f"[{order_id_str}] Skipped (OPERATOR_N)")
+                        await self.log(f"操作员跳过订单 {order_id_str}。")
+                        buy_next_immediately = False
+                        continue
+                    if not buy_next_immediately:
+                        action = await self.wait_operator(
+                            "请回复 y 确认，将真实购买队列中的第 1 单 "
+                            f"{order_id_str}（账号 {head.get('account_key') or '?'}）。"
+                            "输入 n 跳过，stop 结束本批。【会真实扣款】",
+                            pending_order_id=order_id_str,
+                        )
+                        if action == "stop":
+                            break
+                        if action != "y":
+                            self.attempted_orders.add(order_id_str)
+                            run_stats["skipped"] += 1
+                            run_stats["details"].append(f"[{order_id_str}] Skipped (OPERATOR_N)")
+                            await self.log(f"操作员跳过订单 {order_id_str}。")
+                            continue
+                    buy_next_immediately = False
+                    self.attempted_orders.add(order_id_str)
+                    run_stats["total_processed"] += 1
+                    try:
+                        result = await self.process_order(head, backend_page, False)
+                        status = (result or {}).get("status", "UNKNOWN_ERROR") if result else "NoneResult"
+                        await self.log(self._verdict_line(status), "INFO")
+                        await self._record_order_result(
+                            run_stats, order_id_str, status, test_mode=False, gated=True
+                        )
+                    except BotStopped:
+                        raise
+                    except Exception as e:
+                        run_stats["failed"] += 1
+                        run_stats["details"].append(f"[{order_id_str}] Failed ({e})")
+                        await self.log(f"Loop error: {e}", "ERROR")
+                        await self.log(self._verdict_line("ERROR"), "ERROR")
+                    after = await self.wait_operator(
+                        f"人工核查窗口。订单 {order_id_str} 已跑完。"
+                        "核查完毕后输入 y 开始下一单，n 跳过下一单队首，stop 结束本批。",
+                        pending_order_id="",
+                    )
+                    if after == "stop":
+                        break
+                    if after == "y":
+                        buy_next_immediately = True
+                    else:
+                        skip_next_head = True
+                    continue
                 for order in valid_orders:
                     if not self.is_running:
                         break
@@ -167,27 +347,9 @@ class YahooAutoBot(
                     try:
                         result = await self.process_order(order, backend_page, test_mode)
                         status = (result or {}).get("status", "UNKNOWN_ERROR") if result else "NoneResult"
-                        if status in SUCCESS_STATUSES:
-                            run_stats["success"] += 1
-                            run_stats["details"].append(f"[{order_id_str}] Success ({status})")
-                            if (not test_mode) and status in ("PURCHASED", "WAIT_SHIPPING", "WAIT_SHIPPING_CONTACT"):
-                                self.notify_feishu(f"订单 {order_id_str} 处理成功 ({status})")
-                        elif str(status).startswith("SKIPPED"):
-                            run_stats["skipped"] += 1
-                            run_stats["details"].append(f"[{order_id_str}] Skipped ({status})")
-                        else:
-                            run_stats["failed"] += 1
-                            run_stats["details"].append(f"[{order_id_str}] Failed ({status})")
-                            if status in (
-                                "PURCHASE_UNCONFIRMED",
-                                "ADDRESS_FAIL",
-                                "STORE_PICKUP_ONLY_ERROR",
-                                "PAYMENT_UNSUPPORTED",
-                                "NO_YAHOO_BROWSER",
-                                "DETAIL_PAGE_ERROR",
-                                "YAHOO_ID_MISMATCH",
-                            ):
-                                self.notify_feishu(f"订单 {order_id_str} 需要人工: {status}")
+                        await self._record_order_result(
+                            run_stats, order_id_str, status, test_mode, gated=False
+                        )
                     except BotStopped:
                         raise
                     except Exception as e:
@@ -226,4 +388,8 @@ class YahooAutoBot(
             await self.log(summary)
             self.notify_feishu(summary.strip())
             self.is_running = False
+            self.waiting_confirm = False
+            self.pending_order_id = ""
+            self.gated_queue = []
+            self.run_mode = "normal"
             await self.log("自动化已停止。")

@@ -47,11 +47,40 @@ class OrderMixin:
         ctx.sync_order_info()
         result = await self.execute_yahoo_purchase(ctx.yahoo_page, ctx.order_info, test_mode)
         try:
+            if result and (result.get("status") in (
+                "PURCHASED", "WAIT_SHIPPING", "WAIT_SHIPPING_CONTACT", "TEST_SUCCESS"
+            )):
+                await self._log_suffix_check(ctx)
+        except Exception as e:
+            await self.log(f"室号核对失败（不影响结论）: {e}", "DEBUG")
+        try:
             await self.backfill_order(ctx.detail_page, result, ctx.backend_total, test_mode)
         except Exception as e:
             await self.log(f"Navigation error after processing: {e}", "ERROR")
         await self.mw_cleanup_detail_tab(ctx)
         return result
+
+    async def _log_suffix_check(self, ctx):
+        suffix = ctx.suffix
+        page = ctx.yahoo_page
+        if not page or page.is_closed():
+            await self.log(f"室号核对: 雅虎页已关闭，无法确认 '{suffix}'。", "WARNING")
+            return
+        shown = ""
+        if hasattr(self, "_visible_ship_address_text"):
+            shown = await self._visible_ship_address_text(page)
+        if not shown:
+            try:
+                shown = await page.locator("main, #address, #__next").first.inner_text()
+            except Exception:
+                shown = ""
+        if suffix and suffix in (shown or ""):
+            await self.log(f"室号核对: 结算页仍能看到 '{suffix}'。")
+        else:
+            await self.log(
+                f"室号核对: 未能在展示区读到 '{suffix}'（不因此判失败，请人工看一眼）。",
+                "WARNING",
+            )
 
     async def step_open_detail(self, ctx):
         backend_page = ctx.backend_page

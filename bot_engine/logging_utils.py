@@ -33,8 +33,13 @@ class LoggingMixin:
             await self.log_callback(f"[[SOUND:{sound_type}]]")
 
     async def save_error_snapshot(self, page: Page, tag="error"):
-        """Save HTML and Screenshot for debugging"""
+        """失败时写活 DOM 事故包（含 LATEST 指针）。"""
         try:
+            if hasattr(self, "capture_live_incident"):
+                await self.capture_live_incident(
+                    page, tag, extra="save_error_snapshot", notify=True
+                )
+                return
             timestamp = int(time.time())
             snapshot_dir = os.path.join(self.BASE_DIR, "error_snapshots")
             os.makedirs(snapshot_dir, exist_ok=True)

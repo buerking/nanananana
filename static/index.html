@@ -194,6 +194,8 @@
                 style="padding: 8px; border: 1px solid #d9d9d9; border-radius: 4px; width: 220px;">
             <button onclick="initAudio(); startSingleTest()" class="btn-primary"
                 style="background: #722ed1; border-color: #722ed1;">🧪 单单测试</button>
+            <button onclick="initAudio(); startGatedLive()" class="btn-primary"
+                style="background: #d4380d; border-color: #d4380d;">逐单实购</button>
         </div>
 
         <div id="screenshot-alert-panel"
@@ -332,6 +334,20 @@
             <div class="logs" id="log-container">
                 <div class="log-line">Waiting for connection...</div>
             </div>
+            <div id="gated-confirm-panel"
+                style="display: none; margin-top: 10px; padding: 12px; border: 2px solid #d4380d; background: #fff2e8; border-radius: 4px;">
+                <div style="font-weight: bold; color: #d4380d; margin-bottom: 6px;">
+                    逐单实购 · 会真实扣款
+                    <span id="gated-waiting-hint" style="font-weight: normal; margin-left: 8px;"></span>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input id="gated-confirm-input" type="text" placeholder="输入 y / n / stop 后回车"
+                        style="flex: 1; padding: 8px; border: 1px solid #d4380d; border-radius: 4px;">
+                    <button onclick="sendGatedConfirm()" class="btn-primary"
+                        style="background: #d4380d;">发送</button>
+                </div>
+                <div style="font-size: 12px; color: #888; margin-top: 6px;">y=确认购买当前队首 / n=跳过 / stop=结束本批</div>
+            </div>
         </div>
 
         <!-- History Logs -->
@@ -411,7 +427,18 @@
         }
 
         // Init History
-        document.addEventListener('DOMContentLoaded', fetchLogList);
+        document.addEventListener('DOMContentLoaded', function () {
+            fetchLogList();
+            const gatedInput = document.getElementById('gated-confirm-input');
+            if (gatedInput) {
+                gatedInput.addEventListener('keydown', function (ev) {
+                    if (ev.key === 'Enter') {
+                        ev.preventDefault();
+                        sendGatedConfirm();
+                    }
+                });
+            }
+        });
 
         // WebSocket for Logs (带自动重连)
         const logContainer = document.getElementById('log-container');
@@ -607,6 +634,49 @@
             } catch (e) { log("Error: " + e); }
         }
 
+        async function startGatedLive() {
+            const headless = document.getElementById('headless-mode').checked;
+            if (!confirm("逐单实购会真实下单并扣款（不受「测试模式」勾选影响）。确定开始？")) {
+                return;
+            }
+            try {
+                const res = await fetch(`${API_URL}/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ headless, test_mode: false, run_mode: "gated_live" })
+                });
+                const data = await res.json();
+                if (data.status === 'started') {
+                    updateStatus(true, false, "");
+                    log("Command sent: 逐单实购（真实下单）");
+                } else {
+                    log("Info: " + data.status);
+                }
+            } catch (e) { log("Error: " + e); }
+        }
+
+        async function sendGatedConfirm() {
+            const el = document.getElementById('gated-confirm-input');
+            const action = (el.value || "").trim().toLowerCase();
+            if (!action) {
+                return;
+            }
+            try {
+                const res = await fetch(`${API_URL}/confirm`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action })
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    log("已发送确认: " + data.action);
+                    el.value = "";
+                } else {
+                    log("确认未生效: " + (data.hint || data.status));
+                }
+            } catch (e) { log("Error: " + e); }
+        }
+
         async function stopBot() {
             try {
                 await fetch(`${API_URL}/stop`, { method: 'POST' });
@@ -619,7 +689,7 @@
             try {
                 const res = await fetch(`${API_URL}/status`);
                 const data = await res.json();
-                updateStatus(data.running);
+                updateStatus(data.running, data.waiting_confirm, data.pending_order_id);
             } catch (e) { }
         }
 
@@ -1072,15 +1142,28 @@
             } catch (e) { console.error('removeFromBlacklist error:', e); }
         }
 
-        function updateStatus(running) {
+        function updateStatus(running, waitingConfirm, pendingOrderId) {
             isRunning = running;
             const badge = document.getElementById('status-badge');
-            if (running) {
+            if (running && waitingConfirm) {
+                badge.textContent = "等待确认 y/n/stop";
+                badge.className = "status-badge status-running";
+            } else if (running) {
                 badge.textContent = "运行中";
                 badge.className = "status-badge status-running";
             } else {
                 badge.textContent = "已停止";
                 badge.className = "status-badge status-stopped";
+            }
+            const panel = document.getElementById('gated-confirm-panel');
+            const hint = document.getElementById('gated-waiting-hint');
+            if (panel) {
+                panel.style.display = (running && waitingConfirm) ? "block" : "none";
+            }
+            if (hint) {
+                hint.textContent = waitingConfirm
+                    ? ("当前队首: " + (pendingOrderId || "(核查后下一单)"))
+                    : "";
             }
         }
 

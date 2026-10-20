@@ -132,9 +132,12 @@ YAHOO_CHECKPOINTS = {
     },
     "shipping_radios": {
         "page_name": "配送方式",
-        "path": "店铺结算页 → 选择配送 radio（优先ゆうパケット等可追踪）",
-        "looking_for": "配送方式选项 input[name='shipMethodName']",
+        "path": "现网店铺 /order/review 多为 #dlvry「配送方法」展示 +「変更」，没有 radio；有 radio 时才选 input[name='shipMethodName']",
+        "looking_for": "配送展示块 #dlvry / h2「配送方法」，或可选 radio",
         "selectors": [
+            "#dlvry",
+            "h2:has-text('配送方法')",
+            "a[data-cl-params*='_cl_link:dlvry']",
             "input[name='shipMethodName']",
         ],
     },
@@ -198,15 +201,182 @@ YAHOO_CHECKPOINTS = {
 
 
 class YahooUiWatchMixin:
-    """约定控件找不到时：截图 + HTML + 对照 JSON + 飞书。同一检查点每个 path 每轮只报一次。"""
+    """约定控件找不到时：活 DOM 事故包 + 飞书。同一检查点每个 path 每轮只报一次。"""
 
-    async def report_missing_yahoo_ui(self, page: Page, checkpoint_id, ctx=None, extra="", order=None):
+    _HYDRATE_WAIT = (
+        "main h1, #address, #pap, #dlvry, #__next h1, "
+        "h1:has-text('取引ナビ'), h1:has-text('購入内容の確認'), "
+        "text=ご確認ください"
+    )
+
+    async def _wait_live_dom(self, page: Page):
+        if not page or page.is_closed():
+            return
+        try:
+            await page.wait_for_load_state("domcontentloaded", timeout=5000)
+        except Exception:
+            pass
+        try:
+            await page.locator(self._HYDRATE_WAIT).first.wait_for(state="visible", timeout=8000)
+        except Exception:
+            pass
+
+    async def capture_live_incident(self, page: Page, checkpoint_id, ctx=None, extra="", order=None, notify=True):
+        """等 SPA 水合后抓 outerHTML / __NEXT_DATA__ / 截图，并更新 LATEST 指针。"""
         spec = YAHOO_CHECKPOINTS.get(checkpoint_id) or {
             "page_name": checkpoint_id,
             "path": "",
             "looking_for": checkpoint_id,
             "selectors": [],
         }
+        url = ""
+        try:
+            url = (page.url or "") if page and not page.is_closed() else ""
+        except Exception:
+            url = ""
+        if order is None and ctx is not None:
+            order = getattr(ctx, "order", None) or getattr(ctx, "order_info", None) or {}
+        order = order or {}
+        order_id = str(order.get("order_id") or "")
+        product_id = str(order.get("product_id") or "")
+        account_key = str(order.get("account_key") or "")
+        stamp = int(time.time())
+        safe_ckpt = "".join(c if c.isalnum() or c in "-_" else "_" for c in str(checkpoint_id))
+        folder_name = f"{stamp}_{order_id or 'na'}_{safe_ckpt}"
+        pack_dir = os.path.join(self.BASE_DIR, "error_snapshots", "incidents", folder_name)
+        os.makedirs(pack_dir, exist_ok=True)
+        shot_path = os.path.join(pack_dir, "screenshot.png")
+        html_path = os.path.join(pack_dir, "dom.outer.html")
+        next_path = os.path.join(pack_dir, "next_data.json")
+        meta_path = os.path.join(pack_dir, "meta.json")
+
+        await self._wait_live_dom(page)
+
+        outer_html = ""
+        next_data = None
+        hints = []
+        main_text = ""
+        if page and not page.is_closed():
+            try:
+                await page.screenshot(path=shot_path, full_page=True)
+            except Exception as e:
+                await self.log(f"事故包截图失败: {e}", "WARNING")
+                shot_path = ""
+            try:
+                captured = await page.evaluate(
+                    """() => {
+                      const root = document.querySelector('main') || document.querySelector('#__next') || document.body;
+                      const nodes = (root || document).querySelectorAll(
+                        'a, button, input[type=submit], input[type=button], h1, h2, h3'
+                      );
+                      const out = [];
+                      for (const el of nodes) {
+                        const t = (el.innerText || el.value || '').trim().replace(/\\s+/g, ' ');
+                        if (t && t.length <= 48) out.push(t);
+                      }
+                      const nd = document.getElementById('__NEXT_DATA__');
+                      let nextData = null;
+                      if (nd && nd.textContent) {
+                        try { nextData = JSON.parse(nd.textContent); } catch (e) { nextData = null; }
+                      }
+                      return {
+                        outer: document.documentElement ? document.documentElement.outerHTML : (document.body && document.body.outerHTML) || '',
+                        hints: [...new Set(out)].slice(0, 50),
+                        mainText: ((root && root.innerText) || '').slice(0, 4000),
+                        nextData: nextData
+                      };
+                    }"""
+                )
+                outer_html = (captured or {}).get("outer") or ""
+                hints = (captured or {}).get("hints") or []
+                main_text = (captured or {}).get("mainText") or ""
+                next_data = (captured or {}).get("nextData")
+            except Exception as e:
+                await self.log(f"事故包 DOM 提取失败: {e}", "WARNING")
+                try:
+                    outer_html = await page.content()
+                except Exception:
+                    outer_html = ""
+            if outer_html:
+                try:
+                    with open(html_path, "w", encoding="utf-8") as f:
+                        f.write(outer_html)
+                except Exception as e:
+                    await self.log(f"事故包 HTML 失败: {e}", "WARNING")
+                    html_path = ""
+            else:
+                html_path = ""
+            if next_data is not None:
+                try:
+                    with open(next_path, "w", encoding="utf-8") as f:
+                        json.dump(next_data, f, ensure_ascii=False, indent=2)
+                except Exception:
+                    next_path = ""
+            else:
+                next_path = ""
+
+        payload = {
+            "checkpoint": checkpoint_id,
+            "page_name": spec.get("page_name"),
+            "path": spec.get("path"),
+            "looking_for": spec.get("looking_for"),
+            "old_selectors": spec.get("selectors") or [],
+            "url": url,
+            "order_id": order_id,
+            "product_id": product_id,
+            "account_key": account_key,
+            "extra": extra or "",
+            "visible_texts": hints,
+            "main_text_preview": main_text[:1500],
+            "screenshot": shot_path,
+            "html": html_path,
+            "next_data": next_path,
+            "incident_dir": pack_dir,
+            "replace_hint": "请在本仓库对 Cursor 说：修最新失败",
+        }
+        try:
+            with open(meta_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            await self.log(f"事故包 meta 失败: {e}", "WARNING")
+            meta_path = ""
+        latest_path = os.path.join(self.BASE_DIR, "error_snapshots", "LATEST")
+        try:
+            with open(latest_path, "w", encoding="utf-8") as f:
+                f.write(pack_dir)
+        except Exception as e:
+            await self.log(f"写入 LATEST 失败: {e}", "WARNING")
+        payload["meta"] = meta_path
+        payload["latest"] = latest_path
+        if notify:
+            selector_lines = "\n".join(f"  - {s}" for s in (spec.get("selectors") or []))
+            hint_preview = "、".join(hints[:12]) if hints else "(未能提取)"
+            text = (
+                "【雅虎页面改版】约定元素没找到，需要人工对照\n"
+                f"检查点: {checkpoint_id}\n"
+                f"页面: {spec.get('page_name')}\n"
+                f"路径: {spec.get('path')}\n"
+                f"找不到: {spec.get('looking_for')}\n"
+                f"旧选择器:\n{selector_lines or '  (无)'}\n"
+                f"当前URL: {url}\n"
+                f"订单: {order_id or '-'} / 商品: {product_id or '-'}\n"
+                f"{('说明: ' + extra + chr(10)) if extra else ''}"
+                f"结算区可见按钮/标题: {hint_preview}\n"
+                f"事故目录: {pack_dir}\n"
+                f"截图: {shot_path or '(失败)'}\n"
+                f"活DOM: {html_path or '(失败)'}\n"
+                f"对照表: {meta_path or '(失败)'}\n"
+                "请在本仓库对 Cursor 说：修最新失败\n"
+                "（不要在群里回复 class，由 Cursor 读 DOM 修改选择器）"
+            )
+            await self.log(text, "ERROR")
+            self.notify_feishu(text)
+            await self.trigger_sound("attention")
+        else:
+            await self.log(f"事故包已保存: {pack_dir}", "ERROR")
+        return payload
+
+    async def report_missing_yahoo_ui(self, page: Page, checkpoint_id, ctx=None, extra="", order=None):
         url = ""
         try:
             url = (page.url or "") if page and not page.is_closed() else ""
@@ -222,94 +392,6 @@ class YahooUiWatchMixin:
             await self.log(f"雅虎改版对照已报过，跳过重复: {dedupe}", "DEBUG")
             return None
         reported.add(dedupe)
-
-        if order is None and ctx is not None:
-            order = getattr(ctx, "order", None) or getattr(ctx, "order_info", None) or {}
-        order = order or {}
-        order_id = str(order.get("order_id") or "")
-        product_id = str(order.get("product_id") or "")
-
-        snapshot_dir = os.path.join(self.BASE_DIR, "error_snapshots", "ui_miss")
-        os.makedirs(snapshot_dir, exist_ok=True)
-        stamp = int(time.time())
-        base_name = f"{checkpoint_id}_{order_id or 'na'}_{stamp}"
-        shot_path = os.path.join(snapshot_dir, base_name + ".png")
-        html_path = os.path.join(snapshot_dir, base_name + ".html")
-        json_path = os.path.join(snapshot_dir, base_name + ".json")
-
-        if page and not page.is_closed():
-            try:
-                await page.screenshot(path=shot_path, full_page=True)
-            except Exception as e:
-                await self.log(f"改版对照截图失败: {e}", "WARNING")
-                shot_path = ""
-            try:
-                with open(html_path, "w", encoding="utf-8") as f:
-                    f.write(await page.content())
-            except Exception as e:
-                await self.log(f"改版对照 HTML 失败: {e}", "WARNING")
-                html_path = ""
-
-        hints = []
-        try:
-            if page and not page.is_closed():
-                hints = await page.evaluate(
-                    """() => {
-                      const out = [];
-                      const nodes = document.querySelectorAll(
-                        'a, button, input[type=submit], input[type=button], h1, h2, h3'
-                      );
-                      for (const el of nodes) {
-                        const t = (el.innerText || el.value || '').trim().replace(/\\s+/g, ' ');
-                        if (t && t.length <= 48) out.push(t);
-                      }
-                      return [...new Set(out)].slice(0, 50);
-                    }"""
-                )
-        except Exception:
-            hints = []
-
-        payload = {
-            "checkpoint": checkpoint_id,
-            "page_name": spec.get("page_name"),
-            "path": spec.get("path"),
-            "looking_for": spec.get("looking_for"),
-            "old_selectors": spec.get("selectors") or [],
-            "url": url,
-            "order_id": order_id,
-            "product_id": product_id,
-            "extra": extra or "",
-            "visible_texts": hints,
-            "screenshot": shot_path,
-            "html": html_path,
-            "replace_hint": "请对照截图/源码，告诉我新页面上对应控件的 class、id 或可见文本，我直接替换 old_selectors。",
-        }
-        try:
-            with open(json_path, "w", encoding="utf-8") as f:
-                json.dump(payload, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            await self.log(f"改版对照 JSON 失败: {e}", "WARNING")
-            json_path = ""
-
-        selector_lines = "\n".join(f"  - {s}" for s in (spec.get("selectors") or []))
-        hint_preview = "、".join(hints[:12]) if hints else "(未能提取)"
-        text = (
-            "【雅虎页面改版】约定元素没找到，需要人工对照\n"
-            f"检查点: {checkpoint_id}\n"
-            f"页面: {spec.get('page_name')}\n"
-            f"路径: {spec.get('path')}\n"
-            f"找不到: {spec.get('looking_for')}\n"
-            f"旧选择器:\n{selector_lines or '  (无)'}\n"
-            f"当前URL: {url}\n"
-            f"订单: {order_id or '-'} / 商品: {product_id or '-'}\n"
-            f"{('说明: ' + extra + chr(10)) if extra else ''}"
-            f"本页可见按钮/标题: {hint_preview}\n"
-            f"截图: {shot_path or '(失败)'}\n"
-            f"源码: {html_path or '(失败)'}\n"
-            f"对照表: {json_path or '(失败)'}\n"
-            "请回复：新页面上对应的 class / id / 按钮文字，我直接替换。"
+        return await self.capture_live_incident(
+            page, checkpoint_id, ctx=ctx, extra=extra, order=order, notify=True
         )
-        await self.log(text, "ERROR")
-        self.notify_feishu(text)
-        await self.trigger_sound("attention")
-        return payload

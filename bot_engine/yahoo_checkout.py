@@ -36,11 +36,19 @@ class YahooCheckoutMixin:
             note = page.locator("aside").filter(has_text="再ログイン認証")
             if await note.count() == 0:
                 return
-            closer = note.locator("a:has-text('閉じる')")
-            if await closer.count():
-                await closer.first.click()
-                await self.log("已关闭「再ログイン認証」提示。")
-                await asyncio.sleep(0.3)
+            closer = note.locator("a:has-text('閉じる'), button:has-text('閉じる')")
+            if await closer.count() == 0:
+                return
+            loc = closer.first
+            try:
+                visible = await loc.is_visible()
+            except Exception:
+                visible = False
+            if not visible:
+                return
+            await loc.click(timeout=2000, force=True)
+            await self.log("已关闭「再ログイン認証」提示。")
+            await asyncio.sleep(0.3)
         except Exception as e:
             await self.log(f"关闭再登录提示失败: {e}", "DEBUG")
 
@@ -239,10 +247,44 @@ class YahooCheckoutMixin:
                 )
                 return {"status": "STORE_PICKUP_ONLY_ERROR"}
             if all_options_count == 0 and getattr(ctx, "is_store", False):
-                await self.report_missing_yahoo_ui(
-                    yahoo_page, "shipping_radios", ctx,
-                    extra="店铺结算页没有 input[name='shipMethodName']，也没有可识别的配送 radio。",
+                shown = yahoo_page.locator(
+                    "#dlvry, "
+                    "header:has(h2:has-text('配送方法')), "
+                    "section:has(> header h2:has-text('配送方法'))"
                 )
+                shown_text = ""
+                try:
+                    if await shown.count():
+                        shown_text = (await shown.first.inner_text()) or ""
+                except Exception:
+                    shown_text = ""
+                if not shown_text.strip() and await yahoo_page.locator("h2:has-text('配送方法')").count():
+                    try:
+                        shown_text = (
+                            await yahoo_page.locator("h2:has-text('配送方法')").first.evaluate(
+                                "el => (el.closest('section,div') || el.parentElement || el).innerText || ''"
+                            )
+                        ) or ""
+                    except Exception:
+                        shown_text = "配送方法"
+                if shown_text.strip():
+                    compact = " ".join(shown_text.split())
+                    await self.log(f"店铺配送为卖家指定展示项（无 radio）: {compact[:100]}")
+                    if any(k in shown_text for k in pickup_keywords) and not any(
+                        k in shown_text
+                        for k in ("ゆうパック", "ゆうパケット", "宅配", "宅急便", "ネコポス", "追跡")
+                    ):
+                        await self.log("严重错误：展示的配送方式仅为到店自提。请人工处理。", "ERROR")
+                        self.add_risk_history_entry(order_info.get("order_id"), "人工处理: 仅支持到店自提")
+                        return {"status": "STORE_PICKUP_ONLY_ERROR"}
+                    price_m = re.search(r"([\d,]+)円", shown_text)
+                    if price_m:
+                        ctx.shipping_cost = int(price_m.group(1).replace(",", ""))
+                else:
+                    await self.report_missing_yahoo_ui(
+                        yahoo_page, "shipping_radios", ctx,
+                        extra="店铺结算页没有配送 radio，也没有「配送方法」展示块。",
+                    )
             if candidates:
                 best = sorted(candidates, key=lambda c: (0 if c["trackable"] else 1, c["price"]))[0]
                 await best["element"].evaluate(

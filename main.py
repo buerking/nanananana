@@ -92,14 +92,34 @@ class BotConfig(BaseModel):
     headless: bool = False
     test_mode: bool = True
     target_order_id: Optional[str] = None
+    run_mode: str = "normal"
+
+
+class ConfirmInput(BaseModel):
+    action: str
 
 
 @app.post("/start")
 async def start_bot(config: BotConfig):
     if bot.is_running:
         return {"status": "already running"}
-    asyncio.create_task(bot.run_loop(config.headless, config.test_mode, config.target_order_id))
+    asyncio.create_task(
+        bot.run_loop(
+            config.headless,
+            config.test_mode,
+            config.target_order_id,
+            run_mode=config.run_mode or "normal",
+        )
+    )
     return {"status": "started"}
+
+
+@app.post("/confirm")
+async def confirm_action(item: ConfirmInput):
+    ok = bot.submit_operator_action(item.action)
+    if not ok:
+        return {"status": "ignored", "hint": "请输入 y / n / stop"}
+    return {"status": "ok", "action": (item.action or "").strip().lower()}
 
 
 @app.post("/stop")
@@ -110,7 +130,14 @@ async def stop_bot():
 
 @app.get("/status")
 async def get_status():
-    return {"running": bot.is_running, "paused": bot.is_paused}
+    return {
+        "running": bot.is_running,
+        "paused": bot.is_paused,
+        "waiting_confirm": bool(getattr(bot, "waiting_confirm", False)),
+        "pending_order_id": getattr(bot, "pending_order_id", "") or "",
+        "run_mode": getattr(bot, "run_mode", "normal") or "normal",
+        "queue": list(getattr(bot, "gated_queue", None) or []),
+    }
 
 
 @app.get("/screenshot_orders")
