@@ -158,6 +158,15 @@ class QbtMixin:
         单单测试：命中行直接返回（待确认仍跳过；彩色仅警告）。
         """
         await page.bring_to_front()
+        page_total = 0
+        try:
+            banner = await page.locator("body").inner_text()
+            m = re.search(r"当前有\s*(\d+)\s*个未购买", banner or "")
+            if m:
+                page_total = int(m.group(1))
+        except Exception:
+            page_total = 0
+        self.scan_stats = {"page_total": page_total, "scanned": 0, "buyable": 0}
         rows = await page.locator("table.public_table tr").all()
         scanned_items = []
         for row in rows:
@@ -268,6 +277,11 @@ class QbtMixin:
                 )
             return [found]
 
+        stats = getattr(self, "scan_stats", None) or {}
+        stats["scanned"] = len(scanned_items)
+        if not stats.get("page_total"):
+            stats["page_total"] = len({str(it.get("order_id") or "") for it in scanned_items})
+        self.scan_stats = stats
         return await self.assemble_process_queue(scanned_items)
 
     async def filter_buyable_orders(self, scanned_items):
@@ -341,8 +355,20 @@ class QbtMixin:
             self.notify_feishu(
                 "有订单出价账号无法对应 ad/ym，已跳过: " + ", ".join(str(x) for x in skipped_account)
             )
+        stats = getattr(self, "scan_stats", None) or {}
+        stats["buyable"] = len(process_queue)
+        stats["dropped_color"] = len(dropped_color)
+        stats["dropped_pending"] = len(dropped_pending)
+        stats["skipped_multi"] = len(skipped_multi)
+        stats["skipped_account"] = len(skipped_account)
+        if not stats.get("page_total"):
+            stats["page_total"] = len(scanned_items)
+        if not stats.get("scanned"):
+            stats["scanned"] = len(scanned_items)
+        self.scan_stats = stats
+        total = stats.get("page_total") or len(scanned_items)
         await self.log(
-            f"一对一可购买 {len(process_queue)} 笔"
+            f"代购买合计 {total} 笔，可以单条购买 {len(process_queue)} 笔"
             + (
                 "（" + ", ".join(str(it.get("order_id")) for it in process_queue) + "）"
                 if process_queue

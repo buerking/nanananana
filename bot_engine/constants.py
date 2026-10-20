@@ -7,6 +7,7 @@ REMARK_WHITELIST_PATTERNS = [
     "adxez09955@yahoo.co.jp",
     "dxez09955@yahoo.co.jp",
     "ymzjw19369@yahoo.co.jp",
+    "ymzwj19369@yahoo.co.jp",
 ]
 DEFAULT_RISK_KEYWORDS = [
     "直接引取",
@@ -20,7 +21,7 @@ DEFAULT_RISK_KEYWORDS = [
 # 出价账号 → Chrome 目录。ad 用原来的 user_data，ym 用 user_data_ym。QBT 固定开在 ad。
 ACCOUNT_EMAILS = {
     "ad": ["adxez09955@yahoo.co.jp", "dxez09955@yahoo.co.jp"],
-    "ym": ["ymzjw19369@yahoo.co.jp"],
+    "ym": ["ymzjw19369@yahoo.co.jp", "ymzwj19369@yahoo.co.jp"],
 }
 QBT_BROWSER_ACCOUNT = "ad"
 # 可用环境变量 FEISHU_WEBHOOK 覆盖。当前仓库原先没有任何飞书调用。

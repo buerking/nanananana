@@ -168,17 +168,25 @@ class YahooAutoBot(
         return self.confirm_action or "stop"
 
     async def _log_gated_queue(self, orders):
-        lines = ["运行成功，以下订单可以处理:"]
+        stats = getattr(self, "scan_stats", None) or {}
+        total = stats.get("page_total") or stats.get("scanned") or len(orders)
+        buyable = stats.get("buyable")
+        if buyable is None:
+            buyable = len(orders)
+        lines = [
+            f"运行成功。代购买合计 {total} 笔，可以单条购买 {buyable} 笔。",
+            "以下订单可以处理:" if orders else "当前没有可单条购买的订单。",
+        ]
         for i, o in enumerate(orders, 1):
             oid = o.get("order_id")
             pid = o.get("product_id") or "-"
             acc = o.get("account_key") or "?"
             user = o.get("user_name") or "?"
             seller = o.get("seller_id") or "?"
-            total = o.get("backend_total") or 0
+            amount = o.get("backend_total") or 0
             lines.append(
                 f"  {i}. {oid} / {pid} / 卖家 {seller} / 账号 {acc} / 用户 {user}"
-                + (f" / 后台金额 {total}" if total else "")
+                + (f" / 后台金额 {amount}" if amount else "")
             )
         await self.log("\n".join(lines))
 
