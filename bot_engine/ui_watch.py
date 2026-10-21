@@ -195,7 +195,7 @@ YAHOO_CHECKPOINTS = {
     },
     "purchase_success_page": {
         "page_name": "购买完成页",
-        "path": "点最終确认之后 → /buyer/payment/complete「購入が完了しました」或店铺 thank-you",
+        "path": "点最終确认之后 → 个人 /buyer/payment/complete，店铺 /order/thank-you；随后打开订单详情取运费（店铺 /order/status，个人 /trade/top 点「情報」）",
         "looking_for": "购买成功页特征（URL complete/thank-you 或文案 購入が完了しました）",
         "selectors": [
             "h3:has-text('購入が完了しました')",
@@ -205,6 +205,10 @@ YAHOO_CHECKPOINTS = {
             "text=購入が完了",
             "text=ご購入ありがとうございます",
             "#deal a:has-text('取引内容を確認する')",
+            "#dtlinfo",
+            "button:has-text('情報')",
+            "h3:has-text('ストアへのお支払い金額')",
+            "text=送料",
         ],
     },
     "wait_shipping_address": {

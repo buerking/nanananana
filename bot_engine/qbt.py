@@ -442,8 +442,12 @@ class QbtMixin:
                 )
                 await self.log("停止回填。转为人工确认。")
                 return
-            if yahoo_total:
-                await self.log(f"金额已验证: {calculated_total} == {yahoo_total}")
+            if yahoo_total and backend_total and calculated_total == yahoo_total:
+                await self.log(f"金额已验证: 后台{backend_total} + 运费{shipping} == 雅虎{yahoo_total}")
+            else:
+                await self.log(
+                    f"回填金额: 后台商品={backend_total} 运费={shipping} 雅虎合计={yahoo_total or '-'}"
+                )
 
             fee_input = backend_page.locator("input.jpWaybillFee")
             if await fee_input.count():

@@ -32,6 +32,7 @@ class OrderContext:
     early_cod: bool = False
     shipping_cost: int = 0
     yahoo_total: int = 0
+    yahoo_oid: str = ""
     body_text: str = ""
     result: Optional[dict] = None
 

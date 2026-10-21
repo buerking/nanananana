@@ -3,7 +3,9 @@
 同捆校验、待运费地址是主流程上的分支，不是另一套产品。
 """
 import asyncio
+import json
 import re
+from urllib.parse import parse_qs, urlparse
 
 from playwright.async_api import Page
 
@@ -73,6 +75,8 @@ SUCCESS_TOKENS = (
     "/order/thank-you",
     "/buyer/payment/complete",
     "/payment/complete",
+    "支払いが完了しました",
+    "支払い完了の連絡を行いました",
 )
 
 # 个人取引ナビ：先填地址提交取引情報，卖家再报运费。
@@ -87,6 +91,27 @@ WAIT_SHIPPING_FORM = (
     "form[name='tradeForm'], #mBoxConfBt, h2:has-text('落札者情報'), "
     "input[name='address2'], text=取引情報を入力してください"
 )
+
+# 点最终确认后打开订单详情取运费。店铺 /order/status，个人 /trade/top。
+CHECKOUT_STILL_OPEN = (
+    "/order/review",
+    "/order/select-option",
+    "/buyer/payment/input",
+    "/buyer/payment/confirm",
+    "/buyer/edit",
+)
+
+
+def _parse_yen(value):
+    if value is None or value is False:
+        return None
+    if isinstance(value, (int, float)):
+        return int(value)
+    text = str(value).replace("，", ",")
+    found = re.search(r"([\d,]+)", text)
+    if not found:
+        return None
+    return int(found.group(1).replace(",", ""))
 
 
 class YahooPurchaseMixin:
@@ -366,6 +391,7 @@ class YahooPurchaseMixin:
         except Exception:
             pass
         await self.log(f"购买手续页当前 URL: {ctx.yahoo_page.url}")
+        self._remember_yahoo_trade_ids(ctx)
 
     def _checkout_like_url(self, url):
         """真正能改地址/付款的页。/order/status 只是店铺取引ナビ，不算结算。"""
@@ -1135,7 +1161,7 @@ class YahooPurchaseMixin:
             await page.wait_for_url(
                 re.compile(
                     r".*(/buyer/payment/complete|/payment/complete|"
-                    r"/order/thank-you|thank-you).*"
+                    r"/order/thank-you|thank-you|/order/status).*"
                 ),
                 timeout=timeout_ms,
             )
@@ -1158,6 +1184,248 @@ class YahooPurchaseMixin:
             return True
         except Exception:
             return False
+
+    def _remember_yahoo_trade_ids(self, ctx, url=None):
+        page = ctx.yahoo_page
+        u = url or ((page.url if page else "") or "")
+        try:
+            query = parse_qs(urlparse(u).query)
+        except Exception:
+            return
+        oid = (query.get("oid") or [""])[0]
+        if oid:
+            ctx.yahoo_oid = oid
+        aid = (query.get("aid") or query.get("auctionId") or [""])[0]
+        if aid and not (ctx.order.get("product_id") or ctx.order_info.get("product_id")):
+            ctx.order["product_id"] = aid
+            ctx.order_info["product_id"] = aid
+
+    def _product_id(self, ctx):
+        return str(
+            ctx.order.get("product_id")
+            or ctx.order_info.get("product_id")
+            or ""
+        ).strip()
+
+    def _order_detail_kind(self, ctx):
+        url = (ctx.yahoo_page.url if ctx.yahoo_page else "") or ""
+        if ctx.is_store and not ctx.is_personal:
+            return "store"
+        if ctx.is_personal and not ctx.is_store:
+            return "personal"
+        if self._is_store_status_url(url) or "/order/thank-you" in url or "/order/review" in url:
+            return "store"
+        if "contact.auctions.yahoo.co.jp" in url or "/buyer/payment" in url:
+            return "personal"
+        return "store" if ctx.is_store else "personal"
+
+    def _order_detail_url(self, ctx):
+        product_id = self._product_id(ctx)
+        kind = self._order_detail_kind(ctx)
+        if kind == "store":
+            if product_id:
+                return YAHOO_STORE_TRADE_STATUS_URL.format(product_id=product_id)
+            return ""
+        oid = (getattr(ctx, "yahoo_oid", "") or "").strip()
+        if product_id and oid:
+            return (
+                "https://contact.auctions.yahoo.co.jp/trade/top"
+                f"?aid={product_id}&oid={oid}"
+            )
+        url = (ctx.yahoo_page.url if ctx.yahoo_page else "") or ""
+        if "/trade/top" in url:
+            return url.split("#")[0]
+        if product_id:
+            return YAHOO_TRADE_TOP_URL.format(product_id=product_id)
+        return ""
+
+    def _already_on_order_detail(self, url, ctx):
+        u = url or ""
+        pid = self._product_id(ctx)
+        kind = self._order_detail_kind(ctx)
+        if kind == "store":
+            return "/order/status" in u and (not pid or pid in u)
+        return "/trade/top" in u and (not pid or pid in u)
+
+    async def _open_personal_info_tab(self, page):
+        """个人取引ナビ运费表在「情報」Tab，点击后 DOM 才出现お支払い情報。"""
+        info_btn = page.locator("button:has-text('情報')")
+        if not await info_btn.count():
+            return
+        try:
+            cls = (await info_btn.first.get_attribute("class")) or ""
+            if "current" in cls:
+                return
+            await info_btn.first.click()
+            await asyncio.sleep(0.8)
+        except Exception:
+            try:
+                await info_btn.first.click()
+                await asyncio.sleep(0.8)
+            except Exception:
+                pass
+
+    async def _expand_store_order_detail(self, page):
+        """店铺 /order/status 运费在 #dtlinfo，可能要展开「お届け情報・お支払い情報」。"""
+        dtl = page.locator("#dtlinfo")
+        shown = ""
+        try:
+            if await dtl.count():
+                shown = (await dtl.inner_text()) or ""
+        except Exception:
+            shown = ""
+        if re.search(r"送料", shown):
+            return
+        toggle = page.locator("text=お届け情報・お支払い情報などを確認する")
+        if await toggle.count():
+            try:
+                await toggle.first.click()
+                await asyncio.sleep(0.6)
+            except Exception:
+                pass
+
+    async def _read_next_data(self, page):
+        loc = page.locator("#__NEXT_DATA__")
+        try:
+            if not await loc.count():
+                return None
+            raw = await loc.first.inner_text()
+            return json.loads(raw) if raw else None
+        except Exception:
+            return None
+
+    def _trade_info_from_next_data(self, data):
+        stack = [data]
+        seen = 0
+        while stack and seen < 40:
+            seen += 1
+            cur = stack.pop()
+            if not isinstance(cur, dict):
+                continue
+            trade = cur.get("tradeInfo")
+            if isinstance(trade, dict) and (trade.get("paymentInfo") or trade.get("sendInfo")):
+                return trade
+            top = cur.get("top")
+            if isinstance(top, dict) and isinstance(top.get("tradeInfo"), dict):
+                return top.get("tradeInfo") or {}
+            for key in ("props", "pageProps", "initialState", "initialProps"):
+                if isinstance(cur.get(key), dict):
+                    stack.append(cur[key])
+        return {}
+
+    async def _parse_order_detail_amounts(self, page, ctx):
+        shipping = None
+        total = None
+        item = None
+        next_data = await self._read_next_data(page)
+        trade = self._trade_info_from_next_data(next_data) if next_data else {}
+        pay = trade.get("paymentInfo") or {}
+        send = (trade.get("sendInfo") or {}).get("shipMethod") or {}
+        shipping = _parse_yen(pay.get("shippingFee") or send.get("fee"))
+        total = _parse_yen(pay.get("totalPrice"))
+        item = _parse_yen(pay.get("price"))
+
+        chunks = []
+        for sel in (
+            "#dtlinfo",
+            "section:has(h3:has-text('ストアへのお支払い金額'))",
+            "section:has(h3:has-text('お支払い情報'))",
+            "table:has-text('お支払い情報')",
+            "main",
+        ):
+            loc = page.locator(sel)
+            try:
+                if await loc.count():
+                    chunks.append((await loc.first.inner_text()) or "")
+            except Exception:
+                continue
+        text = "\n".join(chunks)
+        if shipping is None:
+            ship_m = re.search(r"送料[：:\s]*([\d,]+)\s*円", text)
+            if ship_m:
+                shipping = int(ship_m.group(1).replace(",", ""))
+            elif "送料無料" in text or "送料：無料" in text:
+                shipping = 0
+        if total is None:
+            total_m = re.search(
+                r"(?:合計金額（税込）|支払い金額\s*\(税込\)|お支払い金額)[^\d]*([\d,]+)\s*円",
+                text,
+            )
+            if total_m:
+                total = int(total_m.group(1).replace(",", ""))
+        if item is None:
+            item_m = re.search(
+                r"(?:商品合計|落札金額|商品金額（税込）|商品金額)[^\d]*([\d,]+)\s*円",
+                text,
+            )
+            if item_m:
+                item = int(item_m.group(1).replace(",", ""))
+        if total is None and item is not None and shipping is not None:
+            total = item + shipping
+        return {"shipping": shipping, "total": total, "item": item}
+
+    async def _log_order_fee_banner(self, ctx, kind, url, amounts):
+        kind_label = "店铺" if kind == "store" else "个人"
+        ship = amounts.get("shipping")
+        total = amounts.get("total")
+        item = amounts.get("item")
+        item_txt = f"{item}円" if item is not None else "-"
+        ship_txt = f"{ship}円" if ship is not None else "未读到"
+        total_txt = f"{total}円" if total is not None else "-"
+        lines = [
+            "========================================",
+            f"【订单详情运费】{kind_label}卖家",
+            f"订单 {ctx.order_id} / 商品 {self._product_id(ctx)}",
+            f"详情页 {url}",
+            f"商品金额 {item_txt}  运费 {ship_txt}  合计 {total_txt}",
+            "========================================",
+        ]
+        for line in lines:
+            await self.log(line, "WARNING")
+
+    async def _open_order_detail_and_capture_fee(self, ctx):
+        """点完最终确认后，拼店铺/个人订单详情 URL，打开并读取运费。"""
+        page = ctx.yahoo_page
+        if page is None:
+            return
+        self._remember_yahoo_trade_ids(ctx)
+        target = self._order_detail_url(ctx)
+        kind = self._order_detail_kind(ctx)
+        if not target:
+            await self.log("拼不出订单详情 URL，无法读取运费。", "WARNING")
+            return
+        cur = page.url or ""
+        if not self._already_on_order_detail(cur, ctx):
+            await self.log(f"购买完成后打开订单详情 ({'店铺' if kind == 'store' else '个人'}): {target}")
+            try:
+                await page.goto(target, wait_until="commit", timeout=20000)
+            except Exception as e:
+                await self.log(f"打开订单详情超时，继续用当前页解析: {e}", "WARNING")
+            try:
+                await page.wait_for_load_state("domcontentloaded", timeout=15000)
+            except Exception:
+                pass
+            try:
+                await page.locator(
+                    "h1:has-text('取引ナビ'), #dtlinfo, button:has-text('情報')"
+                ).first.wait_for(state="visible", timeout=10000)
+            except Exception:
+                pass
+            await asyncio.sleep(1.2)
+        else:
+            await self.log(f"已在订单详情页: {cur}")
+        if kind == "store":
+            await self._expand_store_order_detail(page)
+        else:
+            await self._open_personal_info_tab(page)
+        amounts = await self._parse_order_detail_amounts(page, ctx)
+        if amounts.get("shipping") is not None:
+            ctx.shipping_cost = int(amounts["shipping"])
+        if amounts.get("total"):
+            ctx.yahoo_total = int(amounts["total"])
+        if amounts.get("shipping") is None:
+            await self.log("订单详情页未读到送料，QBT 运费请人工核对。", "WARNING")
+        await self._log_order_fee_banner(ctx, kind, page.url or target, amounts)
 
     async def step_click_pay(self, ctx):
         yahoo_page = ctx.yahoo_page
@@ -1185,11 +1453,13 @@ class YahooPurchaseMixin:
             if not test_mode:
                 ctx.trade_info_submitted = True
                 await self._wait_purchase_complete(yahoo_page)
+            self._remember_yahoo_trade_ids(ctx)
             return None
         if await self._click_store_purchase_confirm(yahoo_page, test_mode):
             if not test_mode:
                 ctx.trade_info_submitted = True
                 await self._wait_purchase_complete(yahoo_page)
+            self._remember_yahoo_trade_ids(ctx)
             return None
         classic_confirm = yahoo_page.locator("#mBoxConfBt")
         if await classic_confirm.count() and await classic_confirm.first.is_visible():
@@ -1262,6 +1532,7 @@ class YahooPurchaseMixin:
                         ctx.trade_info_submitted = True
                     if not test_mode:
                         await self._wait_purchase_complete(yahoo_page)
+                    self._remember_yahoo_trade_ids(ctx)
                     break
             except Exception:
                 continue
@@ -1285,6 +1556,10 @@ class YahooPurchaseMixin:
             await self._wait_purchase_complete(yahoo_page)
         elif not ctx.test_mode:
             await self._wait_purchase_complete(yahoo_page, timeout_ms=8000)
+        self._remember_yahoo_trade_ids(ctx)
+        still_checkout = any(p in ((yahoo_page.url or "")) for p in CHECKOUT_STILL_OPEN)
+        if not ctx.test_mode and not ctx.is_wait_for_shipping and not still_checkout:
+            await self._open_order_detail_and_capture_fee(ctx)
         title = ""
         url = ""
         body_snippet = ""
