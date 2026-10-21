@@ -141,6 +141,11 @@ YAHOO_CHECKPOINTS = {
             "button:has-text('編集する')",
             "input[name='address2']",
             "input[name='home_address2']",
+            "#home_address2",
+            "h1:has-text('氏名・住所情報')",
+            "form[name='address'] button[type='submit']",
+            "button:has-text('登録する')",
+            "a:has-text('ご利用中のサービスに戻る')",
         ],
     },
     "shipping_radios": {

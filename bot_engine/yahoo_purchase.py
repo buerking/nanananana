@@ -1020,6 +1020,23 @@ class YahooPurchaseMixin:
         test_mode = ctx.test_mode
         if hasattr(self, "_dismiss_reauth_note"):
             await self._dismiss_reauth_note(yahoo_page)
+        if hasattr(self, "_is_yahoo_account_address_url") and self._is_yahoo_account_address_url(yahoo_page.url):
+            await self.log("支付前仍停在 Yahoo 账号地址页，先刷新并返回结算...")
+            ok = False
+            if hasattr(self, "_fill_yahoo_account_address_and_return"):
+                ok = await self._fill_yahoo_account_address_and_return(
+                    yahoo_page, getattr(ctx, "suffix", "")
+                )
+            if not ok and hasattr(self, "_return_from_yahoo_account_address"):
+                ok = await self._return_from_yahoo_account_address(yahoo_page)
+            if self._is_yahoo_account_address_url(yahoo_page.url):
+                await self.report_missing_yahoo_ui(
+                    yahoo_page, "address_edit", ctx,
+                    extra="仍停在 account.edit.yahoo.co.jp/address，未回到结算页，不点确认购买。",
+                )
+                return {"status": "ADDRESS_FAIL"}
+            if ok:
+                await self.log("已从账号地址页回到结算，继续找确认按钮。")
         if await self._click_store_purchase_confirm(yahoo_page, test_mode):
             if not test_mode:
                 ctx.trade_info_submitted = True
@@ -1139,6 +1156,17 @@ class YahooPurchaseMixin:
                 extra="待运费单：#mBoxConfBt 仍在，交易信息可能未提交。",
             )
             return {"status": "PURCHASE_UNCONFIRMED", **payload}
+
+        if hasattr(self, "_is_yahoo_account_address_url") and self._is_yahoo_account_address_url(url):
+            await self.log("仍停在 Yahoo 账号地址页，未进入支付确认。", "WARNING")
+            self.add_risk_history_entry(
+                ctx.order_info.get("order_id"), "人工处理: Yahoo账号地址页未回到结算"
+            )
+            await self.report_missing_yahoo_ui(
+                yahoo_page, "address_edit", ctx,
+                extra="结束时仍在 account.edit.yahoo.co.jp/address，不是购买完成页。",
+            )
+            return {"status": "ADDRESS_FAIL", **payload}
 
         if not is_success and not ctx.test_mode:
             await self.log(

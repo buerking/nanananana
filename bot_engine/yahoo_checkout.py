@@ -1,6 +1,7 @@
 """结算 Pipeline 步骤：地址、配送、投放、信用卡、CVV、待运费地址。"""
 import asyncio
 import re
+from urllib.parse import unquote
 
 from playwright.async_api import Page
 
@@ -92,6 +93,130 @@ class YahooCheckoutMixin:
         except Exception:
             return "/order/change" in (page.url or "")
 
+    def _is_yahoo_account_address_url(self, url):
+        u = url or ""
+        return "account.edit.yahoo.co.jp" in u and "address" in u
+
+    async def _yahoo_account_address_form_ready(self, page: Page):
+        try:
+            if await page.locator("#home_address2, input[name='home_address2']").count():
+                if await page.locator("h1:has-text('氏名・住所情報')").count():
+                    return True
+                if await page.locator("form[name='address']").count():
+                    return True
+                return True
+        except Exception:
+            pass
+        return False
+
+    async def _yahoo_account_address_error_visible(self, page: Page):
+        try:
+            body = await page.locator("body").inner_text()
+        except Exception:
+            body = ""
+        return "エラーが発生しました" in (body or "")
+
+    async def _wait_yahoo_account_address_paint(self, page: Page):
+        try:
+            await page.locator(
+                "#home_address2, h1:has-text('氏名・住所情報'), "
+                "text=エラーが発生しました"
+            ).first.wait_for(state="visible", timeout=8000)
+        except Exception:
+            pass
+
+    async def _recover_yahoo_account_address_page(self, page: Page):
+        """点「編集する」后可能跳到账号地址页，首次常报错，刷新最多 3 次。"""
+        if not self._is_yahoo_account_address_url(page.url):
+            return False
+        await self._wait_yahoo_account_address_paint(page)
+        for i in range(3):
+            err = await self._yahoo_account_address_error_visible(page)
+            ready = await self._yahoo_account_address_form_ready(page)
+            if ready and not err:
+                await self.log("已进入 Yahoo 账号地址页。")
+                return True
+            await self.log(f"Yahoo 账号地址页异常，刷新重试 ({i + 1}/3)...")
+            try:
+                await page.reload(wait_until="domcontentloaded", timeout=20000)
+            except Exception as e:
+                await self.log(f"账号地址页刷新失败: {e}", "DEBUG")
+            await self._wait_yahoo_account_address_paint(page)
+        if await self._yahoo_account_address_form_ready(page):
+            await self.log("Yahoo 账号地址页刷新后表单已出现。")
+            return True
+        await self.log("Yahoo 账号地址页刷新 3 次后仍异常。", "WARNING")
+        return False
+
+    async def _return_from_yahoo_account_address(self, page: Page):
+        if not self._is_yahoo_account_address_url(page.url):
+            return True
+        back = page.locator("a:has-text('ご利用中のサービスに戻る')")
+        if await back.count():
+            await self.log("从账号地址页返回结算页。")
+            try:
+                await back.first.click()
+            except Exception:
+                await back.first.click(force=True)
+            try:
+                await page.wait_for_url(
+                    re.compile(r".*contact\.auctions\.yahoo\.co\.jp.*"),
+                    timeout=20000,
+                )
+                return True
+            except Exception:
+                pass
+        done = ""
+        try:
+            m = re.search(r"[?&]\.done=([^&]+)", page.url or "")
+            if m:
+                done = unquote(m.group(1))
+        except Exception:
+            done = ""
+        if done and "contact.auctions.yahoo.co.jp" in done:
+            try:
+                await page.goto(done, wait_until="domcontentloaded", timeout=20000)
+                return True
+            except Exception:
+                pass
+        return not self._is_yahoo_account_address_url(page.url)
+
+    async def _fill_yahoo_account_address_and_return(self, page: Page, suffix):
+        """账号地址页只改自宅 building/room（#home_address2），点登録する后回到结算。"""
+        ready = await self._recover_yahoo_account_address_page(page)
+        if not ready:
+            return False
+        inp = page.locator("#home_address2")
+        if await inp.count() == 0:
+            inp = page.locator("input[name='home_address2']")
+        if await inp.count() == 0:
+            return False
+        current = ""
+        try:
+            current = (await inp.first.input_value()) or ""
+        except Exception:
+            current = ""
+        if suffix not in current.replace("\t", "").replace(" ", ""):
+            await inp.first.fill("")
+            await inp.first.fill(suffix)
+            await inp.first.blur()
+            await self.log(f"账号地址页已填写建物名: {suffix}")
+        save = page.locator("form[name='address'] button[type='submit']")
+        if await save.count() == 0:
+            save = page.locator("button[type='submit']:has-text('登録する')")
+        if await save.count():
+            await save.first.click()
+            try:
+                await page.wait_for_url(
+                    re.compile(r".*contact\.auctions\.yahoo\.co\.jp.*"),
+                    timeout=20000,
+                )
+            except Exception:
+                await self._return_from_yahoo_account_address(page)
+        else:
+            await self._return_from_yahoo_account_address(page)
+        return not self._is_yahoo_account_address_url(page.url)
+
     async def _visible_ship_address_text(self, page: Page):
         """只看お届け先展示区或 address2 输入值，不用整页 HTML。"""
         block = page.locator("#address")
@@ -171,10 +296,46 @@ class YahooCheckoutMixin:
                     if visible_edit is not None:
                         await self.log("点击「編集する」展开地址表单...")
                         await visible_edit.click()
-                        await asyncio.sleep(0.5)
+                        try:
+                            await yahoo_page.wait_for_function(
+                                "() => location.hostname.includes('account.edit.yahoo.co.jp') "
+                                "|| document.querySelector(\"input[name='home_address2'], input[name='address2']\")",
+                                timeout=8000,
+                            )
+                        except Exception:
+                            await asyncio.sleep(0.5)
+                        if self._is_yahoo_account_address_url(yahoo_page.url):
+                            ok = await self._fill_yahoo_account_address_and_return(
+                                yahoo_page, suffix
+                            )
+                            if ok:
+                                after = await self._visible_ship_address_text(yahoo_page)
+                                if suffix in after:
+                                    await self.log(f"账号地址已修改并回到结算页: {suffix}")
+                                else:
+                                    await self.log(
+                                        f"已从账号地址页返回结算，お届け先展示待核对 '{suffix}'。",
+                                        "WARNING",
+                                    )
+                                return None
+                            await self.log("账号地址页未能完成修改。", "ERROR")
+                            self.add_risk_history_entry(
+                                order_info.get("order_id"), "人工处理: Yahoo账号地址页异常"
+                            )
+                            await self.report_missing_yahoo_ui(
+                                yahoo_page, "address_edit", ctx,
+                                extra="account.edit.yahoo.co.jp/address 刷新3次后仍无表单，或登録する后未回到结算页。",
+                            )
+                            return {"status": "ADDRESS_FAIL"}
             input_found = False
             for i in range(8):
                 await self._dismiss_reauth_note(yahoo_page)
+                if self._is_yahoo_account_address_url(yahoo_page.url):
+                    ok = await self._fill_yahoo_account_address_and_return(yahoo_page, suffix)
+                    if ok:
+                        return None
+                    await self.log("账号地址页未能完成修改。", "ERROR")
+                    return {"status": "ADDRESS_FAIL"}
                 inp = yahoo_page.locator("input[name='address2'], input[name='home_address2']")
                 if await inp.count():
                     await inp.first.fill("")
