@@ -97,19 +97,35 @@ class YahooCheckoutMixin:
         u = url or ""
         return "account.edit.yahoo.co.jp" in u and "address" in u
 
+    def _home_address2_locator(self, page: Page):
+        return page.locator(
+            "#home_address2, input[name='home_address2'], [data-testid='home_address2']"
+        )
+
+    async def _yahoo_account_address_heading_visible(self, page: Page):
+        try:
+            return await page.locator(
+                "h1:has-text('氏名・住所情報'), form[name='address']"
+            ).count() > 0
+        except Exception:
+            return False
+
     async def _yahoo_account_address_form_ready(self, page: Page):
         try:
-            if await page.locator("#home_address2, input[name='home_address2']").count():
-                if await page.locator("h1:has-text('氏名・住所情報')").count():
-                    return True
-                if await page.locator("form[name='address']").count():
-                    return True
+            if await self._home_address2_locator(page).count():
                 return True
+            if await self._yahoo_account_address_heading_visible(page):
+                await self._home_address2_locator(page).first.wait_for(
+                    state="visible", timeout=10000
+                )
+                return await self._home_address2_locator(page).count() > 0
         except Exception:
             pass
         return False
 
     async def _yahoo_account_address_error_visible(self, page: Page):
+        if await self._yahoo_account_address_heading_visible(page):
+            return False
         try:
             body = await page.locator("body").inner_text()
         except Exception:
@@ -160,9 +176,21 @@ class YahooCheckoutMixin:
             return False
         await self._settle_yahoo_account_address_page(page)
         for i in range(3):
-            err = await self._yahoo_account_address_error_visible(page)
+            heading = await self._yahoo_account_address_heading_visible(page)
             ready = await self._yahoo_account_address_form_ready(page)
-            if ready and not err:
+            if heading:
+                if ready:
+                    await self.log("已进入 Yahoo 账号地址页。")
+                    return True
+                await self.log("账号地址页标题已出，继续等表单，不再重新打开。")
+                try:
+                    await self._home_address2_locator(page).first.wait_for(
+                        state="visible", timeout=10000
+                    )
+                except Exception:
+                    pass
+                return True
+            if ready:
                 await self.log("已进入 Yahoo 账号地址页。")
                 return True
             await self.log(f"Yahoo 账号地址页仍异常，重新打开 ({i + 1}/3)...")
@@ -211,9 +239,7 @@ class YahooCheckoutMixin:
         ready = await self._recover_yahoo_account_address_page(page)
         if not ready:
             return False
-        inp = page.locator("#home_address2")
-        if await inp.count() == 0:
-            inp = page.locator("input[name='home_address2']")
+        inp = self._home_address2_locator(page)
         try:
             await inp.first.wait_for(state="visible", timeout=8000)
         except Exception:
@@ -229,6 +255,8 @@ class YahooCheckoutMixin:
             await inp.first.fill(suffix)
             await inp.first.blur()
             await self.log(f"账号地址页已填写建物名: {suffix}")
+        else:
+            await self.log(f"账号地址页建物名已含 '{suffix}'，直接登记返回。")
         save = page.locator("form[name='address'] button[type='submit']")
         if await save.count() == 0:
             save = page.locator("button[type='submit']:has-text('登録する')")
@@ -241,20 +269,41 @@ class YahooCheckoutMixin:
                     timeout=20000,
                 )
             except Exception:
-                await self._return_from_yahoo_account_address(page)
-        else:
-            await self._return_from_yahoo_account_address(page)
-        return not self._is_yahoo_account_address_url(page.url)
+                pass
+        await self._return_from_yahoo_account_address(page)
+        if not self._is_yahoo_account_address_url(page.url):
+            return True
+        after = await self._visible_ship_address_text(page)
+        return bool(suffix) and suffix in after
 
     async def _visible_ship_address_text(self, page: Page):
-        """只看お届け先展示区或 address2 输入值，不用整页 HTML。"""
-        block = page.locator("#address")
+        """个人结算是 #bidinfo「落札者情報」旁的地址文案，店铺才是 #address。"""
+        bid = page.locator("#bidinfo")
         try:
-            if await block.count():
-                return (await block.first.inner_text()) or ""
+            if await bid.count():
+                parent = bid.locator("xpath=..")
+                text = (await parent.inner_text()) or ""
+                if text.strip():
+                    return text
         except Exception:
             pass
-        inp = page.locator("input[name='address2'], input[name='home_address2']")
+        for sel in (
+            "section:has(#bidinfo)",
+            "section:has(h2:has-text('落札者情報'))",
+            "#address",
+            "section:has(h2:has-text('お届け先'))",
+        ):
+            loc = page.locator(sel)
+            try:
+                if await loc.count():
+                    text = (await loc.first.inner_text()) or ""
+                    if text.strip():
+                        return text
+            except Exception:
+                continue
+        inp = page.locator(
+            "#home_address2, input[name='address2'], input[name='home_address2']"
+        )
         try:
             if await inp.count():
                 return (await inp.first.input_value()) or ""
@@ -286,7 +335,7 @@ class YahooCheckoutMixin:
             await self._dismiss_reauth_note(yahoo_page)
             try:
                 await yahoo_page.locator(
-                    "#address, h2:has-text('お届け先'), "
+                    "#address, #bidinfo, h2:has-text('落札者情報'), h2:has-text('お届け先'), "
                     "input[name='address2'], input[name='home_address2']"
                 ).first.wait_for(state="visible", timeout=12000)
             except Exception:
@@ -310,6 +359,8 @@ class YahooCheckoutMixin:
                 opened = await self._open_store_address_edit(yahoo_page)
                 if not opened:
                     edit_btn = yahoo_page.locator(
+                        "#bidinfo a:has-text('編集する'), "
+                        "a[data-cl-params*='_cl_link:edit'], "
                         "#elAdressEdit, a:has-text('編集する'), input[value='編集する'], "
                         "button:has-text('編集する')"
                     )
@@ -350,13 +401,21 @@ class YahooCheckoutMixin:
                                         "WARNING",
                                     )
                                 return None
+                            if self._is_yahoo_account_address_url(yahoo_page.url):
+                                await self._return_from_yahoo_account_address(yahoo_page)
+                            after = await self._visible_ship_address_text(yahoo_page)
+                            if suffix in after:
+                                await self.log(
+                                    f"账号地址页跳转未确认，但落札者情報已有正确后缀 '{suffix}'，继续结算。"
+                                )
+                                return None
                             await self.log("账号地址页未能完成修改。", "ERROR")
                             self.add_risk_history_entry(
                                 order_info.get("order_id"), "人工处理: Yahoo账号地址页异常"
                             )
                             await self.report_missing_yahoo_ui(
                                 yahoo_page, "address_edit", ctx,
-                                extra="account.edit.yahoo.co.jp/address 等加载后仍报错，重新打开3次后仍无表单。",
+                                extra="account.edit.yahoo.co.jp/address 未能改址，且结算页落札者情報也没有正确室号。",
                             )
                             return {"status": "ADDRESS_FAIL"}
             input_found = False
