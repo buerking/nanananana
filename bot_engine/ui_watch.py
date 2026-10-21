@@ -102,6 +102,7 @@ YAHOO_CHECKPOINTS = {
         "path": "店铺：購入手続きへ后的结算页；个人：/top 或 /trade/top 点購入手続きをする后的 buyer/payment，或直接进入 /buyer/edit 落札者情報",
         "looking_for": "收件地址区域（お届け先 / address2 / home_address2 / 落札者情報）",
         "selectors": [
+            "#address",
             "h2:has-text('お届け先')",
             "h2:has-text('お届け先住所')",
             "h2:has-text('落札者情報')",
@@ -117,6 +118,7 @@ YAHOO_CHECKPOINTS = {
         "looking_for": "地址编辑入口或室号输入框",
         "selectors": [
             "#address a:has-text('変更')",
+            "#address a[data-cl-params*='_cl_link:address']",
             "header:has(h2:has-text('お届け先')) a:has-text('変更')",
             "a[data-cl-params*='_cl_link:address']",
             "h1:has-text('お届け先編集')",

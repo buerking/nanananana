@@ -940,7 +940,7 @@ class YahooPurchaseMixin:
     async def step_wait_checkout_form(self, ctx):
         yahoo_page = ctx.yahoo_page
         form = yahoo_page.locator(
-            "h2:has-text('お届け先'), h2:has-text('お届け先住所'), h2:has-text('落札者情報'), "
+            "#address, h2:has-text('お届け先'), h2:has-text('お届け先住所'), h2:has-text('落札者情報'), "
             "form[name='tradeForm'], input[name='address2'], input[name='home_address2'], #mBoxConfBt"
         )
         if self._checkout_like_url(yahoo_page.url):

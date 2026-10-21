@@ -32,25 +32,65 @@ class YahooCheckoutMixin:
 
     async def _dismiss_reauth_note(self, page: Page):
         """店铺结算「再ログイン認証」挡层，不关掉会挡住改地址/确认。"""
-        try:
-            note = page.locator("aside").filter(has_text="再ログイン認証")
-            if await note.count() == 0:
-                return
-            closer = note.locator("a:has-text('閉じる'), button:has-text('閉じる')")
-            if await closer.count() == 0:
-                return
-            loc = closer.first
+        for _ in range(6):
             try:
-                visible = await loc.is_visible()
-            except Exception:
-                visible = False
-            if not visible:
+                note = page.locator("aside").filter(has_text="再ログイン認証")
+                if await note.count() == 0:
+                    return
+                closer = note.locator("a:has-text('閉じる'), button:has-text('閉じる')")
+                if await closer.count() == 0:
+                    closer = page.locator("main aside a:has-text('閉じる'), aside a:has-text('閉じる')")
+                if await closer.count() == 0:
+                    await asyncio.sleep(0.4)
+                    continue
+                loc = closer.first
+                try:
+                    visible = await loc.is_visible()
+                except Exception:
+                    visible = False
+                if not visible:
+                    await asyncio.sleep(0.4)
+                    continue
+                await loc.click(timeout=2000, force=True)
+                await self.log("已关闭「再ログイン認証」提示。")
+                try:
+                    await note.first.wait_for(state="hidden", timeout=4000)
+                except Exception:
+                    pass
+                await asyncio.sleep(0.2)
                 return
-            await loc.click(timeout=2000, force=True)
-            await self.log("已关闭「再ログイン認証」提示。")
-            await asyncio.sleep(0.3)
-        except Exception as e:
-            await self.log(f"关闭再登录提示失败: {e}", "DEBUG")
+            except Exception as e:
+                await self.log(f"关闭再登录提示失败: {e}", "DEBUG")
+                return
+
+    def _store_address_change_btn(self, page: Page):
+        """店铺 /order/review お届け先旁的「変更」。不要点支付/配送的「変更」。"""
+        return page.locator(
+            "#address a[data-cl-params*='_cl_link:address'], "
+            "#address a:has-text('変更'), "
+            "a[data-cl-params*='_cl_link:address']"
+        )
+
+    async def _open_store_address_edit(self, page: Page):
+        """展示态没有 address2，要点 #address「変更」才进お届け先編集。"""
+        btn = self._store_address_change_btn(page)
+        if await btn.count() == 0:
+            return False
+        loc = btn.first
+        await self.log("店铺：发现お届け先「変更」。正在点击...")
+        try:
+            await loc.click(timeout=3000)
+        except Exception:
+            await loc.click(force=True, timeout=3000)
+        try:
+            await page.wait_for_selector(
+                "input[name='address2'], input[name='home_address2'], "
+                "h1:has-text('お届け先編集')",
+                timeout=10000,
+            )
+            return True
+        except Exception:
+            return "/order/change" in (page.url or "")
 
     async def _visible_ship_address_text(self, page: Page):
         """只看お届け先展示区或 address2 输入值，不用整页 HTML。"""
@@ -90,6 +130,14 @@ class YahooCheckoutMixin:
         order_info = ctx.order_info
         try:
             await self._dismiss_reauth_note(yahoo_page)
+            try:
+                await yahoo_page.locator(
+                    "#address, h2:has-text('お届け先'), "
+                    "input[name='address2'], input[name='home_address2']"
+                ).first.wait_for(state="visible", timeout=12000)
+            except Exception:
+                pass
+            await self._dismiss_reauth_note(yahoo_page)
             displayed = await self._visible_ship_address_text(yahoo_page)
             addr_inp = yahoo_page.locator("input[name='address2'], input[name='home_address2']")
             already_on_form = await addr_inp.count() > 0
@@ -105,28 +153,12 @@ class YahooCheckoutMixin:
                     return choice
             yahoo_page = ctx.yahoo_page
             if not already_on_form:
-                # 现网店铺：「変更」是 h2 的兄弟节点，在 #address / header 里，不在 h2 内部。
-                change_btn = yahoo_page.locator(
-                    "#address a:has-text('変更'), "
-                    "header:has(h2:has-text('お届け先')) a:has-text('変更'), "
-                    "a[data-cl-params*='_cl_link:address']"
-                )
-                edit_btn = yahoo_page.locator(
-                    "#elAdressEdit, a:has-text('編集する'), input[value='編集する'], "
-                    "button:has-text('編集する')"
-                )
-                if await change_btn.count():
-                    await self.log("店铺：发现お届け先「変更」。正在点击...")
-                    await change_btn.first.click()
-                    try:
-                        await yahoo_page.wait_for_selector(
-                            "input[name='address2'], input[name='home_address2'], "
-                            "h1:has-text('お届け先編集')",
-                            timeout=10000,
-                        )
-                    except Exception:
-                        await asyncio.sleep(0.8)
-                elif await edit_btn.count():
+                opened = await self._open_store_address_edit(yahoo_page)
+                if not opened:
+                    edit_btn = yahoo_page.locator(
+                        "#elAdressEdit, a:has-text('編集する'), input[value='編集する'], "
+                        "button:has-text('編集する')"
+                    )
                     visible_edit = None
                     for i in range(await edit_btn.count()):
                         loc = edit_btn.nth(i)
@@ -141,7 +173,8 @@ class YahooCheckoutMixin:
                         await visible_edit.click()
                         await asyncio.sleep(0.5)
             input_found = False
-            for i in range(5):
+            for i in range(8):
+                await self._dismiss_reauth_note(yahoo_page)
                 inp = yahoo_page.locator("input[name='address2'], input[name='home_address2']")
                 if await inp.count():
                     await inp.first.fill("")
@@ -150,7 +183,14 @@ class YahooCheckoutMixin:
                     await self.log(f"已填写ビル名/室号: {suffix}")
                     input_found = True
                     break
-                await self.log(f"地址输入框未找到 (第 {i + 1}/5 次)，等待页面继续加载...")
+                displayed = await self._visible_ship_address_text(yahoo_page)
+                if suffix in displayed and await self._store_address_change_btn(yahoo_page).count():
+                    await self.log(f"地址检查: お届け先已包含正确后缀 '{suffix}'，跳过修改。")
+                    return None
+                opened = await self._open_store_address_edit(yahoo_page)
+                if opened:
+                    continue
+                await self.log(f"地址输入框未找到 (第 {i + 1}/8 次)，等待お届け先「変更」...")
                 await asyncio.sleep(1)
             if not input_found and hasattr(self, "_continue_personal_checkout"):
                 url_now = yahoo_page.url or ""
