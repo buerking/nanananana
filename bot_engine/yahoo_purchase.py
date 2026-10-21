@@ -29,6 +29,22 @@ PURCHASE_PROCEDURE_SELECTORS = (
 )
 PURCHASE_PROCEDURE_LOCATOR = ", ".join(PURCHASE_PROCEDURE_SELECTORS)
 
+# 购买手续跳转：人手点很快；goto 等 domcontentloaded 会整页卡死。
+# 卡住时最多等 5 分钟，刷新后再判断是否已到下一页，否则再点，最多 3 次。
+NAV_QUICK_MS = 20000
+NAV_HANG_MS = 5 * 60 * 1000
+NAV_RETRY_MAX = 3
+CHECKOUT_URL_RE = re.compile(
+    r".*(/order/review|/order/select-option|/order/change|/buyer/payment|"
+    r"/buyer/edit|/buyer/preview|/buyer/top).*"
+)
+CHECKOUT_FORM_SEL = (
+    "#address, h1:has-text('購入内容の確認'), "
+    "h1:has-text('お届け先編集'), input[name='address2'], "
+    "input[name='home_address2'], form[name='tradeForm'], "
+    "#mBoxConfBt, h2:has-text('落札者情報')"
+)
+
 PAY_BTN_SELECTORS = [
     "input[value='確認する']",
     "button:has-text('確認する')",
@@ -199,7 +215,7 @@ class YahooPurchaseMixin:
                 ctx.yahoo_page = new_pages[-1]
         page = ctx.yahoo_page
         try:
-            await page.wait_for_load_state("domcontentloaded")
+            await page.wait_for_load_state("domcontentloaded", timeout=12000)
         except Exception:
             pass
         await page.bring_to_front()
@@ -243,6 +259,69 @@ class YahooPurchaseMixin:
         await self.log(f"未找到目标页/按钮。已打开标签: {last_urls}", "WARNING")
         return None
 
+    async def _wait_for_checkout_page(self, page, timeout_ms):
+        try:
+            await page.wait_for_url(CHECKOUT_URL_RE, timeout=timeout_ms)
+            return True
+        except Exception:
+            pass
+        if self._checkout_like_url(page.url):
+            return True
+        try:
+            await page.locator(CHECKOUT_FORM_SEL).first.wait_for(
+                state="visible", timeout=min(2000, timeout_ms)
+            )
+            return True
+        except Exception:
+            return False
+
+    async def _page_load_unfinished(self, page, probe_ms=3000):
+        try:
+            await page.wait_for_load_state("domcontentloaded", timeout=probe_ms)
+            return False
+        except Exception:
+            return True
+
+    async def _reload_stuck_page(self, page):
+        """卡住时刷新。有概率刷新后已经在下一页。"""
+        await self.log("页面加载卡住，刷新后再判断是否已进入下一页...")
+        try:
+            await page.reload(wait_until="commit", timeout=20000)
+        except Exception as e:
+            await self.log(f"刷新超时，继续用当前页: {page.url} ({e})", "WARNING")
+        try:
+            await page.wait_for_load_state("domcontentloaded", timeout=12000)
+        except Exception:
+            pass
+        if self._checkout_like_url(page.url):
+            await self.log(f"刷新后已进入下一页: {page.url}")
+            return True
+        await self.log(f"刷新后仍在当前页: {page.url}")
+        return False
+
+    async def _click_purchase_procedure(self, ctx, link, href):
+        """人手点按钮通常很快；不要用 goto 死等 domcontentloaded。"""
+        try:
+            await link.click(timeout=8000)
+            return
+        except Exception as e:
+            await self.log(f"点击购买手续入口失败，改用打开链接: {e}", "DEBUG")
+        if href:
+            try:
+                await ctx.yahoo_page.goto(href, wait_until="commit", timeout=20000)
+            except Exception as e:
+                await self.log(f"打开购买手续页超时，继续用当前页: {ctx.yahoo_page.url} ({e})", "WARNING")
+
+    async def _relocate_purchase_procedure_link(self, ctx):
+        page = ctx.yahoo_page
+        loc = page.locator(PURCHASE_PROCEDURE_LOCATOR)
+        try:
+            if await loc.count():
+                return loc.first
+        except Exception:
+            pass
+        return None
+
     async def _goto_purchase_procedure(self, ctx, link):
         href = ""
         try:
@@ -255,38 +334,35 @@ class YahooPurchaseMixin:
                     href = "https://buy.auctions.yahoo.co.jp" + href
                 else:
                     href = "https://contact.auctions.yahoo.co.jp" + href
-            await self.log(f"进入购买手续页: {href}")
-            await ctx.yahoo_page.goto(href, wait_until="domcontentloaded", timeout=60000)
-            try:
-                await ctx.yahoo_page.wait_for_url(
-                    re.compile(
-                        r".*(/order/review|/order/change|/buyer/payment|"
-                        r"/buyer/edit|/buyer/preview|/buyer/top).*"
-                    ),
-                    timeout=15000,
-                )
-            except Exception:
-                pass
-            try:
-                await ctx.yahoo_page.locator(
-                    "#address, h1:has-text('購入内容の確認'), "
-                    "h1:has-text('お届け先編集'), input[name='address2'], "
-                    "input[name='home_address2'], form[name='tradeForm'], "
-                    "#mBoxConfBt, h2:has-text('落札者情報')"
-                ).first.wait_for(state="visible", timeout=10000)
-            except Exception:
-                pass
-            await self.log(f"购买手续页当前 URL: {ctx.yahoo_page.url}")
-            return
-        await self._follow_click(
-            ctx,
-            link,
-            wait_locator=(
-                "h2:has-text('お届け先'), #address, h1:has-text('購入内容の確認'), "
-                "input[name='address2'], input[name='home_address2'], "
-                "form[name='tradeForm'], #mBoxConfBt, h2:has-text('落札者情報')"
-            ),
-        )
+        await self.log(f"进入购买手续页: {href or '(点击)'}")
+        for attempt in range(1, NAV_RETRY_MAX + 1):
+            if self._checkout_like_url(ctx.yahoo_page.url):
+                break
+            if attempt > 1:
+                await self.log(f"仍未进入购买手续页，重试点击 ({attempt}/{NAV_RETRY_MAX})...")
+                found = await self._relocate_purchase_procedure_link(ctx)
+                if found is not None:
+                    link = found
+                elif not href:
+                    await self.log("刷新后仍在当前页，且找不到购买手续按钮。", "WARNING")
+                    break
+            await self._click_purchase_procedure(ctx, link, href)
+            if await self._wait_for_checkout_page(ctx.yahoo_page, NAV_QUICK_MS):
+                break
+            hanging = await self._page_load_unfinished(ctx.yahoo_page)
+            if hanging:
+                await self.log("购买手续页仍在加载，最多再等 5 分钟...")
+                if await self._wait_for_checkout_page(ctx.yahoo_page, NAV_HANG_MS):
+                    break
+            if await self._reload_stuck_page(ctx.yahoo_page):
+                break
+        try:
+            await ctx.yahoo_page.locator(CHECKOUT_FORM_SEL).first.wait_for(
+                state="visible", timeout=10000
+            )
+        except Exception:
+            pass
+        await self.log(f"购买手续页当前 URL: {ctx.yahoo_page.url}")
 
     def _checkout_like_url(self, url):
         """真正能改地址/付款的页。/order/status 只是店铺取引ナビ，不算结算。"""
@@ -300,6 +376,7 @@ class YahooPurchaseMixin:
                 "buyer/preview",
                 "/payment/input",
                 "/order/review",
+                "/order/select-option",
                 "/order/change",
             )
         )
