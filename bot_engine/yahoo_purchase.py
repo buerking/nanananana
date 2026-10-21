@@ -56,6 +56,19 @@ SUCCESS_TOKENS = (
     "/order/thank-you",
 )
 
+# 个人取引ナビ：先填地址提交取引情報，卖家再报运费。
+WAIT_SHIPPING_HINTS = (
+    "出品者から送料の連絡があります",
+    "送料の連絡があります",
+    "送料連絡待ち",
+    "取引情報を入力してください",
+    "お届け先住所の連絡後",
+)
+WAIT_SHIPPING_FORM = (
+    "form[name='tradeForm'], #mBoxConfBt, h2:has-text('落札者情報'), "
+    "input[name='address2'], text=取引情報を入力してください"
+)
+
 
 class YahooPurchaseMixin:
     async def execute_yahoo_purchase(self, yahoo_page: Page, order_info, test_mode=True):
@@ -245,7 +258,10 @@ class YahooPurchaseMixin:
             await ctx.yahoo_page.goto(href, wait_until="domcontentloaded", timeout=60000)
             try:
                 await ctx.yahoo_page.wait_for_url(
-                    re.compile(r".*(/order/review|/order/change|/buyer/payment).*"),
+                    re.compile(
+                        r".*(/order/review|/order/change|/buyer/payment|"
+                        r"/buyer/edit|/buyer/preview|/buyer/top).*"
+                    ),
                     timeout=15000,
                 )
             except Exception:
@@ -254,7 +270,8 @@ class YahooPurchaseMixin:
                 await ctx.yahoo_page.locator(
                     "#address, h1:has-text('購入内容の確認'), "
                     "h1:has-text('お届け先編集'), input[name='address2'], "
-                    "input[name='home_address2']"
+                    "input[name='home_address2'], form[name='tradeForm'], "
+                    "#mBoxConfBt, h2:has-text('落札者情報')"
                 ).first.wait_for(state="visible", timeout=10000)
             except Exception:
                 pass
@@ -265,7 +282,8 @@ class YahooPurchaseMixin:
             link,
             wait_locator=(
                 "h2:has-text('お届け先'), #address, h1:has-text('購入内容の確認'), "
-                "input[name='address2'], input[name='home_address2']"
+                "input[name='address2'], input[name='home_address2'], "
+                "form[name='tradeForm'], #mBoxConfBt, h2:has-text('落札者情報')"
             ),
         )
 
@@ -284,6 +302,43 @@ class YahooPurchaseMixin:
                 "/order/change",
             )
         )
+
+    def _text_says_wait_shipping(self, text):
+        t = text or ""
+        return any(h in t for h in WAIT_SHIPPING_HINTS)
+
+    async def _page_is_wait_shipping_address_form(self, page):
+        """先填落札者信息、点決定する，卖家之后才报运费。"""
+        if page is None:
+            return False
+        try:
+            if page.is_closed():
+                return False
+        except Exception:
+            return False
+        url = page.url or ""
+        if "buyer/edit" in url:
+            return True
+        try:
+            has_form = await page.locator(WAIT_SHIPPING_FORM).count()
+            if not has_form:
+                return False
+            if await page.locator("text=取引情報を入力してください").count():
+                return True
+            body = ""
+            try:
+                body = await page.locator("body").inner_text()
+            except Exception:
+                body = ""
+            return self._text_says_wait_shipping(body)
+        except Exception:
+            return False
+
+    async def _mark_wait_shipping_form(self, ctx, why):
+        ctx.is_wait_for_shipping = True
+        ctx.is_personal = True
+        await self.log(why)
+        return None
 
     def _is_store_status_url(self, url):
         return "buy.auctions.yahoo.co.jp/order/status" in (url or "")
@@ -518,6 +573,10 @@ class YahooPurchaseMixin:
 
     async def _continue_personal_checkout(self, ctx):
         yahoo_page = ctx.yahoo_page
+        if await self._page_is_wait_shipping_address_form(yahoo_page):
+            return await self._mark_wait_shipping_form(
+                ctx, "已在待运费地址页：先提交取引情報，卖家再报运费。"
+            )
         if self._checkout_like_url(yahoo_page.url):
             await self.log(f"已在结算/地址页: {yahoo_page.url}")
             return None
@@ -541,6 +600,10 @@ class YahooPurchaseMixin:
                 return None
         adopted = await self._adopt_checkout_tab(ctx, timeout=8000)
         if adopted:
+            if await self._page_is_wait_shipping_address_form(ctx.yahoo_page):
+                return await self._mark_wait_shipping_form(
+                    ctx, "已切换到待运费地址页：先提交取引情報，卖家再报运费。"
+                )
             return None
         store_link = await self._adopt_page_matching(
             ctx,
@@ -562,16 +625,31 @@ class YahooPurchaseMixin:
                 "/trade/top",
                 "/top?aid=",
                 "buyer/payment",
+                "buyer/edit",
+                "buyer/preview",
             ),
             selector="a[href*='buyer/payment/input']",
             timeout=25000,
         )
+        if await self._page_is_wait_shipping_address_form(ctx.yahoo_page):
+            return await self._mark_wait_shipping_form(
+                ctx, "等待中已进入待运费地址页：先提交取引情報，卖家再报运费。"
+            )
         if link is None:
             link = await self._adopt_page_matching(
                 ctx,
-                url_parts=("contact.auctions.yahoo.co.jp", "/trade/top", "/top?aid="),
+                url_parts=(
+                    "contact.auctions.yahoo.co.jp",
+                    "/trade/top",
+                    "/top?aid=",
+                    "buyer/edit",
+                ),
                 selector=PURCHASE_PROCEDURE_LOCATOR,
                 timeout=8000,
+            )
+        if await self._page_is_wait_shipping_address_form(ctx.yahoo_page):
+            return await self._mark_wait_shipping_form(
+                ctx, "已进入待运费地址页：先提交取引情報，卖家再报运费。"
             )
         if link is None:
             await self.log(
@@ -603,6 +681,10 @@ class YahooPurchaseMixin:
                 await self.log("发现个人卖家「購入手続きをする」。正在进入支付页...")
             await self._goto_purchase_procedure(ctx, link)
         yahoo_page = ctx.yahoo_page
+        if await self._page_is_wait_shipping_address_form(yahoo_page):
+            return await self._mark_wait_shipping_form(
+                ctx, "购买手续页是待运费地址页：先提交取引情報，卖家再报运费。"
+            )
         kantan_btn = yahoo_page.locator(
             "a:has-text('Yahoo!かんたん決済で支払う'), button:has-text('Yahoo!かんたん決済で支払う')"
         )
@@ -611,13 +693,21 @@ class YahooPurchaseMixin:
             await self.log("发现 'Yahoo!かんたん決済' 按钮。正在点击...")
             await self._follow_click(ctx, kantan_btn.first)
             yahoo_page = ctx.yahoo_page
-        body_text = await yahoo_page.locator("body").inner_text()
-        if "送料連絡待ち" in body_text or "送料の連絡があります" in body_text:
+        try:
+            body_text = await yahoo_page.locator("body").inner_text()
+        except Exception:
+            body_text = ""
+        if self._text_says_wait_shipping(body_text):
             ctx.is_wait_for_shipping = True
-            await self.log("状态：等待运费联系 (2.2)。转入个人流程处理（地址+潜在物流选择）。")
-            return await self.handle_personal_address_only(
-                yahoo_page, ctx.order_info, test_mode=ctx.test_mode
-            )
+            has_form = await yahoo_page.locator(
+                "form[name='tradeForm'], #mBoxConfBt, "
+                "input[name='address2'], input[name='home_address2']"
+            ).count()
+            if has_form:
+                await self.log("状态：等待运费联系。先填地址并提交「決定する」。")
+                return None
+            await self.log("已在送料連絡待ち，交易信息此前已提交。")
+            return {"status": "WAIT_SHIPPING_CONTACT", "shipping": 0, "total": 0}
         if link is None and not has_kantan:
             await self.report_missing_yahoo_ui(
                 yahoo_page, "personal_purchase_procedure", ctx,
@@ -747,7 +837,9 @@ class YahooPurchaseMixin:
                                 "h1:has-text('取引ナビ'), "
                                 "a[href*='buyer/payment/input'], "
                                 "a:has-text('購入手続きをする'), "
-                                "button:has-text('単品で取引する')"
+                                "button:has-text('単品で取引する'), "
+                                "form[name='tradeForm'], #mBoxConfBt, "
+                                "text=取引情報を入力してください"
                             ),
                         )
                     await self.log(f"点击后当前页: {ctx.yahoo_page.url}")
@@ -795,7 +887,9 @@ class YahooPurchaseMixin:
                             "h1:has-text('取引ナビ'), "
                             "a[href*='buyer/payment/input'], "
                             "a:has-text('購入手続きをする'), "
-                            "button:has-text('単品で取引する')"
+                            "button:has-text('単品で取引する'), "
+                            "form[name='tradeForm'], #mBoxConfBt, "
+                            "text=取引情報を入力してください"
                         ),
                     )
                 yahoo_page = ctx.yahoo_page
@@ -845,13 +939,17 @@ class YahooPurchaseMixin:
 
     async def step_wait_checkout_form(self, ctx):
         yahoo_page = ctx.yahoo_page
-        if self._checkout_like_url(yahoo_page.url):
-            await self.log(f"已进入结算/地址页。等待表单... {yahoo_page.url}")
-            return None
         form = yahoo_page.locator(
             "h2:has-text('お届け先'), h2:has-text('お届け先住所'), h2:has-text('落札者情報'), "
             "form[name='tradeForm'], input[name='address2'], input[name='home_address2'], #mBoxConfBt"
         )
+        if self._checkout_like_url(yahoo_page.url):
+            await self.log(f"已进入结算/地址页。等待表单... {yahoo_page.url}")
+            try:
+                await form.first.wait_for(state="visible", timeout=10000)
+            except Exception:
+                pass
+            return None
         try:
             await form.first.wait_for(state="visible", timeout=10000)
             await self.log("已进入购买输入页。等待表单...")
@@ -868,7 +966,9 @@ class YahooPurchaseMixin:
             ctx.body_text = await ctx.yahoo_page.locator("body").inner_text()
         except Exception:
             ctx.body_text = ""
-        if "出品者から送料の連絡があります" in ctx.body_text or "送料連絡待ち" in ctx.body_text:
+        if self._text_says_wait_shipping(ctx.body_text) or await self._page_is_wait_shipping_address_form(
+            ctx.yahoo_page
+        ):
             ctx.is_wait_for_shipping = True
             await self.log("本页需先提交交易信息，之后等待卖家联系运费。")
         return await self.gate_payment_unsupported(ctx)

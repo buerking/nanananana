@@ -127,9 +127,19 @@ class YahooCheckoutMixin:
                     except Exception:
                         await asyncio.sleep(0.8)
                 elif await edit_btn.count():
-                    await self.log("点击「編集する」展开地址表单...")
-                    await edit_btn.first.click()
-                    await asyncio.sleep(0.5)
+                    visible_edit = None
+                    for i in range(await edit_btn.count()):
+                        loc = edit_btn.nth(i)
+                        try:
+                            if await loc.is_visible():
+                                visible_edit = loc
+                                break
+                        except Exception:
+                            continue
+                    if visible_edit is not None:
+                        await self.log("点击「編集する」展开地址表单...")
+                        await visible_edit.click()
+                        await asyncio.sleep(0.5)
             input_found = False
             for i in range(5):
                 inp = yahoo_page.locator("input[name='address2'], input[name='home_address2']")
@@ -210,6 +220,9 @@ class YahooCheckoutMixin:
         yahoo_page = ctx.yahoo_page
         order_info = ctx.order_info
         need_track = ctx.need_track
+        if getattr(ctx, "is_wait_for_shipping", False):
+            await self.log("待运费页：配送由卖家事后联系，跳过选择配送方式。")
+            return None
         try:
             pickup_keywords = ("店頭受取", "店頭受け取り", "来店", "手渡し", "店舗等で受け取る")
             radios = await yahoo_page.locator("input[name='shipMethodName']").all()
@@ -411,10 +424,31 @@ class YahooCheckoutMixin:
             return (s or "").replace(" ", "").replace("\n", "").strip()
 
         try:
-            edit_btn = yahoo_page.locator("a:has-text('編集する'), input[value='編集する']")
-            if await edit_btn.count():
-                await edit_btn.first.click()
-                await yahoo_page.wait_for_selector("input[name='home_address2'], input[name='address2']")
+            addr_inp = yahoo_page.locator("input[name='home_address2'], input[name='address2']")
+            form_ready = False
+            try:
+                form_ready = await addr_inp.count() > 0 and await addr_inp.first.is_visible()
+            except Exception:
+                form_ready = await addr_inp.count() > 0
+            if not form_ready:
+                edit_btn = yahoo_page.locator(
+                    "a:has-text('編集する'), input[value='編集する'], #elAdressEdit"
+                )
+                clicked_edit = False
+                n = await edit_btn.count()
+                for i in range(n):
+                    loc = edit_btn.nth(i)
+                    try:
+                        if await loc.is_visible():
+                            await loc.click()
+                            clicked_edit = True
+                            break
+                    except Exception:
+                        continue
+                if clicked_edit:
+                    await yahoo_page.wait_for_selector(
+                        "input[name='home_address2'], input[name='address2']"
+                    )
             filled = await safe_fill("input[name='home_address2']", suffix)
             if not filled:
                 filled = await safe_fill("input[name='address2']", suffix)
@@ -422,18 +456,24 @@ class YahooCheckoutMixin:
             if test_mode:
                 await self.log("[TestMode] 待运费地址已填写，不提交「決定する」。")
             else:
-                for sel in (
-                    "button:has-text('登録する')",
-                    "input[value='登録する']",
-                    "input[value='決定する'], button:has-text('決定する'), a:has-text('決定する'), #mBoxConfBt",
-                    "input[value='変更する']",
-                    "input[type='submit']",
-                ):
-                    btn = yahoo_page.locator(sel)
-                    if await btn.count():
-                        await btn.first.click(force=True)
-                        save_clicked = True
-                        break
+                decide = yahoo_page.locator("#mBoxConfBt")
+                if await decide.count() and await decide.first.is_visible():
+                    await decide.first.click(force=True)
+                    save_clicked = True
+                else:
+                    for sel in (
+                        "a:has-text('決定する')",
+                        "button:has-text('決定する')",
+                        "input[value='決定する']",
+                        "button:has-text('登録する')",
+                        "input[value='登録する']",
+                        "input[value='変更する']",
+                    ):
+                        btn = yahoo_page.locator(sel)
+                        if await btn.count() and await btn.first.is_visible():
+                            await btn.first.click(force=True)
+                            save_clicked = True
+                            break
                 if save_clicked:
                     try:
                         confirm = yahoo_page.locator("#confSubmitBtn")
@@ -443,7 +483,7 @@ class YahooCheckoutMixin:
                     except Exception:
                         pass
                 else:
-                    await self.log("Form Save/Decision button not found! Attempting generic submit...", "WARNING")
+                    await self.log("待运费页未找到「決定する」。", "WARNING")
             await yahoo_page.wait_for_load_state("domcontentloaded")
             body_text = await yahoo_page.locator("body").inner_text()
             if suffix in clean_str(body_text) or suffix in body_text:

@@ -99,7 +99,7 @@ YAHOO_CHECKPOINTS = {
     },
     "checkout_address_form": {
         "page_name": "结算/地址页",
-        "path": "店铺：購入手続きへ后的结算页；个人：/top 或 /trade/top 点購入手続きをする后的 buyer/payment 或落札者情報",
+        "path": "店铺：購入手続きへ后的结算页；个人：/top 或 /trade/top 点購入手続きをする后的 buyer/payment，或直接进入 /buyer/edit 落札者情報",
         "looking_for": "收件地址区域（お届け先 / address2 / home_address2 / 落札者情報）",
         "selectors": [
             "h2:has-text('お届け先')",
@@ -179,9 +179,12 @@ YAHOO_CHECKPOINTS = {
     },
     "wait_shipping_address": {
         "page_name": "待运费只改地址",
-        "path": "取引ナビ出现「送料連絡待ち」→ 只改 home_address2/address2 → 正式模式点 #mBoxConfBt 和 #confSubmitBtn",
+        "path": "点取引后进入 /buyer/edit「取引情報を入力してください」→ 改 address2 → #mBoxConfBt 決定する → #confSubmitBtn 確定する；卖家之后才报运费。已提交后的等待页是「送料連絡待ち」",
         "looking_for": "待运费页的地址输入框",
         "selectors": [
+            "form[name='tradeForm']",
+            "text=取引情報を入力してください",
+            "text=出品者から送料の連絡があります",
             "input[name='home_address2']",
             "input[name='address2']",
             "a:has-text('編集する')",
