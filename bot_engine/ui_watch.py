@@ -159,6 +159,8 @@ YAHOO_CHECKPOINTS = {
         "selectors": [
             "#dlvry",
             "h2:has-text('配送方法')",
+            "section:has(h2:has-text('配送方法'))",
+            "#orderPrice",
             "a[data-cl-params*='_cl_link:dlvry']",
             "input[name='shipMethodName']",
         ],
@@ -187,16 +189,22 @@ YAHOO_CHECKPOINTS = {
             "#fconfirm a:has-text('購入を確定する')",
             "a:has-text('購入を確定する')",
             "button:has-text('購入を確定する')",
+            "a:has-text('上記に同意のうえ')",
+            "button:has-text('上記に同意のうえ')",
         ],
     },
     "purchase_success_page": {
         "page_name": "购买完成页",
-        "path": "点最终确认之后 → thank-you / 「購入完了」/「購入が完了しました」",
-        "looking_for": "购买成功页特征（URL thank-you 或文案 購入完了）",
+        "path": "点最終确认之后 → /buyer/payment/complete「購入が完了しました」或店铺 thank-you",
+        "looking_for": "购买成功页特征（URL complete/thank-you 或文案 購入が完了しました）",
         "selectors": [
+            "h3:has-text('購入が完了しました')",
+            "h1:has-text('完了')",
+            "text=購入が完了しました",
             "text=購入完了",
             "text=購入が完了",
             "text=ご購入ありがとうございます",
+            "#deal a:has-text('取引内容を確認する')",
         ],
     },
     "wait_shipping_address": {

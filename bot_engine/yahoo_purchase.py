@@ -66,10 +66,13 @@ SUCCESS_TOKENS = (
     "購入完了",
     "購入が完了",
     "手続きの完了",
+    "購入手続きの完了",
     "購入が完了しました",
     "ご注文ありがとう",
     "ご購入ありがとうございます",
     "/order/thank-you",
+    "/buyer/payment/complete",
+    "/payment/complete",
 )
 
 # 个人取引ナビ：先填地址提交取引情報，卖家再报运费。
@@ -1078,6 +1081,11 @@ class YahooPurchaseMixin:
         try:
             if await fconfirm.count() == 0:
                 return False
+            try:
+                if not await fconfirm.first.is_visible():
+                    return False
+            except Exception:
+                return False
             if await buy.count() == 0:
                 buy = yahoo_page.locator("#fconfirm >> text=購入を確定する")
             if await buy.count() == 0:
@@ -1090,6 +1098,65 @@ class YahooPurchaseMixin:
             return True
         except Exception as e:
             await self.log(f"店铺二次确认点击失败: {e}", "DEBUG")
+            return False
+
+    async def _click_personal_final_confirm(self, yahoo_page, test_mode):
+        """个人 /buyer/payment/confirm：「上記に同意のうえ 購入を確定する」。"""
+        url = yahoo_page.url or ""
+        agree = yahoo_page.locator(
+            "a:has-text('上記に同意のうえ'), button:has-text('上記に同意のうえ')"
+        )
+        on_confirm = "/buyer/payment/confirm" in url
+        visible = False
+        try:
+            visible = await agree.count() > 0 and await agree.first.is_visible()
+        except Exception:
+            visible = False
+        if not on_confirm and not visible:
+            return False
+        if not visible:
+            return False
+        await self.log("发现个人确认页「上記に同意のうえ 購入を確定する」。")
+        if test_mode:
+            await self.log("[TestMode] 不点最终确定。")
+            return True
+        try:
+            await agree.first.click()
+        except Exception:
+            buy = yahoo_page.locator(
+                "a:has-text('購入を確定する'), button:has-text('購入を確定する')"
+            )
+            await buy.first.click()
+        return True
+
+    async def _wait_purchase_complete(self, page, timeout_ms=20000):
+        """点最终确定后等 /buyer/payment/complete 或「購入が完了しました」。"""
+        try:
+            await page.wait_for_url(
+                re.compile(
+                    r".*(/buyer/payment/complete|/payment/complete|"
+                    r"/order/thank-you|thank-you).*"
+                ),
+                timeout=timeout_ms,
+            )
+            return True
+        except Exception:
+            pass
+        url = page.url or ""
+        title = ""
+        try:
+            title = await page.title()
+        except Exception:
+            title = ""
+        if any(t in url or t in title for t in SUCCESS_TOKENS):
+            return True
+        try:
+            await page.locator(
+                "h3:has-text('購入が完了しました'), h1:has-text('完了'), "
+                "text=購入が完了しました"
+            ).first.wait_for(state="visible", timeout=3000)
+            return True
+        except Exception:
             return False
 
     async def step_click_pay(self, ctx):
@@ -1114,9 +1181,15 @@ class YahooPurchaseMixin:
                 return {"status": "ADDRESS_FAIL"}
             if ok:
                 await self.log("已从账号地址页回到结算，继续找确认按钮。")
+        if await self._click_personal_final_confirm(yahoo_page, test_mode):
+            if not test_mode:
+                ctx.trade_info_submitted = True
+                await self._wait_purchase_complete(yahoo_page)
+            return None
         if await self._click_store_purchase_confirm(yahoo_page, test_mode):
             if not test_mode:
                 ctx.trade_info_submitted = True
+                await self._wait_purchase_complete(yahoo_page)
             return None
         classic_confirm = yahoo_page.locator("#mBoxConfBt")
         if await classic_confirm.count() and await classic_confirm.first.is_visible():
@@ -1167,13 +1240,28 @@ class YahooPurchaseMixin:
                     await btn.click()
                     await self._fill_cvv(yahoo_page, self.DEFAULT_CVV)
                     try:
-                        await yahoo_page.locator("#fconfirm").wait_for(
-                            state="visible", timeout=8000
+                        await yahoo_page.wait_for_url(
+                            re.compile(
+                                r".*(/buyer/payment/confirm|/buyer/payment/complete|"
+                                r"/order/thank-you).*"
+                            ),
+                            timeout=15000,
                         )
                     except Exception:
                         pass
-                    if await self._click_store_purchase_confirm(yahoo_page, test_mode):
+                    try:
+                        await yahoo_page.locator(
+                            "#fconfirm, a:has-text('上記に同意のうえ'), "
+                            "h3:has-text('購入が完了しました')"
+                        ).first.wait_for(state="visible", timeout=8000)
+                    except Exception:
+                        pass
+                    if await self._click_personal_final_confirm(yahoo_page, test_mode):
                         ctx.trade_info_submitted = True
+                    elif await self._click_store_purchase_confirm(yahoo_page, test_mode):
+                        ctx.trade_info_submitted = True
+                    if not test_mode:
+                        await self._wait_purchase_complete(yahoo_page)
                     break
             except Exception:
                 continue
@@ -1187,6 +1275,16 @@ class YahooPurchaseMixin:
 
     async def step_finish(self, ctx):
         yahoo_page = ctx.yahoo_page
+        if not ctx.test_mode and "/buyer/payment/confirm" in (yahoo_page.url or ""):
+            await self.log("仍在购买确认页，补点「上記に同意のうえ 購入を確定する」...")
+            clicked = await self._click_personal_final_confirm(yahoo_page, False)
+            if not clicked:
+                clicked = await self._click_store_purchase_confirm(yahoo_page, False)
+            if clicked:
+                ctx.trade_info_submitted = True
+            await self._wait_purchase_complete(yahoo_page)
+        elif not ctx.test_mode:
+            await self._wait_purchase_complete(yahoo_page, timeout_ms=8000)
         title = ""
         url = ""
         body_snippet = ""

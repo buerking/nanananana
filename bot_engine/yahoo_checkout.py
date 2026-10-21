@@ -598,9 +598,45 @@ class YahooCheckoutMixin:
                 )
                 ctx.shipping_cost = int(best["price"] or 0)
                 await self.log(f"店铺：选择最佳配送: {best['text']} ({best['price']}円)")
+            if not int(getattr(ctx, "shipping_cost", 0) or 0):
+                await self._capture_displayed_amounts(ctx)
         except Exception as e:
             await self.log(f"店铺配送选择异常: {e}", "DEBUG")
         return None
+
+    async def _capture_displayed_amounts(self, ctx):
+        """个人结算页配送是展示文案（おてがる配送 1,400円），没有 radio。"""
+        page = ctx.yahoo_page
+        chunks = []
+        for sel in (
+            "section:has(h2:has-text('配送方法'))",
+            "#orderPrice",
+            "section:has(h2:has-text('ご購入内容詳細'))",
+        ):
+            loc = page.locator(sel)
+            try:
+                if await loc.count():
+                    chunks.append((await loc.first.inner_text()) or "")
+            except Exception:
+                continue
+        text = "\n".join(chunks)
+        if not text.strip():
+            try:
+                text = await page.locator("main").inner_text()
+            except Exception:
+                text = ""
+        if not int(getattr(ctx, "shipping_cost", 0) or 0):
+            ship_m = re.search(r"送料[：:]\s*([\d,]+)\s*円", text)
+            if not ship_m:
+                ship_m = re.search(r"([\d,]+)\s*円（税込）", text)
+            if ship_m:
+                ctx.shipping_cost = int(ship_m.group(1).replace(",", ""))
+                await self.log(f"结算页展示运费: {ctx.shipping_cost}円")
+        if not int(getattr(ctx, "yahoo_total", 0) or 0):
+            total_m = re.search(r"お支払い金額[^\d]*([\d,]+)\s*円", text)
+            if total_m:
+                ctx.yahoo_total = int(total_m.group(1).replace(",", ""))
+                await self.log(f"结算页展示合计: {ctx.yahoo_total}円")
 
     async def step_okihai(self, ctx):
         try:
