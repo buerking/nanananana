@@ -45,3 +45,7 @@ YAHOO_STORE_TRADE_STATUS_URL = (
     "https://buy.auctions.yahoo.co.jp/order/status?auctionId={product_id}"
 )
 SUCCESS_STATUSES = ("PURCHASED", "TEST_SUCCESS", "WAIT_SHIPPING", "WAIT_SHIPPING_CONTACT")
+# 雅虎跳转/水合上限。wait_for_url 等匹配到会立刻返回，不会真的空等 5 分钟。
+WAIT_HANG_MS = 5 * 60 * 1000
+# 单次可见点击；隐藏节点不要用 Playwright 默认 30 秒空等。
+WAIT_CLICK_MS = 8000

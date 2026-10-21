@@ -2,7 +2,7 @@ import os
 
 from playwright.async_api import async_playwright
 
-from .constants import ACCOUNT_EMAILS, QBT_BROWSER_ACCOUNT, YAHOO_HOME_URL
+from .constants import ACCOUNT_EMAILS, QBT_BROWSER_ACCOUNT, WAIT_HANG_MS, YAHOO_HOME_URL
 
 
 def _system_chrome_path():
@@ -53,6 +53,7 @@ class BrowserMixin:
         if chrome:
             launch_kwargs["executable_path"] = chrome
         context = await self.playwright.chromium.launch_persistent_context(**launch_kwargs)
+        context.set_default_navigation_timeout(WAIT_HANG_MS)
         pages = context.pages
         page = pages[0] if pages else await context.new_page()
         try:
@@ -108,7 +109,7 @@ class BrowserMixin:
                 pass
             raise
 
-    async def reuse_or_goto(self, context, url, url_hint="", timeout=30000):
+    async def reuse_or_goto(self, context, url, url_hint="", timeout=WAIT_HANG_MS):
         """已打开相同商品/后台页则复用，否则直接 goto，不模拟点击等新标签。"""
         hint = (url_hint or "").lower()
         for page in context.pages:
@@ -125,7 +126,7 @@ class BrowserMixin:
         try:
             await page.goto(url, wait_until="commit", timeout=timeout)
             try:
-                await page.wait_for_load_state("domcontentloaded", timeout=min(timeout, 15000))
+                await page.wait_for_load_state("domcontentloaded", timeout=timeout)
             except Exception:
                 pass
         except Exception:

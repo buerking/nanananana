@@ -22,12 +22,14 @@ from .orders import OrderMixin
 from .qbt import QbtMixin
 from .storage import StorageMixin
 from .ui_watch import YahooUiWatchMixin
+from .waits import WaitMixin
 from .yahoo_checkout import YahooCheckoutMixin
 from .yahoo_purchase import YahooPurchaseMixin
 
 
 class YahooAutoBot(
     LoggingMixin,
+    WaitMixin,
     StorageMixin,
     BrowserMixin,
     YahooUiWatchMixin,

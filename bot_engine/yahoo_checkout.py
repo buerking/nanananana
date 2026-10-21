@@ -5,6 +5,8 @@ from urllib.parse import unquote, urlparse, parse_qs
 
 from playwright.async_api import Page
 
+from .constants import WAIT_CLICK_MS, WAIT_HANG_MS
+
 
 class YahooCheckoutMixin:
     async def _fill_cvv(self, page: Page, cvv_code=None):
@@ -87,7 +89,7 @@ class YahooCheckoutMixin:
             await page.wait_for_selector(
                 "input[name='address2'], input[name='home_address2'], "
                 "h1:has-text('お届け先編集')",
-                timeout=10000,
+                timeout=WAIT_HANG_MS,
             )
             return True
         except Exception:
@@ -116,7 +118,7 @@ class YahooCheckoutMixin:
                 return True
             if await self._yahoo_account_address_heading_visible(page):
                 await self._home_address2_locator(page).first.wait_for(
-                    state="visible", timeout=10000
+                    state="visible", timeout=WAIT_HANG_MS
                 )
                 return await self._home_address2_locator(page).count() > 0
         except Exception:
@@ -134,11 +136,10 @@ class YahooCheckoutMixin:
 
     async def _settle_yahoo_account_address_page(self, page: Page):
         """等 load + Next 水合，不在半成品 DOM 上判断/填写。"""
-        for state in ("domcontentloaded", "load"):
-            try:
-                await page.wait_for_load_state(state, timeout=15000)
-            except Exception:
-                pass
+        try:
+            await page.wait_for_load_state("domcontentloaded", timeout=WAIT_HANG_MS)
+        except Exception:
+            pass
         try:
             await page.wait_for_function(
                 """() => {
@@ -151,12 +152,11 @@ class YahooCheckoutMixin:
                     const err = t.includes('エラーが発生しました');
                     return !!(form || named || err);
                 }""",
-                timeout=15000,
+                timeout=WAIT_HANG_MS,
             )
         except Exception:
             pass
-        # 错误页有时会先闪一下再出表单，给水合留一点时间
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
 
     async def _reopen_yahoo_account_address_url(self, page: Page):
         """等同地址栏回车：整页重新打开当前 URL，比 reload 更容易过瞬时错误页。"""
@@ -165,7 +165,7 @@ class YahooCheckoutMixin:
             return
         await self.log("账号地址页按当前地址重新打开（等同回车）...")
         try:
-            await page.goto(url, wait_until="commit", timeout=20000)
+            await page.goto(url, wait_until="commit", timeout=WAIT_HANG_MS)
         except Exception as e:
             await self.log(f"账号地址页重新打开超时: {e}", "WARNING")
         await self._settle_yahoo_account_address_page(page)
@@ -185,7 +185,7 @@ class YahooCheckoutMixin:
                 await self.log("账号地址页标题已出，继续等表单，不再重新打开。")
                 try:
                     await self._home_address2_locator(page).first.wait_for(
-                        state="visible", timeout=10000
+                        state="visible", timeout=WAIT_HANG_MS
                     )
                 except Exception:
                     pass
@@ -253,11 +253,11 @@ class YahooCheckoutMixin:
             try:
                 if not await loc.is_visible():
                     continue
-                await loc.click(timeout=4000)
+                await loc.click(timeout=WAIT_CLICK_MS)
                 return True
             except Exception:
                 try:
-                    await loc.click(force=True, timeout=3000)
+                    await loc.click(force=True, timeout=WAIT_CLICK_MS)
                     return True
                 except Exception:
                     continue
@@ -269,9 +269,9 @@ class YahooCheckoutMixin:
             return True
         if not self._is_yahoo_account_address_url(page.url):
             return True
-        await self.log("从账号地址页返回结算页...")
+        await self.log("从账号地址页返回结算页（最长 5 分钟）...")
         loop = asyncio.get_running_loop()
-        deadline = loop.time() + 20
+        deadline = loop.time() + WAIT_HANG_MS / 1000.0
         used_done = False
         while loop.time() < deadline:
             if self._is_checkout_after_address_url(page.url):
@@ -284,21 +284,16 @@ class YahooCheckoutMixin:
                     "contact.auctions.yahoo.co.jp" in done or "buy.auctions.yahoo.co.jp" in done
                 ):
                     used_done = True
-                    await self.log(f"未点到返回链接，改打开 .done 结算地址...")
+                    await self.log("未点到返回链接，改打开 .done 结算地址...")
                     try:
-                        await page.goto(done, wait_until="commit", timeout=15000)
+                        await page.goto(done, wait_until="commit", timeout=WAIT_HANG_MS)
                     except Exception as e:
                         await self.log(f"打开 .done 超时: {e}", "WARNING")
-            try:
-                await page.wait_for_url(
-                    re.compile(
-                        r".*(contact\.auctions\.yahoo\.co\.jp|"
-                        r"buy\.auctions\.yahoo\.co\.jp/order/).*"
-                    ),
-                    timeout=2500,
-                )
-            except Exception:
-                pass
+            await self.wait_url(
+                page,
+                r".*(contact\.auctions\.yahoo\.co\.jp|buy\.auctions\.yahoo\.co\.jp/order/).*",
+                timeout_ms=2500,
+            )
             await asyncio.sleep(0.4)
         if self._is_checkout_after_address_url(page.url):
             await self.log(f"已回到结算页: {page.url}")
@@ -312,9 +307,7 @@ class YahooCheckoutMixin:
         if not ready:
             return False
         inp = self._home_address2_locator(page)
-        try:
-            await inp.first.wait_for(state="visible", timeout=8000)
-        except Exception:
+        if not await self.wait_visible(inp, timeout_ms=WAIT_HANG_MS):
             return False
         current = ""
         try:
@@ -333,19 +326,9 @@ class YahooCheckoutMixin:
         if await save.count() == 0:
             save = page.locator("button[type='submit']:has-text('登録する')")
         if await save.count():
-            await save.first.wait_for(state="visible", timeout=5000)
-            await save.first.click()
-            await self.log("账号地址已点「登録する」，等待跳回结算...")
-            try:
-                await page.wait_for_url(
-                    re.compile(
-                        r".*(contact\.auctions\.yahoo\.co\.jp|"
-                        r"buy\.auctions\.yahoo\.co\.jp/order/).*"
-                    ),
-                    timeout=12000,
-                )
-            except Exception:
-                pass
+            await self.wait_visible(save, timeout_ms=WAIT_HANG_MS)
+            await self.click_visible(save)
+            await self.log("账号地址已点「登録する」，等待跳回结算（最长 5 分钟）...")
         if self._is_checkout_after_address_url(page.url):
             await self.log(f"登録后已在结算页: {page.url}")
             return True
@@ -421,7 +404,7 @@ class YahooCheckoutMixin:
                 await yahoo_page.locator(
                     "#address, #bidinfo, h2:has-text('落札者情報'), h2:has-text('お届け先'), "
                     "input[name='address2'], input[name='home_address2']"
-                ).first.wait_for(state="visible", timeout=12000)
+                ).first.wait_for(state="visible", timeout=WAIT_HANG_MS)
             except Exception:
                 pass
             await self._dismiss_reauth_note(yahoo_page)
@@ -459,18 +442,21 @@ class YahooCheckoutMixin:
                             continue
                     if visible_edit is not None:
                         await self.log("点击「編集する」展开地址表单...")
-                        try:
-                            await yahoo_page.wait_for_load_state("load", timeout=8000)
-                        except Exception:
-                            pass
-                        await visible_edit.click()
-                        try:
-                            await yahoo_page.wait_for_url(
-                                re.compile(r".*account\.edit\.yahoo\.co\.jp.*address.*"),
-                                timeout=15000,
+                        if not await self.click_visible(visible_edit):
+                            await visible_edit.click(timeout=WAIT_CLICK_MS)
+
+                        async def address_edit_opened():
+                            if self._is_yahoo_account_address_url(yahoo_page.url):
+                                return True
+                            inp = yahoo_page.locator(
+                                "input[name='address2'], input[name='home_address2']"
                             )
-                        except Exception:
-                            pass
+                            try:
+                                return await inp.count() > 0 and await inp.first.is_visible()
+                            except Exception:
+                                return False
+
+                        await self.wait_until(address_edit_opened, timeout_ms=WAIT_HANG_MS)
                         if self._is_yahoo_account_address_url(yahoo_page.url):
                             ok = await self._fill_yahoo_account_address_and_return(
                                 yahoo_page, suffix
@@ -573,7 +559,7 @@ class YahooCheckoutMixin:
                 await save_btn.first.click()
                 try:
                     await yahoo_page.wait_for_selector(
-                        "#address, h1:has-text('購入内容の確認')", timeout=10000
+                        "#address, h1:has-text('購入内容の確認')", timeout=WAIT_HANG_MS
                     )
                 except Exception:
                     pass
@@ -904,14 +890,17 @@ class YahooCheckoutMixin:
                 if save_clicked:
                     try:
                         confirm = yahoo_page.locator("#confSubmitBtn")
-                        await confirm.wait_for(state="visible", timeout=8000)
+                        await confirm.wait_for(state="visible", timeout=WAIT_HANG_MS)
                         await self.log("确认弹窗：取引情報を確定しますか？ 点击確定する。")
-                        await confirm.first.click(force=True)
+                        await self.click_visible(confirm, force=True)
                     except Exception:
                         pass
                 else:
                     await self.log("待运费页未找到「決定する」。", "WARNING")
-            await yahoo_page.wait_for_load_state("domcontentloaded")
+            try:
+                await yahoo_page.wait_for_load_state("domcontentloaded", timeout=WAIT_HANG_MS)
+            except Exception:
+                pass
             body_text = await yahoo_page.locator("body").inner_text()
             if suffix in clean_str(body_text) or suffix in body_text:
                 await self.log(f"地址已验证 (待发货): {suffix}")

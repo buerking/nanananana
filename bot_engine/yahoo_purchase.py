@@ -10,6 +10,8 @@ from urllib.parse import parse_qs, urlparse
 from playwright.async_api import Page
 
 from .constants import (
+    WAIT_CLICK_MS,
+    WAIT_HANG_MS,
     YAHOO_STORE_TRADE_STATUS_URL,
     YAHOO_TRADE_NAV_URL,
     YAHOO_TRADE_TOP_URL,
@@ -33,8 +35,6 @@ PURCHASE_PROCEDURE_LOCATOR = ", ".join(PURCHASE_PROCEDURE_SELECTORS)
 
 # 购买手续跳转：人手点很快；goto 等 domcontentloaded 会整页卡死。
 # 卡住时最多等 5 分钟，刷新后再判断是否已到下一页，否则再点，最多 3 次。
-NAV_QUICK_MS = 20000
-NAV_HANG_MS = 5 * 60 * 1000
 NAV_RETRY_MAX = 3
 CHECKOUT_URL_RE = re.compile(
     r".*(/order/review|/order/select-option|/order/change|/buyer/payment|"
@@ -224,38 +224,38 @@ class YahooPurchaseMixin:
             await self.log(f"同捆验证流程异常: {e}", "ERROR")
             return {"status": "BUNDLE_EXCEPTION"}
 
-    async def _follow_click(self, ctx, locator, wait_locator=None, timeout=15000):
+    async def _follow_click(self, ctx, locator, wait_locator=None, timeout=WAIT_HANG_MS):
         """点击可能打开新标签的链接，并切到新页。避免还停在拍品页找按钮。"""
         page = ctx.yahoo_page
         context = page.context
         pages_before = list(context.pages)
         clicked = False
         try:
-            async with context.expect_page(timeout=8000) as new_page_info:
-                await locator.click()
+            async with context.expect_page(timeout=WAIT_CLICK_MS) as new_page_info:
+                if not await self.click_visible(locator):
+                    await locator.click(timeout=WAIT_CLICK_MS)
                 clicked = True
             ctx.yahoo_page = await new_page_info.value
         except Exception:
             if not clicked:
-                await locator.click()
+                if not await self.click_visible(locator):
+                    await locator.click(timeout=WAIT_CLICK_MS)
             new_pages = [p for p in context.pages if p not in pages_before]
             if new_pages:
                 ctx.yahoo_page = new_pages[-1]
         page = ctx.yahoo_page
         try:
-            await page.wait_for_load_state("domcontentloaded", timeout=12000)
+            await page.wait_for_load_state("domcontentloaded", timeout=WAIT_HANG_MS)
         except Exception:
             pass
         await page.bring_to_front()
         await self.log(f"点击后当前页: {page.url}")
         if wait_locator:
-            try:
-                await page.locator(wait_locator).first.wait_for(state="visible", timeout=timeout)
-            except Exception:
+            if not await self.wait_visible(page.locator(wait_locator), timeout_ms=timeout):
                 await self.log(f"点击后未等到目标元素。URL={page.url}", "WARNING")
         return page
 
-    async def _adopt_page_matching(self, ctx, url_parts, selector, timeout=25000):
+    async def _adopt_page_matching(self, ctx, url_parts, selector, timeout=WAIT_HANG_MS):
         """新版取引ナビ是 Next.js 异步渲染，按钮可能后出现；也可能在另一个标签。"""
         deadline = asyncio.get_running_loop().time() + timeout / 1000
         last_urls = []
@@ -287,21 +287,12 @@ class YahooPurchaseMixin:
         await self.log(f"未找到目标页/按钮。已打开标签: {last_urls}", "WARNING")
         return None
 
-    async def _wait_for_checkout_page(self, page, timeout_ms):
-        try:
-            await page.wait_for_url(CHECKOUT_URL_RE, timeout=timeout_ms)
+    async def _wait_for_checkout_page(self, page, timeout_ms=WAIT_HANG_MS):
+        if await self.wait_url(page, CHECKOUT_URL_RE, timeout_ms=timeout_ms):
             return True
-        except Exception:
-            pass
         if self._checkout_like_url(page.url):
             return True
-        try:
-            await page.locator(CHECKOUT_FORM_SEL).first.wait_for(
-                state="visible", timeout=min(2000, timeout_ms)
-            )
-            return True
-        except Exception:
-            return False
+        return await self.wait_visible(page.locator(CHECKOUT_FORM_SEL), timeout_ms=timeout_ms)
 
     async def _page_load_unfinished(self, page, probe_ms=3000):
         try:
@@ -314,11 +305,11 @@ class YahooPurchaseMixin:
         """卡住时刷新。有概率刷新后已经在下一页。"""
         await self.log("页面加载卡住，刷新后再判断是否已进入下一页...")
         try:
-            await page.reload(wait_until="commit", timeout=20000)
+            await page.reload(wait_until="commit", timeout=WAIT_HANG_MS)
         except Exception as e:
             await self.log(f"刷新超时，继续用当前页: {page.url} ({e})", "WARNING")
         try:
-            await page.wait_for_load_state("domcontentloaded", timeout=12000)
+            await page.wait_for_load_state("domcontentloaded", timeout=WAIT_HANG_MS)
         except Exception:
             pass
         if self._checkout_like_url(page.url):
@@ -330,13 +321,15 @@ class YahooPurchaseMixin:
     async def _click_purchase_procedure(self, ctx, link, href):
         """人手点按钮通常很快；不要用 goto 死等 domcontentloaded。"""
         try:
-            await link.click(timeout=8000)
+            if await self.click_visible(link, timeout_ms=WAIT_CLICK_MS):
+                return
+            await link.click(timeout=WAIT_CLICK_MS)
             return
         except Exception as e:
             await self.log(f"点击购买手续入口失败，改用打开链接: {e}", "DEBUG")
         if href:
             try:
-                await ctx.yahoo_page.goto(href, wait_until="commit", timeout=20000)
+                await ctx.yahoo_page.goto(href, wait_until="commit", timeout=WAIT_HANG_MS)
             except Exception as e:
                 await self.log(f"打开购买手续页超时，继续用当前页: {ctx.yahoo_page.url} ({e})", "WARNING")
 
@@ -375,21 +368,12 @@ class YahooPurchaseMixin:
                     await self.log("刷新后仍在当前页，且找不到购买手续按钮。", "WARNING")
                     break
             await self._click_purchase_procedure(ctx, link, href)
-            if await self._wait_for_checkout_page(ctx.yahoo_page, NAV_QUICK_MS):
+            await self.log("等待进入购买手续页（最长 5 分钟）...")
+            if await self._wait_for_checkout_page(ctx.yahoo_page, WAIT_HANG_MS):
                 break
-            hanging = await self._page_load_unfinished(ctx.yahoo_page)
-            if hanging:
-                await self.log("购买手续页仍在加载，最多再等 5 分钟...")
-                if await self._wait_for_checkout_page(ctx.yahoo_page, NAV_HANG_MS):
-                    break
             if await self._reload_stuck_page(ctx.yahoo_page):
                 break
-        try:
-            await ctx.yahoo_page.locator(CHECKOUT_FORM_SEL).first.wait_for(
-                state="visible", timeout=10000
-            )
-        except Exception:
-            pass
+        await self.wait_visible(ctx.yahoo_page.locator(CHECKOUT_FORM_SEL), timeout_ms=WAIT_HANG_MS)
         await self.log(f"购买手续页当前 URL: {ctx.yahoo_page.url}")
         self._remember_yahoo_trade_ids(ctx)
 
@@ -518,7 +502,7 @@ class YahooPurchaseMixin:
             try:
                 await yahoo_page.locator(
                     "#pap a, a[href*='/order/review'], h1:has-text('取引ナビ')"
-                ).first.wait_for(state="visible", timeout=8000)
+                ).first.wait_for(state="visible", timeout=WAIT_HANG_MS)
             except Exception:
                 pass
             if await self._click_store_purchase_procedure(ctx):
@@ -551,18 +535,16 @@ class YahooPurchaseMixin:
             ctx.is_store = True
             ctx.is_personal = False
             try:
-                await yahoo_page.goto(href, wait_until="domcontentloaded", timeout=20000)
+                await yahoo_page.goto(href, wait_until="commit", timeout=WAIT_HANG_MS)
             except Exception as e:
                 await self.log(f"店铺取引ナビ打开失败: {e}", "WARNING")
                 return False
             if "/order/review" in (yahoo_page.url or "") or "/order/change" in (yahoo_page.url or ""):
                 return True
-            try:
-                await yahoo_page.locator(
-                    "#pap a, a[href*='/order/review']"
-                ).first.wait_for(state="visible", timeout=8000)
-            except Exception:
-                pass
+            await self.wait_visible(
+                yahoo_page.locator("#pap a, a[href*='/order/review']"),
+                timeout_ms=WAIT_HANG_MS,
+            )
             if await self._click_store_purchase_procedure(ctx):
                 return True
             return True
@@ -573,16 +555,16 @@ class YahooPurchaseMixin:
         status_url = YAHOO_STORE_TRADE_STATUS_URL.format(product_id=product_id)
         await self.log(f"尝试店铺取引ナビ: {status_url}")
         try:
-            await yahoo_page.goto(status_url, wait_until="domcontentloaded", timeout=20000)
+            await yahoo_page.goto(status_url, wait_until="commit", timeout=WAIT_HANG_MS)
         except Exception as e:
             await self.log(f"店铺取引ナビ打开超时: {e}", "WARNING")
             return False
-        try:
-            await yahoo_page.locator(
+        await self.wait_visible(
+            yahoo_page.locator(
                 "#pap a, a[href*='/order/review'], h1:has-text('取引ナビ')"
-            ).first.wait_for(state="visible", timeout=8000)
-        except Exception:
-            pass
+            ),
+            timeout_ms=WAIT_HANG_MS,
+        )
         if await self._page_has_yahoo_id_mismatch(yahoo_page):
             await self.log("店铺 /order/status 返回账号不符页，不按店铺处理。", "WARNING")
             return False
@@ -591,7 +573,7 @@ class YahooPurchaseMixin:
         await self.log("店铺 /order/status 没有「購入手続きする」，改走个人取引ナビ。")
         return False
 
-    async def _adopt_checkout_tab(self, ctx, timeout=12000):
+    async def _adopt_checkout_tab(self, ctx, timeout=WAIT_HANG_MS):
         deadline = asyncio.get_running_loop().time() + timeout / 1000
         while asyncio.get_running_loop().time() < deadline:
             for page in list(ctx.yahoo_page.context.pages):
@@ -674,7 +656,7 @@ class YahooPurchaseMixin:
             if new_pages:
                 ctx.yahoo_page = new_pages[-1]
                 await ctx.yahoo_page.bring_to_front()
-            await self._adopt_checkout_tab(ctx, timeout=8000)
+            await self._adopt_checkout_tab(ctx, timeout=WAIT_HANG_MS)
             await self.log(f"单品确认后当前页: {ctx.yahoo_page.url}")
         return None
 
@@ -705,7 +687,7 @@ class YahooPurchaseMixin:
         if self._is_store_status_url(yahoo_page.url):
             if await self._click_store_purchase_procedure(ctx):
                 return None
-        adopted = await self._adopt_checkout_tab(ctx, timeout=8000)
+        adopted = await self._adopt_checkout_tab(ctx, timeout=WAIT_HANG_MS)
         if adopted:
             if await self._page_is_wait_shipping_address_form(ctx.yahoo_page):
                 return await self._mark_wait_shipping_form(
@@ -716,7 +698,7 @@ class YahooPurchaseMixin:
             ctx,
             url_parts=("buy.auctions.yahoo.co.jp/order/status", "/order/review"),
             selector="a[href*='/order/review'], #pap a:has-text('購入手続きする')",
-            timeout=4000,
+            timeout=WAIT_CLICK_MS,
         )
         if store_link is not None:
             await self.log("发现店铺「購入手続きする」。正在进入 /order/review...")
@@ -724,7 +706,7 @@ class YahooPurchaseMixin:
             ctx.is_personal = False
             await self._goto_purchase_procedure(ctx, store_link)
             return None
-        await self.log("等待新版取引ナビ异步渲染「購入手続きをする」...")
+        await self.log("等待新版取引ナビ异步渲染「購入手続きをする」（最长 5 分钟）...")
         link = await self._adopt_page_matching(
             ctx,
             url_parts=(
@@ -736,7 +718,7 @@ class YahooPurchaseMixin:
                 "buyer/preview",
             ),
             selector="a[href*='buyer/payment/input']",
-            timeout=25000,
+            timeout=WAIT_HANG_MS,
         )
         if await self._page_is_wait_shipping_address_form(ctx.yahoo_page):
             return await self._mark_wait_shipping_form(
@@ -752,7 +734,7 @@ class YahooPurchaseMixin:
                     "buyer/edit",
                 ),
                 selector=PURCHASE_PROCEDURE_LOCATOR,
-                timeout=8000,
+                timeout=WAIT_HANG_MS,
             )
         if await self._page_is_wait_shipping_address_form(ctx.yahoo_page):
             return await self._mark_wait_shipping_form(
@@ -840,16 +822,12 @@ class YahooPurchaseMixin:
         if await buy_now_btn.count() > 0:
             await self.log("检测到店铺结算入口 (購入手続きへ)。正在点击...")
             ctx.is_store = True
-            await buy_now_btn.first.click()
-            try:
-                await yahoo_page.wait_for_url(
-                    re.compile(
-                        r".*(/order/review|/order/select-option|/order/change).*"
-                    ),
-                    timeout=15000,
-                )
-            except Exception:
-                pass
+            await self.click_visible(buy_now_btn)
+            await self.wait_url(
+                yahoo_page,
+                r".*(/order/review|/order/select-option|/order/change).*",
+                timeout_ms=WAIT_HANG_MS,
+            )
             await self.log(f"購入手続きへ后当前页: {yahoo_page.url}")
         elif await buy_now_auction_btn.count() > 0:
             has_bid = await yahoo_page.locator(
@@ -883,7 +861,7 @@ class YahooPurchaseMixin:
                                 await self.log("[TestMode] 模拟点击 (不提交)...")
                             else:
                                 await win_btn.first.click()
-                            await yahoo_page.wait_for_selector("text=おめでとうございます", timeout=15000)
+                            await yahoo_page.wait_for_selector("text=おめでとうございます", timeout=WAIT_HANG_MS)
                         else:
                             await self.report_missing_yahoo_ui(
                                 yahoo_page, "bid_confirm", ctx,
@@ -934,10 +912,10 @@ class YahooPurchaseMixin:
                                 href = "https://contact.auctions.yahoo.co.jp" + href
                         await self.log(f"打开取引ナビ: {href}")
                         try:
-                            await yahoo_page.goto(href, wait_until="commit", timeout=20000)
+                            await yahoo_page.goto(href, wait_until="commit", timeout=WAIT_HANG_MS)
                             try:
                                 await yahoo_page.wait_for_load_state(
-                                    "domcontentloaded", timeout=12000
+                                    "domcontentloaded", timeout=WAIT_HANG_MS
                                 )
                             except Exception:
                                 pass
@@ -968,10 +946,10 @@ class YahooPurchaseMixin:
                     ):
                         await self.log(f"直接打开取引ナビ: {trade_url}")
                         try:
-                            await yahoo_page.goto(trade_url, wait_until="commit", timeout=20000)
+                            await yahoo_page.goto(trade_url, wait_until="commit", timeout=WAIT_HANG_MS)
                             try:
                                 await yahoo_page.wait_for_load_state(
-                                    "domcontentloaded", timeout=12000
+                                    "domcontentloaded", timeout=WAIT_HANG_MS
                                 )
                             except Exception:
                                 pass
@@ -1062,13 +1040,10 @@ class YahooPurchaseMixin:
         )
         if self._checkout_like_url(yahoo_page.url):
             await self.log(f"已进入结算/地址页。等待表单... {yahoo_page.url}")
-            try:
-                await form.first.wait_for(state="visible", timeout=10000)
-            except Exception:
-                pass
+            await self.wait_visible(form, timeout_ms=WAIT_HANG_MS)
             return None
         try:
-            await form.first.wait_for(state="visible", timeout=10000)
+            await form.first.wait_for(state="visible", timeout=WAIT_HANG_MS)
             await self.log("已进入购买输入页。等待表单...")
         except Exception:
             await self.log("警告：未找到 'お届け先' 表单，页面可能不同。继续...", "WARNING")
@@ -1120,7 +1095,7 @@ class YahooPurchaseMixin:
             if test_mode:
                 await self.log("[TestMode] 二次确认弹窗已出现，不点「購入を確定する」。")
                 return True
-            await buy.first.click(force=True)
+            await self.click_visible(buy, force=True)
             return True
         except Exception as e:
             await self.log(f"店铺二次确认点击失败: {e}", "DEBUG")
@@ -1146,44 +1121,45 @@ class YahooPurchaseMixin:
         if test_mode:
             await self.log("[TestMode] 不点最终确定。")
             return True
-        try:
-            await agree.first.click()
-        except Exception:
+        if not await self.click_visible(agree):
             buy = yahoo_page.locator(
                 "a:has-text('購入を確定する'), button:has-text('購入を確定する')"
             )
-            await buy.first.click()
+            if not await self.click_visible(buy):
+                await buy.first.click(timeout=WAIT_CLICK_MS)
         return True
 
-    async def _wait_purchase_complete(self, page, timeout_ms=20000):
-        """点最终确定后等 /buyer/payment/complete 或「購入が完了しました」。"""
-        try:
-            await page.wait_for_url(
-                re.compile(
-                    r".*(/buyer/payment/complete|/payment/complete|"
-                    r"/order/thank-you|thank-you|/order/status).*"
-                ),
-                timeout=timeout_ms,
-            )
-            return True
-        except Exception:
-            pass
-        url = page.url or ""
-        title = ""
-        try:
-            title = await page.title()
-        except Exception:
+    async def _wait_purchase_complete(self, page, timeout_ms=WAIT_HANG_MS):
+        """点最终确定后等完成页。匹配到立刻返回，上限 5 分钟。"""
+        complete_re = re.compile(
+            r".*(/buyer/payment/complete|/payment/complete|"
+            r"/order/thank-you|thank-you|/order/status).*"
+        )
+
+        async def arrived():
+            url = page.url or ""
+            if complete_re.search(url):
+                return True
             title = ""
-        if any(t in url or t in title for t in SUCCESS_TOKENS):
-            return True
-        try:
-            await page.locator(
-                "h3:has-text('購入が完了しました'), h1:has-text('完了'), "
-                "text=購入が完了しました"
-            ).first.wait_for(state="visible", timeout=3000)
-            return True
-        except Exception:
+            try:
+                title = await page.title()
+            except Exception:
+                title = ""
+            if any(t in url or t in title for t in SUCCESS_TOKENS):
+                return True
+            try:
+                loc = page.locator(
+                    "h3:has-text('購入が完了しました'), h1:has-text('完了'), "
+                    "text=購入が完了しました, text=ご購入ありがとうございます"
+                )
+                if await loc.count() and await loc.first.is_visible():
+                    return True
+            except Exception:
+                pass
             return False
+
+        await self.log("等待购买完成页（最长 5 分钟）...")
+        return await self.wait_until(arrived, timeout_ms=timeout_ms)
 
     def _remember_yahoo_trade_ids(self, ctx, url=None):
         page = ctx.yahoo_page
@@ -1398,19 +1374,17 @@ class YahooPurchaseMixin:
         if not self._already_on_order_detail(cur, ctx):
             await self.log(f"购买完成后打开订单详情 ({'店铺' if kind == 'store' else '个人'}): {target}")
             try:
-                await page.goto(target, wait_until="commit", timeout=20000)
+                await page.goto(target, wait_until="commit", timeout=WAIT_HANG_MS)
             except Exception as e:
                 await self.log(f"打开订单详情超时，继续用当前页解析: {e}", "WARNING")
             try:
-                await page.wait_for_load_state("domcontentloaded", timeout=15000)
+                await page.wait_for_load_state("domcontentloaded", timeout=WAIT_HANG_MS)
             except Exception:
                 pass
-            try:
-                await page.locator(
-                    "h1:has-text('取引ナビ'), #dtlinfo, button:has-text('情報')"
-                ).first.wait_for(state="visible", timeout=10000)
-            except Exception:
-                pass
+            await self.wait_visible(
+                page.locator("h1:has-text('取引ナビ'), #dtlinfo, button:has-text('情報')"),
+                timeout_ms=WAIT_HANG_MS,
+            )
             await asyncio.sleep(1.2)
         else:
             await self.log(f"已在订单详情页: {cur}")
@@ -1467,10 +1441,11 @@ class YahooPurchaseMixin:
             if test_mode:
                 await self.log("[TestMode] 模拟点击决定（不提交，也不点弹窗「確定する」）...")
                 return None
-            await classic_confirm.first.click(force=True)
+            await self.click_visible(classic_confirm, force=True)
             try:
-                await yahoo_page.locator("#confSubmitBtn, #mBoxConf").wait_for(
-                    state="visible", timeout=8000
+                await self.wait_visible(
+                    yahoo_page.locator("#confSubmitBtn, #mBoxConf"),
+                    timeout_ms=WAIT_HANG_MS,
                 )
                 confirm = yahoo_page.locator("#confSubmitBtn")
                 if await confirm.count() == 0:
@@ -1480,14 +1455,14 @@ class YahooPurchaseMixin:
                     )
                 if await confirm.count():
                     await self.log("确认弹窗：取引情報を確定しますか？ 点击確定する。")
-                    await confirm.first.click(force=True)
+                    await self.click_visible(confirm, force=True)
                     ctx.trade_info_submitted = True
                     try:
-                        await confirm.first.wait_for(state="hidden", timeout=10000)
+                        await confirm.first.wait_for(state="hidden", timeout=WAIT_HANG_MS)
                     except Exception:
                         pass
                     try:
-                        await yahoo_page.wait_for_load_state("domcontentloaded", timeout=10000)
+                        await yahoo_page.wait_for_load_state("domcontentloaded", timeout=WAIT_HANG_MS)
                     except Exception:
                         pass
             except Exception as e:
@@ -1507,25 +1482,31 @@ class YahooPurchaseMixin:
                         await self.log("[TestMode] 模拟点击 (不提交)...")
                         break
                     await self.log("正在点击 (REAL BUY)...")
-                    await btn.click()
+                    await self.click_visible(btn)
                     await self._fill_cvv(yahoo_page, self.DEFAULT_CVV)
-                    try:
-                        await yahoo_page.wait_for_url(
-                            re.compile(
-                                r".*(/buyer/payment/confirm|/buyer/payment/complete|"
-                                r"/order/thank-you).*"
-                            ),
-                            timeout=15000,
-                        )
-                    except Exception:
-                        pass
-                    try:
-                        await yahoo_page.locator(
+
+                    async def after_confirm():
+                        url = yahoo_page.url or ""
+                        if any(
+                            p in url
+                            for p in (
+                                "/buyer/payment/confirm",
+                                "/buyer/payment/complete",
+                                "/order/thank-you",
+                                "/order/status",
+                            )
+                        ):
+                            return True
+                        loc = yahoo_page.locator(
                             "#fconfirm, a:has-text('上記に同意のうえ'), "
                             "h3:has-text('購入が完了しました')"
-                        ).first.wait_for(state="visible", timeout=8000)
-                    except Exception:
-                        pass
+                        )
+                        try:
+                            return await loc.count() > 0 and await loc.first.is_visible()
+                        except Exception:
+                            return False
+
+                    await self.wait_until(after_confirm, timeout_ms=WAIT_HANG_MS)
                     if await self._click_personal_final_confirm(yahoo_page, test_mode):
                         ctx.trade_info_submitted = True
                     elif await self._click_store_purchase_confirm(yahoo_page, test_mode):
@@ -1555,7 +1536,7 @@ class YahooPurchaseMixin:
                 ctx.trade_info_submitted = True
             await self._wait_purchase_complete(yahoo_page)
         elif not ctx.test_mode:
-            await self._wait_purchase_complete(yahoo_page, timeout_ms=8000)
+            await self._wait_purchase_complete(yahoo_page, timeout_ms=WAIT_HANG_MS)
         self._remember_yahoo_trade_ids(ctx)
         still_checkout = any(p in ((yahoo_page.url or "")) for p in CHECKOUT_STILL_OPEN)
         if not ctx.test_mode and not ctx.is_wait_for_shipping and not still_checkout:

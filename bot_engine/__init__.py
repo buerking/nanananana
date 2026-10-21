@@ -6,6 +6,7 @@
 - gates.py            门卫：黑名单 / 备注 / 敏感词 / 同捆弹窗 / 登录
 - yahoo_purchase.py   主流程 Pipeline：进购买页 → 结算 → 确认支付
 - yahoo_checkout.py   结算步骤：地址、配送、信用卡、CVV
+- waits.py            雅虎跳转/水合等待（上限 5 分钟，匹配到立刻返回）
 - orders.py           打开详情/雅虎页，再交给主流程
 - qbt.py              扫单、回填
 - flow.py             OrderContext + run_chain
