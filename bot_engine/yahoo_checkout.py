@@ -116,36 +116,61 @@ class YahooCheckoutMixin:
             body = ""
         return "エラーが発生しました" in (body or "")
 
-    async def _wait_yahoo_account_address_paint(self, page: Page):
+    async def _settle_yahoo_account_address_page(self, page: Page):
+        """等 load + Next 水合，不在半成品 DOM 上判断/填写。"""
+        for state in ("domcontentloaded", "load"):
+            try:
+                await page.wait_for_load_state(state, timeout=15000)
+            except Exception:
+                pass
         try:
-            await page.locator(
-                "#home_address2, h1:has-text('氏名・住所情報'), "
-                "text=エラーが発生しました"
-            ).first.wait_for(state="visible", timeout=8000)
+            await page.wait_for_function(
+                """() => {
+                    const t = (document.body && document.body.innerText) || '';
+                    const form = document.querySelector(
+                        '#home_address2, input[name="home_address2"], form[name="address"]'
+                    );
+                    const title = document.querySelector('h1');
+                    const named = title && title.textContent && title.textContent.includes('氏名・住所情報');
+                    const err = t.includes('エラーが発生しました');
+                    return !!(form || named || err);
+                }""",
+                timeout=15000,
+            )
         except Exception:
             pass
+        # 错误页有时会先闪一下再出表单，给水合留一点时间
+        await asyncio.sleep(2)
+
+    async def _reopen_yahoo_account_address_url(self, page: Page):
+        """等同地址栏回车：整页重新打开当前 URL，比 reload 更容易过瞬时错误页。"""
+        url = page.url or ""
+        if not url:
+            return
+        await self.log("账号地址页按当前地址重新打开（等同回车）...")
+        try:
+            await page.goto(url, wait_until="commit", timeout=20000)
+        except Exception as e:
+            await self.log(f"账号地址页重新打开超时: {e}", "WARNING")
+        await self._settle_yahoo_account_address_page(page)
 
     async def _recover_yahoo_account_address_page(self, page: Page):
-        """点「編集する」后可能跳到账号地址页，首次常报错，刷新最多 3 次。"""
+        """点「編集する」后可能跳到账号地址页。先等加载完，仍报错再用 goto 重开最多 3 次。"""
         if not self._is_yahoo_account_address_url(page.url):
             return False
-        await self._wait_yahoo_account_address_paint(page)
+        await self._settle_yahoo_account_address_page(page)
         for i in range(3):
             err = await self._yahoo_account_address_error_visible(page)
             ready = await self._yahoo_account_address_form_ready(page)
             if ready and not err:
                 await self.log("已进入 Yahoo 账号地址页。")
                 return True
-            await self.log(f"Yahoo 账号地址页异常，刷新重试 ({i + 1}/3)...")
-            try:
-                await page.reload(wait_until="domcontentloaded", timeout=20000)
-            except Exception as e:
-                await self.log(f"账号地址页刷新失败: {e}", "DEBUG")
-            await self._wait_yahoo_account_address_paint(page)
-        if await self._yahoo_account_address_form_ready(page):
-            await self.log("Yahoo 账号地址页刷新后表单已出现。")
+            await self.log(f"Yahoo 账号地址页仍异常，重新打开 ({i + 1}/3)...")
+            await self._reopen_yahoo_account_address_url(page)
+        if await self._yahoo_account_address_form_ready(page) and not await self._yahoo_account_address_error_visible(page):
+            await self.log("Yahoo 账号地址页重新打开后表单已出现。")
             return True
-        await self.log("Yahoo 账号地址页刷新 3 次后仍异常。", "WARNING")
+        await self.log("Yahoo 账号地址页重新打开 3 次后仍异常。", "WARNING")
         return False
 
     async def _return_from_yahoo_account_address(self, page: Page):
@@ -189,7 +214,9 @@ class YahooCheckoutMixin:
         inp = page.locator("#home_address2")
         if await inp.count() == 0:
             inp = page.locator("input[name='home_address2']")
-        if await inp.count() == 0:
+        try:
+            await inp.first.wait_for(state="visible", timeout=8000)
+        except Exception:
             return False
         current = ""
         try:
@@ -197,6 +224,7 @@ class YahooCheckoutMixin:
         except Exception:
             current = ""
         if suffix not in current.replace("\t", "").replace(" ", ""):
+            await inp.first.click()
             await inp.first.fill("")
             await inp.first.fill(suffix)
             await inp.first.blur()
@@ -205,6 +233,7 @@ class YahooCheckoutMixin:
         if await save.count() == 0:
             save = page.locator("button[type='submit']:has-text('登録する')")
         if await save.count():
+            await save.first.wait_for(state="visible", timeout=5000)
             await save.first.click()
             try:
                 await page.wait_for_url(
@@ -295,15 +324,18 @@ class YahooCheckoutMixin:
                             continue
                     if visible_edit is not None:
                         await self.log("点击「編集する」展开地址表单...")
+                        try:
+                            await yahoo_page.wait_for_load_state("load", timeout=8000)
+                        except Exception:
+                            pass
                         await visible_edit.click()
                         try:
-                            await yahoo_page.wait_for_function(
-                                "() => location.hostname.includes('account.edit.yahoo.co.jp') "
-                                "|| document.querySelector(\"input[name='home_address2'], input[name='address2']\")",
-                                timeout=8000,
+                            await yahoo_page.wait_for_url(
+                                re.compile(r".*account\.edit\.yahoo\.co\.jp.*address.*"),
+                                timeout=15000,
                             )
                         except Exception:
-                            await asyncio.sleep(0.5)
+                            pass
                         if self._is_yahoo_account_address_url(yahoo_page.url):
                             ok = await self._fill_yahoo_account_address_and_return(
                                 yahoo_page, suffix
@@ -324,7 +356,7 @@ class YahooCheckoutMixin:
                             )
                             await self.report_missing_yahoo_ui(
                                 yahoo_page, "address_edit", ctx,
-                                extra="account.edit.yahoo.co.jp/address 刷新3次后仍无表单，或登録する后未回到结算页。",
+                                extra="account.edit.yahoo.co.jp/address 等加载后仍报错，重新打开3次后仍无表单。",
                             )
                             return {"status": "ADDRESS_FAIL"}
             input_found = False
