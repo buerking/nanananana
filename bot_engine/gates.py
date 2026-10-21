@@ -5,6 +5,8 @@
 import re
 
 from .flow import deny
+from .qbt import parse_storage_code
+from .ticket import create_work_order
 
 
 class GatesMixin:
@@ -102,6 +104,71 @@ class GatesMixin:
         except Exception:
             pass
         return False
+
+    async def gate_item_option(self, ctx):
+        """店铺 /order/select-option：规格/颜色必须用户确认，不能自动选。"""
+        page = ctx.yahoo_page
+        url = page.url or ""
+        if "select-option" not in url:
+            try:
+                await page.wait_for_url(
+                    re.compile(r".*/order/select-option.*"),
+                    timeout=2500,
+                )
+                url = page.url or ""
+            except Exception:
+                pass
+        hinted = "select-option" in (url or "")
+        body = ""
+        if not hinted:
+            try:
+                body = await page.locator("body").inner_text()
+            except Exception:
+                body = ""
+            hinted = "商品オプションを選択してください" in body
+        if not hinted:
+            return None
+        oid = ctx.order_info.get("order_id") or ctx.order.get("order_id") or ""
+        pid = ctx.order_info.get("product_id") or ctx.order.get("product_id") or ""
+        choices = []
+        try:
+            labels = page.locator("main fieldset label, main legend")
+            n = min(await labels.count(), 12)
+            for i in range(n):
+                t = " ".join(((await labels.nth(i).inner_text()) or "").split())
+                if t:
+                    choices.append(t)
+        except Exception:
+            choices = []
+        choice_txt = "、".join(choices[:8]) if choices else "（页上有规格选项）"
+        await self.log(
+            f"店铺商品需要选择规格/款式，已停止自动购买。请建工单联系用户确认。选项: {choice_txt}",
+            "ERROR",
+        )
+        self.add_risk_history_entry(oid, "人工处理: 需联系用户选择商品款式")
+        storage_code = parse_storage_code(
+            ctx.order_info.get("storage_code") or ctx.order.get("storage_code") or ""
+        ) or parse_storage_code(
+            ctx.order_info.get("user_name") or ctx.order.get("user_name") or ""
+        )
+        issue = (
+            f"雅虎店铺结算出现规格选择（オプション選択），无法自动下单。"
+            f"商品 {pid}。请确认要购买的款式。选项: {choice_txt}"
+        )
+        if storage_code:
+            ok, err = await create_work_order(oid, storage_code, [issue], send_message=1)
+            if ok:
+                await self.log(f"已创建工单（入库码 {storage_code}，已站内通知用户）。")
+            else:
+                await self.log(f"创建工单失败: {err}", "WARNING")
+        else:
+            await self.log("详情页未解析到入库码，跳过创建工单。", "WARNING")
+        self.notify_feishu(
+            f"订单 {oid} / 商品 {pid} / 入库码 {storage_code or '(未解析)'} 需要人工客服：\n"
+            "点「購入手続きへ」后出现规格选择页，请联系用户选择款式后再买。不要自动选。\n"
+            f"选项: {choice_txt}"
+        )
+        return deny("SKIPPED_NEED_USER_OPTION")
 
     async def gate_combined_shipping(self, ctx):
         """雅虎同捆弹窗：发现则转人工。超时视为没有弹窗。"""

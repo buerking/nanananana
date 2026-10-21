@@ -97,6 +97,7 @@ class YahooPurchaseMixin:
                 self.step_bundle_interstitial,
                 self.step_enter_purchase,
                 self.step_new_trade_choice,
+                self.gate_item_option,
                 self.step_wait_checkout_form,
                 self.step_capture_body_and_payment_gate,
                 self.step_uncheck_newsletter,
@@ -734,6 +735,16 @@ class YahooPurchaseMixin:
             await self.log("检测到店铺结算入口 (購入手続きへ)。正在点击...")
             ctx.is_store = True
             await buy_now_btn.first.click()
+            try:
+                await yahoo_page.wait_for_url(
+                    re.compile(
+                        r".*(/order/review|/order/select-option|/order/change).*"
+                    ),
+                    timeout=15000,
+                )
+            except Exception:
+                pass
+            await self.log(f"購入手続きへ后当前页: {yahoo_page.url}")
         elif await buy_now_auction_btn.count() > 0:
             has_bid = await yahoo_page.locator(
                 "#bidButtonGroup button:has-text('入札'), #bidButtonGroup a:has-text('入札')"

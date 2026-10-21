@@ -5,6 +5,26 @@ from playwright.async_api import Page
 from .constants import QBT_BROWSER_ACCOUNT, RISK_STATUS_SEARCH_URL
 
 _CF_EMAIL_RE = re.compile(r"[\w.+-]+@yahoo\.co\.jp", re.I)
+_STORAGE_FROM_ZY_RE = re.compile(r"ZY\d+\s*/\s*([A-Za-z0-9]{5,6})", re.I)
+_STORAGE_ONLY_RE = re.compile(r"^[A-Za-z][A-Za-z0-9]{4,5}$")
+
+
+def parse_storage_code(text):
+    """QBT「用户信息/入库码」：ZY26100805337948/HHLGY → HHLGY。不用数字用户 ID。"""
+    raw = (text or "").strip()
+    if not raw:
+        return ""
+    line = raw.split("\n")[0].strip()
+    m = _STORAGE_FROM_ZY_RE.search(line.replace(" ", ""))
+    if m:
+        return m.group(1)
+    if "/" in line:
+        tail = line.split("/")[-1].strip()
+        if _STORAGE_ONLY_RE.fullmatch(tail):
+            return tail
+    if _STORAGE_ONLY_RE.fullmatch(line):
+        return line
+    return ""
 _ROW_COLOR_JS = """
 (row) => {
   const isColored = (node) => {
@@ -143,6 +163,9 @@ class QbtMixin:
             if re.match(r"\d{4}-\d{2}-\d{2}", text):
                 continue
             if re.match(r"ZY\d+", text, re.I):
+                code = parse_storage_code(text)
+                if code:
+                    return code
                 continue
             if re.fullmatch(r"[A-Za-z0-9_-]{16,}", text):
                 continue
@@ -223,6 +246,9 @@ class QbtMixin:
                 user_name = await self._extract_user_name(
                     row, order_id, product_id, seller_id, bid_email
                 )
+                storage_code = parse_storage_code(row_text) or (
+                    user_name if parse_storage_code(user_name) else ""
+                )
                 has_color = await self._row_has_qbt_color(row)
                 scanned_items.append(
                     {
@@ -234,7 +260,7 @@ class QbtMixin:
                         "status": status_text,
                         "has_split_btn": has_split_btn,
                         "option_info": option_info,
-                        "storage_code": "",
+                        "storage_code": storage_code,
                         "bid_email": bid_email,
                         "account_key": account_key,
                         "user_name": user_name,

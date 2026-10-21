@@ -26,9 +26,20 @@ YAHOO_CHECKPOINTS = {
             "button:has-text('取引ナビ')",
         ],
     },
+    "store_select_option": {
+        "page_name": "店铺规格选择",
+        "path": "拍品页点「購入手続きへ」→ /order/select-option「商品オプションを選択してください」→ 不得自动选，转人工建工单联系用户选款式",
+        "looking_for": "规格选择页标题/次へ（程序应跳过，不点击）",
+        "selectors": [
+            "text=商品オプションを選択してください",
+            "a[data-cl-params*='_cl_link:next']",
+            "a:has-text('次へ')",
+            "h1:has-text('購入手続き')",
+        ],
+    },
     "store_buy_now": {
         "page_name": "店铺拍品页",
-        "path": "拍品页 → 点「購入手続きへ」→ 店铺结算页",
+        "path": "拍品页 → 点「購入手続きへ」→ 无规格则进 /order/review；有规格则进 /order/select-option 转人工",
         "looking_for": "店铺立即结算按钮「購入手続きへ」",
         "selectors": [
             "#bidButtonGroup button:has-text('購入手続きへ')",

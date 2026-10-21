@@ -29,6 +29,10 @@ FEISHU_WEBHOOK = (
     "https://open.feishu.cn/open-apis/bot/v2/hook/0698f195-67e8-4359-b3dc-cd947782d2b4"
 )
 BACKEND_URL = "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list"
+EDI_TICKET_URL = "https://edi.jpgoodbuy.com/service.php?func=apiCreateWorkOrder"
+EDI_TICKET_PC_MARK = "nananana"
+# 可用环境变量 EDI_SIGN_SECRET 覆盖。
+EDI_TICKET_SECRET = "sgfegerggdsfwewythhdjyujfgrgerdgref"
 RISK_STATUS_SEARCH_URL = "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-order-list"
 YAHOO_HOME_URL = "https://auctions.yahoo.co.jp/"
 YAHOO_AUCTION_URL = "https://auctions.yahoo.co.jp/jp/auction/{product_id}"

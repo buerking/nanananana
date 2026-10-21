@@ -6,6 +6,7 @@ from playwright.async_api import Page
 
 from .constants import QBT_BROWSER_ACCOUNT, YAHOO_AUCTION_URL
 from .flow import OrderContext, run_chain
+from .qbt import parse_storage_code
 
 
 class OrderMixin:
@@ -128,6 +129,17 @@ class OrderMixin:
                             )
                             order["order_id"] = first_id
                 bound_items.append(item_data)
+            if detail_rows:
+                try:
+                    info_text = await detail_rows[0].locator("td").nth(1).inner_text()
+                    code = parse_storage_code(info_text)
+                    if code:
+                        order["storage_code"] = code
+                        if not order.get("user_name"):
+                            order["user_name"] = code
+                        await self.log(f"入库码: {code}")
+                except Exception:
+                    pass
             await self.log(f"后台详情解析: 共 {len(bound_items)} 个商品, 总金额 {backend_total}")
             if option_info:
                 await self.log(f"从详情页更新选项信息: {option_info}")

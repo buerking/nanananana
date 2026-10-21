@@ -197,6 +197,8 @@ class YahooAutoBot(
             return "本单自动购买是否成功: 流程成功，待卖家运费"
         if status == "PURCHASE_UNCONFIRMED":
             return "本单自动购买是否成功: 未确认（已点确认但未见成功页，请人工核对是否扣款）"
+        if status == "SKIPPED_NEED_USER_OPTION":
+            return "本单自动购买是否成功: 跳过（需建工单联系用户选择款式）"
         if str(status).startswith("SKIPPED"):
             return f"本单自动购买是否成功: 跳过（{status}）"
         if status == "TEST_SUCCESS":
