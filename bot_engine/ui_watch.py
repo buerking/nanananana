@@ -150,6 +150,9 @@ YAHOO_CHECKPOINTS = {
             "form[name='address'] button[type='submit']",
             "button:has-text('登録する')",
             "a:has-text('ご利用中のサービスに戻る')",
+            "button:has-text('ご利用中のサービスに戻る')",
+            "a:has-text('サービスに戻る')",
+            "a:has-text('オークションに戻る')",
         ],
     },
     "shipping_radios": {

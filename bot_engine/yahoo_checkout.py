@@ -1,7 +1,7 @@
 """结算 Pipeline 步骤：地址、配送、投放、信用卡、CVV、待运费地址。"""
 import asyncio
 import re
-from urllib.parse import unquote
+from urllib.parse import unquote, urlparse, parse_qs
 
 from playwright.async_api import Page
 
@@ -201,38 +201,110 @@ class YahooCheckoutMixin:
         await self.log("Yahoo 账号地址页重新打开 3 次后仍异常。", "WARNING")
         return False
 
+    def _is_checkout_after_address_url(self, url):
+        u = url or ""
+        if self._is_yahoo_account_address_url(u):
+            return False
+        return any(
+            p in u
+            for p in (
+                "contact.auctions.yahoo.co.jp",
+                "buy.auctions.yahoo.co.jp/order/",
+                "/buyer/payment",
+                "/order/review",
+            )
+        )
+
+    def _yahoo_account_back_locator(self, page: Page):
+        return page.locator(
+            "a:has-text('ご利用中のサービスに戻る'), "
+            "button:has-text('ご利用中のサービスに戻る'), "
+            "a:has-text('サービスに戻る'), "
+            "button:has-text('サービスに戻る'), "
+            "a:has-text('オークションに戻る'), "
+            "a[href*='contact.auctions.yahoo.co.jp']"
+        )
+
+    def _done_url_from_account_address(self, page: Page):
+        u = page.url or ""
+        try:
+            query = parse_qs(urlparse(u).query)
+            raw = (query.get(".done") or query.get("done") or [""])[0]
+            if raw:
+                return unquote(raw)
+        except Exception:
+            pass
+        try:
+            m = re.search(r"[?&]\.done=([^&]+)", u)
+            if m:
+                return unquote(m.group(1))
+        except Exception:
+            pass
+        return ""
+
+    async def _click_visible_account_back(self, page: Page):
+        back = self._yahoo_account_back_locator(page)
+        try:
+            n = await back.count()
+        except Exception:
+            n = 0
+        for i in range(n):
+            loc = back.nth(i)
+            try:
+                if not await loc.is_visible():
+                    continue
+                await loc.click(timeout=4000)
+                return True
+            except Exception:
+                try:
+                    await loc.click(force=True, timeout=3000)
+                    return True
+                except Exception:
+                    continue
+        return False
+
     async def _return_from_yahoo_account_address(self, page: Page):
+        """点「登録する」后 Yahoo 常自己跳回结算；「戻る」链接可能在 DOM 里但点不到。"""
+        if self._is_checkout_after_address_url(page.url):
+            return True
         if not self._is_yahoo_account_address_url(page.url):
             return True
-        back = page.locator("a:has-text('ご利用中のサービスに戻る')")
-        if await back.count():
-            await self.log("从账号地址页返回结算页。")
-            try:
-                await back.first.click()
-            except Exception:
-                await back.first.click(force=True)
+        await self.log("从账号地址页返回结算页...")
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + 20
+        used_done = False
+        while loop.time() < deadline:
+            if self._is_checkout_after_address_url(page.url):
+                await self.log(f"已回到结算页: {page.url}")
+                return True
+            clicked = await self._click_visible_account_back(page)
+            if not clicked and not used_done:
+                done = self._done_url_from_account_address(page)
+                if done and (
+                    "contact.auctions.yahoo.co.jp" in done or "buy.auctions.yahoo.co.jp" in done
+                ):
+                    used_done = True
+                    await self.log(f"未点到返回链接，改打开 .done 结算地址...")
+                    try:
+                        await page.goto(done, wait_until="commit", timeout=15000)
+                    except Exception as e:
+                        await self.log(f"打开 .done 超时: {e}", "WARNING")
             try:
                 await page.wait_for_url(
-                    re.compile(r".*contact\.auctions\.yahoo\.co\.jp.*"),
-                    timeout=20000,
+                    re.compile(
+                        r".*(contact\.auctions\.yahoo\.co\.jp|"
+                        r"buy\.auctions\.yahoo\.co\.jp/order/).*"
+                    ),
+                    timeout=2500,
                 )
-                return True
             except Exception:
                 pass
-        done = ""
-        try:
-            m = re.search(r"[?&]\.done=([^&]+)", page.url or "")
-            if m:
-                done = unquote(m.group(1))
-        except Exception:
-            done = ""
-        if done and "contact.auctions.yahoo.co.jp" in done:
-            try:
-                await page.goto(done, wait_until="domcontentloaded", timeout=20000)
-                return True
-            except Exception:
-                pass
-        return not self._is_yahoo_account_address_url(page.url)
+            await asyncio.sleep(0.4)
+        if self._is_checkout_after_address_url(page.url):
+            await self.log(f"已回到结算页: {page.url}")
+            return True
+        await self.log(f"账号地址页返回结算未完成，当前: {page.url}", "WARNING")
+        return False
 
     async def _fill_yahoo_account_address_and_return(self, page: Page, suffix):
         """账号地址页只改自宅 building/room（#home_address2），点登録する后回到结算。"""
@@ -263,14 +335,26 @@ class YahooCheckoutMixin:
         if await save.count():
             await save.first.wait_for(state="visible", timeout=5000)
             await save.first.click()
+            await self.log("账号地址已点「登録する」，等待跳回结算...")
             try:
                 await page.wait_for_url(
-                    re.compile(r".*contact\.auctions\.yahoo\.co\.jp.*"),
-                    timeout=20000,
+                    re.compile(
+                        r".*(contact\.auctions\.yahoo\.co\.jp|"
+                        r"buy\.auctions\.yahoo\.co\.jp/order/).*"
+                    ),
+                    timeout=12000,
                 )
             except Exception:
                 pass
-        await self._return_from_yahoo_account_address(page)
+        if self._is_checkout_after_address_url(page.url):
+            await self.log(f"登録后已在结算页: {page.url}")
+            return True
+        try:
+            await self._return_from_yahoo_account_address(page)
+        except Exception as e:
+            await self.log(f"返回结算链接点击异常（若已在结算页则继续）: {e}", "WARNING")
+        if self._is_checkout_after_address_url(page.url):
+            return True
         if not self._is_yahoo_account_address_url(page.url):
             return True
         after = await self._visible_ship_address_text(page)
@@ -502,6 +586,21 @@ class YahooCheckoutMixin:
                     "WARNING",
                 )
         except Exception as e:
+            url_now = yahoo_page.url or ""
+            if self._is_checkout_after_address_url(url_now):
+                await self.log(
+                    f"地址步骤异常，但当前已是结算页，继续下单。异常: {e}",
+                    "WARNING",
+                )
+                return None
+            if self._is_yahoo_account_address_url(url_now):
+                try:
+                    await self._return_from_yahoo_account_address(yahoo_page)
+                except Exception:
+                    pass
+                if self._is_checkout_after_address_url(yahoo_page.url):
+                    await self.log("地址页返回结算成功，继续下单。", "WARNING")
+                    return None
             await self.log(f"个人地址修改失败或异常: {e}", "ERROR")
             self.add_risk_history_entry(order_info.get("order_id"), "人工处理: 个人地址块异常宕机")
             return {"status": "ADDRESS_FAIL"}
