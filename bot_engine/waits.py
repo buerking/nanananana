@@ -50,6 +50,19 @@ def is_purchase_complete_url(url):
 
 
 class WaitMixin:
+    async def has_visible(self, locator, limit=8):
+        try:
+            n = await locator.count()
+        except Exception:
+            return False
+        for i in range(min(n, limit)):
+            try:
+                if await locator.nth(i).is_visible():
+                    return True
+            except Exception:
+                continue
+        return False
+
     async def click_visible(self, locator, timeout_ms=WAIT_CLICK_MS, force=False):
         try:
             n = await locator.count()

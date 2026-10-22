@@ -1137,27 +1137,41 @@ class YahooPurchaseMixin:
         await self.extract_seller_messages(ctx.yahoo_page, ctx.order_id, is_store=ctx.is_store)
         return None
 
+    def _store_second_confirm_locator(self, yahoo_page):
+        """店铺 #fconfirm 里真正可点的「購入を確定する」。外壳 #fconfirm 常驻 DOM，不能用它判断可见。"""
+        return yahoo_page.locator(
+            "#fconfirm a:has-text('購入を確定する'), "
+            "#fconfirm button:has-text('購入を確定する'), "
+            "aside:has-text('購入を確定しますか？') a:has-text('購入を確定する'), "
+            "aside:has-text('購入を確定しますか？') a:has-text('上記に同意のうえ')"
+        )
+
+    def _second_confirm_locator(self, yahoo_page):
+        return yahoo_page.locator(
+            "#fconfirm a:has-text('購入を確定する'), "
+            "#fconfirm button:has-text('購入を確定する'), "
+            "aside:has-text('購入を確定しますか？'), "
+            "a:has-text('上記に同意のうえ'), "
+            "button:has-text('上記に同意のうえ'), "
+            "h3:has-text('購入が完了しました')"
+        )
+
+    async def _has_visible_second_confirm(self, yahoo_page):
+        return await self.has_visible(self._second_confirm_locator(yahoo_page))
+
     async def _click_store_purchase_confirm(self, yahoo_page, test_mode):
-        """店铺二次确认 #fconfirm「購入を確定しますか？」→「購入を確定する」。"""
-        fconfirm = yahoo_page.locator("#fconfirm")
-        buy = fconfirm.locator("a:has-text('購入を確定する'), button:has-text('購入を確定する')")
+        """店铺点完「確認する」后的二次确认：「購入を確定しますか？」→「購入を確定する」。"""
+        buy = self._store_second_confirm_locator(yahoo_page)
         try:
-            if await fconfirm.count() == 0:
-                return False
-            try:
-                if not await fconfirm.first.is_visible():
-                    return False
-            except Exception:
-                return False
-            if await buy.count() == 0:
-                buy = yahoo_page.locator("#fconfirm >> text=購入を確定する")
-            if await buy.count() == 0:
+            if not await self.has_visible(buy):
                 return False
             await self.log("发现店铺二次确认弹窗「購入を確定しますか？」")
             if test_mode:
                 await self.log("[TestMode] 二次确认弹窗已出现，不点「購入を確定する」。")
                 return True
-            await self.click_visible(buy, force=True)
+            if not await self.click_visible(buy, force=True):
+                await self.log("店铺二次确认按钮可见但点击失败。", "WARNING")
+                return False
             return True
         except Exception as e:
             await self.log(f"店铺二次确认点击失败: {e}", "DEBUG")
@@ -1170,11 +1184,7 @@ class YahooPurchaseMixin:
             "a:has-text('上記に同意のうえ'), button:has-text('上記に同意のうえ')"
         )
         on_confirm = "/buyer/payment/confirm" in url
-        visible = False
-        try:
-            visible = await agree.count() > 0 and await agree.first.is_visible()
-        except Exception:
-            visible = False
+        visible = await self.has_visible(agree)
         if not on_confirm and not visible:
             return False
         if not visible:
@@ -1190,6 +1200,37 @@ class YahooPurchaseMixin:
             if not await self.click_visible(buy):
                 await buy.first.click(timeout=WAIT_CLICK_MS)
         return True
+
+    async def _await_and_click_second_confirm(self, yahoo_page, test_mode, ctx=None):
+        """点完「確認する」后：关掉再登录提示，检测二次确认并点击。"""
+        if hasattr(self, "_dismiss_reauth_note"):
+            await self._dismiss_reauth_note(yahoo_page)
+
+        async def ready():
+            url = yahoo_page.url or ""
+            if self._is_purchase_complete_url(url):
+                return True
+            _host, path = yahoo_host_path(url)
+            if "/buyer/payment/confirm" in path or "/buyer/payment/complete" in path:
+                return True
+            if "/order/thank-you" in path:
+                return True
+            return await self._has_visible_second_confirm(yahoo_page)
+
+        await self.log("点完確認する，检测二次确认弹窗...")
+        await self.wait_until(ready, timeout_ms=WAIT_HANG_MS)
+        if test_mode or self._is_purchase_complete_url(yahoo_page.url or ""):
+            return False
+        clicked = await self._click_store_purchase_confirm(yahoo_page, test_mode)
+        if not clicked:
+            clicked = await self._click_personal_final_confirm(yahoo_page, test_mode)
+        if clicked:
+            await self.log("已点击二次确认「購入を確定する」。")
+            if ctx is not None:
+                ctx.trade_info_submitted = True
+        else:
+            await self.log("未见二次确认弹窗，继续等購入完了。")
+        return clicked
 
     async def _wait_purchase_complete(self, page, timeout_ms=WAIT_HANG_MS):
         """点最终确定后等完成页。匹配到立刻返回，上限 5 分钟。"""
@@ -1587,38 +1628,19 @@ class YahooPurchaseMixin:
                         await self.log("[TestMode] 模拟点击 (不提交)...")
                         break
                     await self.log("正在点击 (REAL BUY)...")
-                    await self.click_visible(btn)
-                    await self._fill_cvv(yahoo_page, self.DEFAULT_CVV)
-
-                    async def after_confirm():
-                        url = yahoo_page.url or ""
-                        if any(
-                            p in url
-                            for p in (
-                                "/buyer/payment/confirm",
-                                "/buyer/payment/complete",
-                                "/order/thank-you",
-                                "/order/status",
-                            )
-                        ):
-                            return True
-                        loc = yahoo_page.locator(
-                            "#fconfirm, a:has-text('上記に同意のうえ'), "
-                            "h3:has-text('購入が完了しました')"
+                    clicked_pay = await self.click_visible(btn)
+                    if not clicked_pay:
+                        continue
+                    try:
+                        await self._fill_cvv(yahoo_page, self.DEFAULT_CVV)
+                        await self._await_and_click_second_confirm(
+                            yahoo_page, test_mode, ctx
                         )
-                        try:
-                            return await loc.count() > 0 and await loc.first.is_visible()
-                        except Exception:
-                            return False
-
-                    await self.wait_until(after_confirm, timeout_ms=WAIT_HANG_MS)
-                    if await self._click_personal_final_confirm(yahoo_page, test_mode):
-                        ctx.trade_info_submitted = True
-                    elif await self._click_store_purchase_confirm(yahoo_page, test_mode):
-                        ctx.trade_info_submitted = True
-                    if not test_mode:
-                        await self._wait_purchase_complete(yahoo_page)
-                    self._remember_yahoo_trade_ids(ctx)
+                        if not test_mode:
+                            await self._wait_purchase_complete(yahoo_page)
+                        self._remember_yahoo_trade_ids(ctx)
+                    except Exception as e:
+                        await self.log(f"二次确认或等待完成失败: {e}")
                     break
             except Exception:
                 continue
@@ -1658,11 +1680,14 @@ class YahooPurchaseMixin:
         yahoo_page = ctx.yahoo_page
         if self._is_yahoo_login_or_reauth_url(yahoo_page.url):
             await self.wait_out_yahoo_login_or_reauth(yahoo_page, "购买收尾")
-        if not ctx.test_mode and "/buyer/payment/confirm" in yahoo_host_path(yahoo_page.url or "")[1]:
-            await self.log("仍在购买确认页，补点「上記に同意のうえ 購入を確定する」...")
-            clicked = await self._click_personal_final_confirm(yahoo_page, False)
+        path = yahoo_host_path(yahoo_page.url or "")[1]
+        if not ctx.test_mode and (
+            "/buyer/payment/confirm" in path or "/order/review" in path
+        ):
+            await self.log("仍在购买确认页，检测二次确认...")
+            clicked = await self._click_store_purchase_confirm(yahoo_page, False)
             if not clicked:
-                clicked = await self._click_store_purchase_confirm(yahoo_page, False)
+                clicked = await self._click_personal_final_confirm(yahoo_page, False)
             if clicked:
                 ctx.trade_info_submitted = True
             await self._wait_purchase_complete(yahoo_page)
