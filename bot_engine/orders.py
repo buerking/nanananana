@@ -4,7 +4,7 @@ import re
 
 from playwright.async_api import Page
 
-from .constants import QBT_BROWSER_ACCOUNT, YAHOO_AUCTION_URL
+from .constants import QBT_BROWSER_ACCOUNT, WAIT_CLICK_MS, YAHOO_AUCTION_URL
 from .flow import OrderContext, run_chain
 from .qbt import parse_storage_code
 
@@ -196,6 +196,9 @@ class OrderMixin:
                 pass
         try:
             if ctx.backend_page and not ctx.backend_page.is_closed():
-                await ctx.backend_page.goto(self.BACKEND_URL, wait_until="domcontentloaded")
-        except Exception:
-            pass
+                await self.log("回填后回到未购买列表...")
+                await ctx.backend_page.goto(
+                    self.BACKEND_URL, wait_until="commit", timeout=WAIT_CLICK_MS * 2
+                )
+        except Exception as e:
+            await self.log(f"回到未购买列表未完成（下一轮扫描会再打开）: {e}", "WARNING")

@@ -24,6 +24,11 @@ ACCOUNT_EMAILS = {
     "ad": ["adxez09955@yahoo.co.jp", "dxez09955@yahoo.co.jp"],
     "ym": ["ymzjw19369@yahoo.co.jp", "ymzwj19369@yahoo.co.jp"],
 }
+# 独立 Chrome 的 CDP 端口。重启 main 时只断开 Playwright，不关浏览器。
+CHROME_CDP_PORTS = {
+    "ad": 9222,
+    "ym": 9223,
+}
 QBT_BROWSER_ACCOUNT = "ad"
 # 可用环境变量 FEISHU_WEBHOOK 覆盖。当前仓库原先没有任何飞书调用。
 FEISHU_WEBHOOK = (

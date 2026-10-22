@@ -53,6 +53,7 @@ class YahooAutoBot(
         self.browser_context = None
         self.page = None
         self.yahoo_contexts = {}
+        self.yahoo_browsers = {}
         self.qbt_account = QBT_BROWSER_ACCOUNT
         if getattr(sys, "frozen", False):
             self.BASE_DIR = os.path.dirname(sys.executable)

@@ -1444,10 +1444,36 @@ class YahooPurchaseMixin:
             await self.log("未见二次确认弹窗，继续等購入完了。")
         return clicked
 
+    async def _wait_shipping_submit_settled(self, page, ctx):
+        """待运费没有購入完了页：確定する之后决定按钮消失或出现送料連絡待ち即可。"""
+        if not ctx or not getattr(ctx, "is_wait_for_shipping", False):
+            return False
+        try:
+            loc = page.locator("text=送料連絡待ち")
+            if await loc.count() and await loc.first.is_visible():
+                return True
+        except Exception:
+            pass
+        if not getattr(ctx, "trade_info_submitted", False):
+            return False
+        try:
+            decide = page.locator("#mBoxConfBt")
+            if await decide.count() == 0 or not await decide.first.is_visible():
+                return True
+        except Exception:
+            return True
+        return False
+
     async def _wait_purchase_complete(self, page, timeout_ms=WAIT_HANG_MS, ctx=None):
         """点最终确定后等完成页。匹配到立刻返回，上限 5 分钟。3DS 出现时飞书通知并继续等。"""
         notified_3ds = False
         syserr_reloads = 0
+        wait_shipping = bool(
+            ctx and getattr(ctx, "is_wait_for_shipping", False)
+            and getattr(ctx, "trade_info_submitted", False)
+        )
+        if wait_shipping:
+            timeout_ms = min(int(timeout_ms or WAIT_HANG_MS), WAIT_CLICK_MS * 2)
 
         async def arrived():
             nonlocal notified_3ds, syserr_reloads
@@ -1455,6 +1481,8 @@ class YahooPurchaseMixin:
                 syserr_reloads += 1
                 await self._reload_if_yahoo_system_error(page, max_tries=1)
                 return False
+            if await self._wait_shipping_submit_settled(page, ctx):
+                return True
             if await self._cvv_required_on_page(page):
                 return True
             if await self._3ds_visible_on_page(page):
@@ -1481,7 +1509,10 @@ class YahooPurchaseMixin:
                 pass
             return False
 
-        await self.log("等待购买完成页（最长 5 分钟）...")
+        if wait_shipping:
+            await self.log("待运费单已提交取引情報，确认页面收妥（不等購入完了页）...")
+        else:
+            await self.log("等待购买完成页（最长 5 分钟）...")
         return await self.wait_until(arrived, timeout_ms=timeout_ms)
 
     def _remember_yahoo_trade_ids(self, ctx, url=None):
@@ -1826,7 +1857,7 @@ class YahooPurchaseMixin:
             try:
                 await self.wait_visible(
                     yahoo_page.locator("#confSubmitBtn, #mBoxConf"),
-                    timeout_ms=WAIT_HANG_MS,
+                    timeout_ms=WAIT_CLICK_MS * 2,
                 )
                 confirm = yahoo_page.locator("#confSubmitBtn")
                 if await confirm.count() == 0:
@@ -1839,11 +1870,13 @@ class YahooPurchaseMixin:
                     await self.click_visible(confirm, force=True)
                     ctx.trade_info_submitted = True
                     try:
-                        await confirm.first.wait_for(state="hidden", timeout=WAIT_HANG_MS)
+                        await confirm.first.wait_for(state="hidden", timeout=WAIT_CLICK_MS * 2)
                     except Exception:
                         pass
                     try:
-                        await yahoo_page.wait_for_load_state("domcontentloaded", timeout=WAIT_HANG_MS)
+                        await yahoo_page.wait_for_load_state(
+                            "domcontentloaded", timeout=WAIT_CLICK_MS * 2
+                        )
                     except Exception:
                         pass
             except Exception as e:
@@ -1955,7 +1988,10 @@ class YahooPurchaseMixin:
             if skipped:
                 return skipped
         elif not ctx.test_mode:
-            await self._wait_purchase_complete(yahoo_page, timeout_ms=WAIT_HANG_MS, ctx=ctx)
+            wait_ms = WAIT_CLICK_MS * 2 if (
+                ctx.is_wait_for_shipping and getattr(ctx, "trade_info_submitted", False)
+            ) else WAIT_HANG_MS
+            await self._wait_purchase_complete(yahoo_page, timeout_ms=wait_ms, ctx=ctx)
             skipped = await self.gate_need_3ds_timeout(ctx)
             if skipped:
                 return skipped

@@ -3,7 +3,7 @@ from urllib.parse import unquote
 
 from playwright.async_api import Page
 
-from .constants import QBT_BROWSER_ACCOUNT, RISK_STATUS_SEARCH_URL
+from .constants import QBT_BROWSER_ACCOUNT, RISK_STATUS_SEARCH_URL, WAIT_CLICK_MS
 
 _CF_EMAIL_RE = re.compile(r"[\w.+-]+@yahoo\.co\.jp", re.I)
 _STORAGE_FROM_ZY_RE = re.compile(r"ZY\d+\s*/\s*([A-Za-z0-9]{5,6})", re.I)
@@ -96,7 +96,9 @@ class QbtMixin:
             page = await self.browser_context.new_page()
         if not self._is_qbt_not_buy_list_url(page.url):
             await self.log("后台不在未购买列表，直接打开拉单页。")
-            await page.goto(self.BACKEND_URL, wait_until="domcontentloaded")
+            await page.goto(
+                self.BACKEND_URL, wait_until="commit", timeout=WAIT_CLICK_MS * 2
+            )
         await page.bring_to_front()
         return page
 

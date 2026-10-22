@@ -232,7 +232,7 @@ YAHOO_CHECKPOINTS = {
     },
     "wait_shipping_address": {
         "page_name": "待运费只改地址",
-        "path": "点取引后进入 /buyer/edit「取引情報を入力してください」→ 改 address2 → #mBoxConfBt 決定する → #confSubmitBtn 確定する；卖家之后才报运费。已提交后的等待页是「送料連絡待ち」",
+        "path": "点取引后进入 /buyer/edit「取引情報を入力してください」→ 若 address2 折叠则先点「編集する」再改室号 → #mBoxConfBt 決定する → #confSubmitBtn 確定する；卖家之后才报运费。已提交后的等待页是「送料連絡待ち」",
         "looking_for": "待运费页的地址输入框",
         "selectors": [
             "form[name='tradeForm']",
