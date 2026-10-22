@@ -31,6 +31,7 @@ class OrderContext:
     trade_info_submitted: bool = False
     early_cod: bool = False
     shipping_cost: int = 0
+    shipping_known: bool = False
     yahoo_total: int = 0
     yahoo_oid: str = ""
     body_text: str = ""

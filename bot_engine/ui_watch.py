@@ -178,7 +178,7 @@ YAHOO_CHECKPOINTS = {
     },
     "pay_confirm_button": {
         "page_name": "最终确认",
-        "path": "结算页填完地址/配送/支付 → 点確認する/確認し購入を進める → 店铺弹 #fconfirm「購入を確定する」；旧版个人待运费是 #mBoxConfBt 再弹 #confSubmitBtn",
+        "path": "结算页填完地址/配送/支付 → 点確認する。若跳到 login.yahoo.co.jp / wallet 二次验证，等人登完再回 contact.auctions，不要把登录页当改版。",
         "looking_for": "最终确认/决定按钮",
         "selectors": [
             "#mBoxConfBt",

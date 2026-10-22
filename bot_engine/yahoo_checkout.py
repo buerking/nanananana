@@ -202,18 +202,9 @@ class YahooCheckoutMixin:
         return False
 
     def _is_checkout_after_address_url(self, url):
-        u = url or ""
-        if self._is_yahoo_account_address_url(u):
+        if self._is_yahoo_account_address_url(url):
             return False
-        return any(
-            p in u
-            for p in (
-                "contact.auctions.yahoo.co.jp",
-                "buy.auctions.yahoo.co.jp/order/",
-                "/buyer/payment",
-                "/order/review",
-            )
-        )
+        return self._is_auction_checkout_host_url(url)
 
     def _yahoo_account_back_locator(self, page: Page):
         return page.locator(
@@ -274,6 +265,8 @@ class YahooCheckoutMixin:
         deadline = loop.time() + WAIT_HANG_MS / 1000.0
         used_done = False
         while loop.time() < deadline:
+            if self._is_yahoo_login_or_reauth_url(page.url):
+                return await self.wait_out_yahoo_login_or_reauth(page, "从地址页返回时")
             if self._is_checkout_after_address_url(page.url):
                 await self.log(f"已回到结算页: {page.url}")
                 return True
@@ -670,6 +663,7 @@ class YahooCheckoutMixin:
                     price_m = re.search(r"([\d,]+)円", shown_text)
                     if price_m:
                         ctx.shipping_cost = int(price_m.group(1).replace(",", ""))
+                        ctx.shipping_known = True
                 else:
                     await self.report_missing_yahoo_ui(
                         yahoo_page, "shipping_radios", ctx,
@@ -681,9 +675,13 @@ class YahooCheckoutMixin:
                     "el => { el.checked = true; el.click(); "
                     "el.dispatchEvent(new Event('change', {bubbles: true})); }"
                 )
-                ctx.shipping_cost = int(best["price"] or 0)
+                new_fee = int(best["price"] or 0)
+                if new_fee or not getattr(ctx, "shipping_known", False):
+                    ctx.shipping_cost = new_fee
+                    if new_fee:
+                        ctx.shipping_known = True
                 await self.log(f"店铺：选择最佳配送: {best['text']} ({best['price']}円)")
-            if not int(getattr(ctx, "shipping_cost", 0) or 0):
+            if not getattr(ctx, "shipping_known", False):
                 await self._capture_displayed_amounts(ctx)
         except Exception as e:
             await self.log(f"店铺配送选择异常: {e}", "DEBUG")
@@ -710,12 +708,15 @@ class YahooCheckoutMixin:
                 text = await page.locator("main").inner_text()
             except Exception:
                 text = ""
-        if not int(getattr(ctx, "shipping_cost", 0) or 0):
-            ship_m = re.search(r"送料[：:]\s*([\d,]+)\s*円", text)
+        if not getattr(ctx, "shipping_known", False):
+            ship_m = re.search(r"全国一律[^\d]{0,16}([\d,]+)\s*円", text)
+            if not ship_m:
+                ship_m = re.search(r"送料[：:]\s*([\d,]+)\s*円", text)
             if not ship_m:
                 ship_m = re.search(r"([\d,]+)\s*円（税込）", text)
             if ship_m:
                 ctx.shipping_cost = int(ship_m.group(1).replace(",", ""))
+                ctx.shipping_known = True
                 await self.log(f"结算页展示运费: {ctx.shipping_cost}円")
         if not int(getattr(ctx, "yahoo_total", 0) or 0):
             total_m = re.search(r"お支払い金額[^\d]*([\d,]+)\s*円", text)
