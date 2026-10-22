@@ -7,6 +7,7 @@ import re
 from .flow import deny
 from .qbt import parse_storage_code
 from .ticket import create_work_order
+from .waits import is_yahoo_login_or_reauth_url
 
 
 class GatesMixin:
@@ -58,8 +59,14 @@ class GatesMixin:
             return None
 
     async def gate_yahoo_login(self, ctx):
-        if "login.yahoo.co.jp" not in (ctx.yahoo_page.url or ""):
+        page = ctx.yahoo_page
+        url = page.url if page else ""
+        if not is_yahoo_login_or_reauth_url(url):
             return None
+        if hasattr(self, "_try_skip_ghost_yahoo_login"):
+            skipped = await self._try_skip_ghost_yahoo_login(page)
+            if skipped or not is_yahoo_login_or_reauth_url(page.url or ""):
+                return None
         await self.log("严重错误：雅虎未登录！停止运行。", "ERROR")
         await self.trigger_sound("error")
         self.is_running = False

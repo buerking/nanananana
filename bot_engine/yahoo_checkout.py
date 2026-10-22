@@ -1,11 +1,11 @@
 """结算 Pipeline 步骤：地址、配送、投放、信用卡、CVV、待运费地址。"""
 import asyncio
 import re
-from urllib.parse import unquote, urlparse, parse_qs
 
 from playwright.async_api import Page
 
 from .constants import WAIT_CLICK_MS, WAIT_HANG_MS
+from .waits import yahoo_done_url_from
 
 
 class YahooCheckoutMixin:
@@ -217,21 +217,7 @@ class YahooCheckoutMixin:
         )
 
     def _done_url_from_account_address(self, page: Page):
-        u = page.url or ""
-        try:
-            query = parse_qs(urlparse(u).query)
-            raw = (query.get(".done") or query.get("done") or [""])[0]
-            if raw:
-                return unquote(raw)
-        except Exception:
-            pass
-        try:
-            m = re.search(r"[?&]\.done=([^&]+)", u)
-            if m:
-                return unquote(m.group(1))
-        except Exception:
-            pass
-        return ""
+        return yahoo_done_url_from(page.url or "")
 
     async def _click_visible_account_back(self, page: Page):
         back = self._yahoo_account_back_locator(page)

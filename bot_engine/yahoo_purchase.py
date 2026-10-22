@@ -288,6 +288,10 @@ class YahooPurchaseMixin:
         return None
 
     async def _wait_for_checkout_page(self, page, timeout_ms=WAIT_HANG_MS):
+        if self._is_yahoo_login_or_reauth_url(page.url):
+            ok = await self.wait_out_yahoo_login_or_reauth(page, "进入购买手续")
+            if not ok and self._is_yahoo_login_or_reauth_url(page.url):
+                return False
         if await self.wait_url(page, CHECKOUT_URL_RE, timeout_ms=timeout_ms):
             return True
         if self._checkout_like_url(page.url):
@@ -379,6 +383,8 @@ class YahooPurchaseMixin:
 
     def _checkout_like_url(self, url):
         """真正能改地址/付款的页。/order/status 只是店铺取引ナビ，不算结算。"""
+        if self._is_yahoo_login_or_reauth_url(url):
+            return False
         u = url or ""
         return any(
             p in u
