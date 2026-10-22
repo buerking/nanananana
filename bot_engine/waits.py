@@ -80,21 +80,38 @@ def is_auction_checkout_host_url(url):
 
 
 def yahoo_done_url_from(url):
-    """取出 .done= / done= 回跳地址。login 与账号地址页都有；值本身可能已解码一次。"""
+    """取出 .done= / done= 回跳地址。parse_qs 已解码一层，不要再 unquote，以免嵌套 .done 的 & 被拆开。"""
     try:
-        query = parse_qs(urlparse(url or "").query)
+        query = parse_qs(urlparse(url or "").query, keep_blank_values=True)
         raw = (query.get(".done") or query.get("done") or [""])[0]
         if raw:
-            return unquote(raw)
+            return raw
     except Exception:
         pass
     try:
-        m = re.search(r"[?&]\.?done=([^&]+)", url or "")
+        m = re.search(r"[?&]\.?done=([^&]+)", url or "", re.I)
         if m:
             return unquote(m.group(1))
     except Exception:
         pass
     return ""
+
+
+def yahoo_checkout_done_url_from(url):
+    """login → wallet_sub_add → 结算，层层解开 .done=，直到拍卖结算地址。"""
+    current = url or ""
+    seen = set()
+    for _ in range(6):
+        if not current or current in seen:
+            break
+        seen.add(current)
+        if is_safe_yahoo_done_url(current):
+            return current
+        nxt = yahoo_done_url_from(current)
+        if not nxt or nxt == current:
+            break
+        current = nxt
+    return current if is_safe_yahoo_done_url(current) else ""
 
 
 def is_safe_yahoo_done_url(done):
@@ -138,10 +155,7 @@ class WaitMixin:
     async def _yahoo_system_error_visible(self, page):
         if page is None:
             return False
-        loc = page.locator(
-            "text=システムでエラーが発生しました, "
-            "text=お手数ですが再度お試しください"
-        )
+        loc = page.locator("text=システムでエラーが発生しました")
         try:
             if await self.has_visible(loc):
                 return True
@@ -151,7 +165,20 @@ class WaitMixin:
             body = await page.locator("body").inner_text()
         except Exception:
             return False
-        return YAHOO_SYSTEM_ERROR_TEXT in (body or "")
+        text = body or ""
+        return YAHOO_SYSTEM_ERROR_TEXT in text
+
+    async def _wait_visible_reload_syserr(self, page, locator, timeout_ms=WAIT_HANG_MS):
+        """等目标出现；若是系统错误页则刷新后再等。"""
+
+        async def ready():
+            await self._reload_if_yahoo_system_error(page)
+            try:
+                return await locator.first.is_visible()
+            except Exception:
+                return False
+
+        return await self.wait_until(ready, timeout_ms=timeout_ms)
 
     async def _reload_if_yahoo_system_error(self, page, max_tries=3):
         """系统错误页刷新即可跳过，不要当失败停住。"""
@@ -340,20 +367,34 @@ class WaitMixin:
         await self.log(f"已绕过抽风页: {page.url}")
         return True
 
-    async def _try_skip_wallet_sub_add(self, page):
-        """edit.wallet.../wallet_sub_add：urldecode .done= 后直接访问，不填卡、不等二次验证。"""
+    async def _try_skip_nested_done_to_checkout(self, page):
+        """login.yahoo 的 .done 常套一层 wallet_sub_add，再套结算地址。直接打开最内层结算 URL。"""
         url = page.url if page else ""
+        if not is_yahoo_login_or_reauth_url(url) and not is_yahoo_wallet_sub_add_url(url):
+            return False
+        done = yahoo_checkout_done_url_from(url)
+        if not done:
+            return False
+        return await self._goto_yahoo_done_url(page, done, "登录/钱包页嵌套 .done，")
+
+    async def _try_skip_wallet_sub_add(self, page):
+        """edit.wallet.../wallet_sub_add：解开 .done= 后直接访问，不填卡、不等二次验证。"""
+        url = page.url if page else ""
+        if await self._try_skip_nested_done_to_checkout(page):
+            return True
         if not is_yahoo_wallet_sub_add_url(url):
             return False
-        done = yahoo_done_url_from(url)
+        done = yahoo_checkout_done_url_from(url) or yahoo_done_url_from(url)
         if not is_safe_yahoo_done_url(done):
-            await self.log(f"钱包 wallet_sub_add 无可用 .done: {url}", "WARNING")
+            await self.log("钱包 wallet_sub_add 无可用结算 .done。", "WARNING")
             return False
         return await self._goto_yahoo_done_url(page, done, "钱包 wallet_sub_add，")
 
     async def _try_skip_ghost_yahoo_login(self, page):
         """会话还在却画出登录表单：取出 .done= 直接打开回跳地址，不填账号、不点次へ。"""
         url = page.url if page else ""
+        if await self._try_skip_nested_done_to_checkout(page):
+            return True
         if await self._try_skip_wallet_sub_add(page):
             return True
         if not is_yahoo_login_or_reauth_url(url):
@@ -366,7 +407,7 @@ class WaitMixin:
             or await self._yahoo_login_account_visible(page)
         ):
             return False
-        done = yahoo_done_url_from(url)
+        done = yahoo_checkout_done_url_from(url) or yahoo_done_url_from(url)
         if not is_safe_yahoo_done_url(done):
             return False
         already = ""
@@ -382,20 +423,34 @@ class WaitMixin:
         )
 
     async def wait_out_yahoo_login_or_reauth(self, page, why=""):
-        """钱包/登录二次验证：wallet_sub_add 与登录抽风先走 .done；其它钱包验证仍等人登完。"""
+        """钱包/登录二次验证：嵌套 .done 与登录抽风先回跳；不行再等人登完并飞书。"""
         if not is_yahoo_login_or_reauth_url(page.url if page else ""):
+            return True
+        if await self._try_skip_nested_done_to_checkout(page):
             return True
         if await self._try_skip_wallet_sub_add(page):
             return True
         if await self._try_skip_ghost_yahoo_login(page):
             return True
         hint = f"（{why}）" if why else ""
+        host, path = yahoo_host_path(page.url if page else "")
         await self.log(
-            f"检测到 Yahoo 登录/钱包验证页{hint}，请在该窗口完成登录。最长等 5 分钟。 当前: {page.url}",
+            f"检测到 Yahoo 登录/钱包验证页{hint}，请在该窗口完成登录。最长等 5 分钟。 当前: {host}{path}",
             "WARNING",
         )
         try:
             await self.trigger_sound("attention")
+        except Exception:
+            pass
+        try:
+            aid = ""
+            done = yahoo_checkout_done_url_from(page.url or "")
+            q = parse_qs(urlparse(done or "").query)
+            aid = (q.get("aid") or q.get("auctionId") or [""])[0]
+            self.notify_feishu(
+                f"雅虎登录/钱包验证需要人工完成{hint}。商品 {aid or '-'}。"
+                "请在当前窗口登录后继续。"
+            )
         except Exception:
             pass
 

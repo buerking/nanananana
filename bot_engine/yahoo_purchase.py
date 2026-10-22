@@ -345,16 +345,21 @@ class YahooPurchaseMixin:
         return None
 
     async def _wait_for_checkout_page(self, page, timeout_ms=WAIT_HANG_MS):
-        await self._reload_if_yahoo_system_error(page)
         if self._is_yahoo_login_or_reauth_url(page.url):
             ok = await self.wait_out_yahoo_login_or_reauth(page, "进入购买手续")
             if not ok and self._is_yahoo_login_or_reauth_url(page.url):
                 return False
-        if await self.wait_url(page, CHECKOUT_URL_RE, timeout_ms=timeout_ms):
-            return True
-        if self._checkout_like_url(page.url):
-            return True
-        return await self.wait_visible(page.locator(CHECKOUT_FORM_SEL), timeout_ms=timeout_ms)
+
+        async def ready():
+            await self._reload_if_yahoo_system_error(page)
+            if self._checkout_like_url(page.url):
+                return True
+            try:
+                return await page.locator(CHECKOUT_FORM_SEL).first.is_visible()
+            except Exception:
+                return False
+
+        return await self.wait_until(ready, timeout_ms=timeout_ms)
 
     async def _page_load_unfinished(self, page, probe_ms=3000):
         try:
@@ -642,8 +647,10 @@ class YahooPurchaseMixin:
             ctx.is_store = True
             ctx.is_personal = False
             try:
-                await yahoo_page.locator(STORE_STATUS_READY_SEL).first.wait_for(
-                    state="visible", timeout=WAIT_HANG_MS
+                await self._wait_visible_reload_syserr(
+                    yahoo_page,
+                    yahoo_page.locator(STORE_STATUS_READY_SEL),
+                    timeout_ms=WAIT_HANG_MS,
                 )
             except Exception:
                 pass
@@ -686,7 +693,8 @@ class YahooPurchaseMixin:
                 return False
             if "/order/review" in (yahoo_page.url or "") or "/order/change" in (yahoo_page.url or ""):
                 return True
-            await self.wait_visible(
+            await self._wait_visible_reload_syserr(
+                yahoo_page,
                 yahoo_page.locator(STORE_STATUS_READY_SEL),
                 timeout_ms=WAIT_HANG_MS,
             )
@@ -707,7 +715,8 @@ class YahooPurchaseMixin:
         except Exception as e:
             await self.log(f"店铺取引ナビ打开超时: {e}", "WARNING")
             return False
-        await self.wait_visible(
+        await self._wait_visible_reload_syserr(
+            yahoo_page,
             yahoo_page.locator(STORE_STATUS_READY_SEL),
             timeout_ms=WAIT_HANG_MS,
         )
@@ -1373,7 +1382,7 @@ class YahooPurchaseMixin:
 
     async def _watch_3ds_after_confirm(self, page, ctx=None, timeout_ms=15000):
         """点完确定后 3DS 同页弹出，立刻轮询 DOM，不要等 navigation。"""
-        await self.log("点完确定，检测同页 3DS 弹窗...")
+        await self.log("点完确定，检测是否出现 3DS 验证码（发卡行/邮件 OTP）...")
 
         async def present():
             return await self._3ds_visible_on_page(page)

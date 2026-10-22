@@ -210,42 +210,30 @@ class GatesMixin:
             return None
 
     async def _3ds_visible_on_page(self, page):
-        """3DS 是同页插入的 dialog+iframe，没有整页刷新。不要用 is_visible，dialog/iframe 经常判成不可见。"""
+        """真正要人输入验证码的 3DS（邮件 OTP / 发卡行 ACS）。
+
+        确认页常驻 #challengeAuthParentFrame /「クレジットカード認証」父框，
+        摩擦式 3DS 会一闪而过然后購入完了，不能据此发飞书。
+        """
         if page is None:
             return False
         try:
-            found = await page.evaluate(
-                """() => {
-                    const iframe = document.querySelector(
-                        '#challengeAuthParentFrame, iframe[src*="challengeAuth"]'
-                    );
-                    if (iframe) return true;
-                    const dlg = document.querySelector(
-                        '#modalArea dialog[open], dialog[open][aria-labelledby="CardAuthenticationModalLabel"]'
-                    );
-                    if (dlg && (dlg.innerText || '').indexOf('クレジットカード認証') >= 0) return true;
-                    return false;
-                }"""
-            )
-            if found:
-                return True
-        except Exception:
-            pass
-        try:
-            if await page.locator(
-                "#challengeAuthParentFrame, "
-                "iframe[src*='challengeAuth'], "
-                "#modalArea dialog[open], "
-                "dialog[open][aria-labelledby='CardAuthenticationModalLabel']"
-            ).count() > 0:
-                return True
-        except Exception:
-            pass
-        try:
             for fr in page.frames:
                 url = (fr.url or "").lower()
-                if "challengeauth" in url or "dnp-cdms" in url or "acs-" in url:
+                if "dnp-cdms" in url or "/gab0/" in url:
                     return True
+                try:
+                    n = await fr.locator(
+                        ".v-challengezone, "
+                        "input.v-inputcode, "
+                        "h1:has-text('eメールによる認証'), "
+                        "text=eメールによる認証, "
+                        "text=認証コード"
+                    ).count()
+                    if n:
+                        return True
+                except Exception:
+                    continue
         except Exception:
             pass
         return False
