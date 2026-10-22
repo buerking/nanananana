@@ -54,6 +54,30 @@ STORE_STATUS_READY_SEL = (
     "a:has-text('まとめて購入手続きする'), "
     "a:has-text('単品で購入手続きする')"
 )
+PERSONAL_PROCEDURE_SEL = (
+    "a[href*='buyer/payment/input'], "
+    "a:has-text('購入手続きをする'), "
+    "button:has-text('購入手続きをする')"
+)
+PERSONAL_BUNDLE_SEL = (
+    "main button:has-text('単品で取引する'), "
+    "main a:has-text('単品で取引する'), "
+    "button:has-text('単品で取引する'), "
+    "a:has-text('単品で取引する'), "
+    "a:has-text('まとめて取引をはじめる'), "
+    "button:has-text('まとめて取引をはじめる')"
+)
+TRADE_KIND_LABEL = {
+    "login": "登录页",
+    "id_mismatch": "账号不符",
+    "wait_shipping_form": "待运费地址页",
+    "checkout": "结算页",
+    "store_bundle": "店铺同捆选择",
+    "store_status": "店铺取引ナビ",
+    "personal_bundle": "个人同捆选择",
+    "personal_nav": "个人取引ナビ",
+    "unknown": "未识别页",
+}
 
 # 购买手续跳转：人手点很快；goto 等 domcontentloaded 会整页卡死。
 # 卡住时最多等 5 分钟，刷新后再判断是否已到下一页，否则再点，最多 3 次。
@@ -708,9 +732,6 @@ class YahooPurchaseMixin:
         yahoo_page = ctx.yahoo_page
         if self._checkout_like_url(yahoo_page.url):
             return None
-        adopted = await self._adopt_checkout_tab(ctx, timeout=1500)
-        if adopted:
-            return None
         page_btn = yahoo_page.locator("main button:has-text('単品で取引する'), main a:has-text('単品で取引する')")
         if await page_btn.count() == 0:
             page_btn = yahoo_page.locator("button:has-text('単品で取引する'), a:has-text('単品で取引する')")
@@ -772,118 +793,56 @@ class YahooPurchaseMixin:
             await self.log(f"单品确认后当前页: {ctx.yahoo_page.url}")
         return None
 
-    async def _continue_personal_checkout(self, ctx):
-        yahoo_page = ctx.yahoo_page
-        if await self._page_is_wait_shipping_address_form(yahoo_page):
-            return await self._mark_wait_shipping_form(
-                ctx, "已在待运费地址页：先提交取引情報，卖家再报运费。"
-            )
-        if self._checkout_like_url(yahoo_page.url):
-            await self.log(f"已在结算/地址页: {yahoo_page.url}")
+    async def _visible_action(self, page, selector):
+        """当前页已经看得见的按钮，不空等。跳过まとめて/単品で購入。"""
+        loc = page.locator(selector)
+        try:
+            n = await loc.count()
+        except Exception:
             return None
-        if await self._page_has_yahoo_id_mismatch(yahoo_page):
-            await self.log(
-                "個人取引ナビ拒绝访问（Yahoo ID 与入札时不一致，或店铺单误开了 /trade/top）。改走店铺 /order/status。",
-                "WARNING",
-            )
-            store_ok = await self._try_store_won_checkout(ctx)
-            if store_ok is True:
-                return None
-            if isinstance(store_ok, dict):
-                return store_ok
-            await self.report_missing_yahoo_ui(
-                yahoo_page, "trade_nav_id_mismatch", ctx,
-                extra="取引ナビにアクセスできません。入札账号与当前登录 Yahoo ID 不一致。",
-            )
-            return deny("YAHOO_ID_MISMATCH")
-        if self._is_store_status_url(yahoo_page.url):
-            clicked = await self._click_store_purchase_procedure(ctx)
-            if isinstance(clicked, dict):
-                return clicked
-            if clicked:
-                return None
-        adopted = await self._adopt_checkout_tab(ctx, timeout=WAIT_HANG_MS)
-        if adopted:
-            if await self._page_is_wait_shipping_address_form(ctx.yahoo_page):
-                return await self._mark_wait_shipping_form(
-                    ctx, "已切换到待运费地址页：先提交取引情報，卖家再报运费。"
-                )
-            return None
-        store_link = await self._adopt_page_matching(
-            ctx,
-            url_parts=("buy.auctions.yahoo.co.jp/order/status", "/order/review"),
-            selector="a[href*='/order/review'], #pap a:has-text('購入手続きする')",
-            timeout=WAIT_CLICK_MS,
-        )
-        if store_link is not None:
-            await self.log("发现店铺「購入手続きする」。正在进入 /order/review...")
-            ctx.is_store = True
-            ctx.is_personal = False
-            await self._goto_purchase_procedure(ctx, store_link)
-            return None
-        await self.log("等待新版取引ナビ异步渲染「購入手続きをする」（最长 5 分钟）...")
-        link = await self._adopt_page_matching(
-            ctx,
-            url_parts=(
-                "contact.auctions.yahoo.co.jp",
-                "/trade/top",
-                "/top?aid=",
-                "buyer/payment",
-                "buyer/edit",
-                "buyer/preview",
-            ),
-            selector="a[href*='buyer/payment/input']",
-            timeout=WAIT_HANG_MS,
-        )
-        if await self._page_is_wait_shipping_address_form(ctx.yahoo_page):
-            return await self._mark_wait_shipping_form(
-                ctx, "等待中已进入待运费地址页：先提交取引情報，卖家再报运费。"
-            )
-        if link is None:
-            link = await self._adopt_page_matching(
-                ctx,
-                url_parts=(
-                    "contact.auctions.yahoo.co.jp",
-                    "/trade/top",
-                    "/top?aid=",
-                    "buyer/edit",
-                ),
-                selector=PURCHASE_PROCEDURE_LOCATOR,
-                timeout=WAIT_HANG_MS,
-            )
-        if await self._page_is_wait_shipping_address_form(ctx.yahoo_page):
-            return await self._mark_wait_shipping_form(
-                ctx, "已进入待运费地址页：先提交取引情報，卖家再报运费。"
-            )
-        if link is None:
-            await self.log(
-                f"取引ナビ页没有「購入手続きをする」。URL={ctx.yahoo_page.url}",
-                "WARNING",
-            )
-            if await self._page_has_yahoo_id_mismatch(ctx.yahoo_page):
-                await self.log(
-                    "等待后仍是账号不符页。改走店铺 /order/status。",
-                    "WARNING",
-                )
-                store_ok = await self._try_store_won_checkout(ctx)
-                if store_ok is True:
-                    return None
-                if isinstance(store_ok, dict):
-                    return store_ok
-                return deny("YAHOO_ID_MISMATCH")
-        else:
-            href = ""
+        for i in range(min(n, 8)):
+            item = loc.nth(i)
             try:
-                href = (await link.get_attribute("href")) or ""
+                if not await item.is_visible():
+                    continue
+                text = " ".join(((await item.inner_text()) or "").split())
+                if "まとめて" in text or "単品で購入" in text:
+                    continue
+                return item
             except Exception:
-                href = ""
-            if "/order/review" in href or self._is_store_status_url(ctx.yahoo_page.url):
-                ctx.is_store = True
-                ctx.is_personal = False
-                await self.log("发现店铺「購入手続きする」。正在进入购买手续页...")
-            else:
-                await self.log("发现个人卖家「購入手続きをする」。正在进入支付页...")
-            await self._goto_purchase_procedure(ctx, link)
+                continue
+        return None
+
+    async def _classify_trade_page(self, page):
+        """先看 URL，再看页上已有按钮。不先等一种入口再换另一种。"""
+        url = page.url or ""
+        if self._is_yahoo_login_or_reauth_url(url):
+            return "login"
+        if await self._page_has_yahoo_id_mismatch(page):
+            return "id_mismatch"
+        if await self._page_is_wait_shipping_address_form(page):
+            return "wait_shipping_form"
+        if self._checkout_like_url(url):
+            return "checkout"
+        if self._is_store_status_url(url) or (
+            "buy.auctions.yahoo.co.jp" in url and "/order/" in url
+        ):
+            if await self._store_bundle_choice_visible(page):
+                return "store_bundle"
+            return "store_status"
+        if "contact.auctions.yahoo.co.jp" in url:
+            if await self.has_visible(page.locator(PERSONAL_BUNDLE_SEL)):
+                return "personal_bundle"
+            return "personal_nav"
+        if await self.has_visible(page.locator(PERSONAL_BUNDLE_SEL)):
+            return "personal_bundle"
+        if await self._visible_action(page, PERSONAL_PROCEDURE_SEL):
+            return "personal_nav"
+        if await self._store_bundle_choice_visible(page):
+            return "store_bundle"
+        return "unknown"
+
+    async def _after_purchase_entry(self, ctx):
         yahoo_page = ctx.yahoo_page
         if await self._page_is_wait_shipping_address_form(yahoo_page):
             return await self._mark_wait_shipping_form(
@@ -892,8 +851,7 @@ class YahooPurchaseMixin:
         kantan_btn = yahoo_page.locator(
             "a:has-text('Yahoo!かんたん決済で支払う'), button:has-text('Yahoo!かんたん決済で支払う')"
         )
-        has_kantan = await kantan_btn.count() > 0
-        if has_kantan:
+        if await self.has_visible(kantan_btn):
             await self.log("发现 'Yahoo!かんたん決済' 按钮。正在点击...")
             await self._follow_click(ctx, kantan_btn.first)
             yahoo_page = ctx.yahoo_page
@@ -912,11 +870,101 @@ class YahooPurchaseMixin:
                 return None
             await self.log("已在送料連絡待ち，交易信息此前已提交。")
             return {"status": "WAIT_SHIPPING_CONTACT", "shipping": 0, "total": 0}
-        if link is None and not has_kantan:
-            await self.report_missing_yahoo_ui(
-                yahoo_page, "personal_purchase_procedure", ctx,
-                extra="已在取引ナビ，没有「購入手続きをする」，也没有かんたん決済。",
+        return None
+
+    async def _open_personal_procedure(self, ctx):
+        page = ctx.yahoo_page
+        link = await self._visible_action(page, PERSONAL_PROCEDURE_SEL)
+        if link is None:
+            btn = page.locator(PERSONAL_PROCEDURE_SEL)
+            if await self.wait_visible(btn, timeout_ms=WAIT_CLICK_MS):
+                link = await self._visible_action(page, PERSONAL_PROCEDURE_SEL)
+        if link is None:
+            await self.log(
+                f"个人取引ナビ没有「購入手続きをする」。URL={page.url}",
+                "WARNING",
             )
+            await self.report_missing_yahoo_ui(
+                page, "personal_purchase_procedure", ctx,
+                extra="已判定个人取引ナビ，页上没有「購入手続きをする」。",
+            )
+            return None
+        ctx.is_personal = True
+        ctx.is_store = False
+        await self.log("个人取引ナビ：立即点「購入手続きをする」。")
+        await self._goto_purchase_procedure(ctx, link)
+        return await self._after_purchase_entry(ctx)
+
+    async def _continue_personal_checkout(self, ctx):
+        """看当前是哪一页，立刻走对应处理。"""
+        yahoo_page = ctx.yahoo_page
+        kind = await self._classify_trade_page(yahoo_page)
+        label = TRADE_KIND_LABEL.get(kind, kind)
+        await self.log(f"取引后续：当前是{label} {yahoo_page.url}")
+
+        if kind == "login":
+            await self.wait_out_yahoo_login_or_reauth(yahoo_page, "取引后续")
+            if self._is_yahoo_login_or_reauth_url(ctx.yahoo_page.url):
+                return deny("YAHOO_REAUTH")
+            return await self._continue_personal_checkout(ctx)
+
+        if kind == "wait_shipping_form":
+            return await self._mark_wait_shipping_form(
+                ctx, "已在待运费地址页：先提交取引情報，卖家再报运费。"
+            )
+
+        if kind == "checkout":
+            await self.log(f"已在结算/地址页: {yahoo_page.url}")
+            return await self._after_purchase_entry(ctx)
+
+        if kind == "id_mismatch":
+            await self.log(
+                "個人取引ナビ拒绝访问（Yahoo ID 与入札时不一致，或店铺单误开了 /trade/top）。改走店铺 /order/status。",
+                "WARNING",
+            )
+            store_ok = await self._try_store_won_checkout(ctx)
+            if store_ok is True:
+                return None
+            if isinstance(store_ok, dict):
+                return store_ok
+            await self.report_missing_yahoo_ui(
+                yahoo_page, "trade_nav_id_mismatch", ctx,
+                extra="取引ナビにアクセスできません。入札账号与当前登录 Yahoo ID 不一致。",
+            )
+            return deny("YAHOO_ID_MISMATCH")
+
+        if kind == "store_bundle":
+            skipped = await self._skip_if_store_bundle_choice(ctx)
+            return skipped or deny("SKIPPED_COMBINED_SHIPPING")
+
+        if kind == "store_status":
+            ctx.is_store = True
+            ctx.is_personal = False
+            clicked = await self._click_store_purchase_procedure(ctx)
+            if isinstance(clicked, dict):
+                return clicked
+            if clicked:
+                return await self._after_purchase_entry(ctx)
+            await self.log("店铺取引ナビ没有「購入手続きする」。", "WARNING")
+            return None
+
+        if kind == "personal_bundle":
+            choice = await self._dismiss_bundle_choice_page(ctx)
+            if choice:
+                self.add_risk_history_entry(
+                    ctx.order_info.get("order_id"), "人工处理: 发现同捆提示"
+                )
+                return choice
+            return await self._after_purchase_entry(ctx)
+
+        if kind == "personal_nav":
+            return await self._open_personal_procedure(ctx)
+
+        await self.log(f"取引后续无法判定页面，不空等。URL={yahoo_page.url}", "WARNING")
+        await self.report_missing_yahoo_ui(
+            yahoo_page, "personal_purchase_procedure", ctx,
+            extra="无法判定是个人还是店铺取引ナビ。",
+        )
         return None
 
     def _parse_item_postage_text(self, text):
@@ -1170,10 +1218,6 @@ class YahooPurchaseMixin:
                 rejected = await self.gate_seller_bundle_rejected(ctx)
                 if rejected:
                     return rejected
-                choice = await self._dismiss_bundle_choice_page(ctx)
-                if choice:
-                    self.add_risk_history_entry(order_info.get("order_id"), "人工处理: 发现同捆提示")
-                    return choice
                 continued = await self._continue_personal_checkout(ctx)
                 if continued:
                     return continued
@@ -1193,24 +1237,10 @@ class YahooPurchaseMixin:
         return None
 
     async def step_new_trade_choice(self, ctx):
-        """进入取引ナビ后若仍停在新版同捆选择页，再点一次单品。"""
+        """留言后若仍停在取引ナビ，按当前页类型立即处理。"""
         if self._checkout_like_url(ctx.yahoo_page.url):
             return None
-        if ctx.is_store or self._is_store_status_url(ctx.yahoo_page.url):
-            clicked = await self._click_store_purchase_procedure(ctx)
-            if isinstance(clicked, dict):
-                return clicked
-            if clicked:
-                return None
-        choice = await self._dismiss_bundle_choice_page(ctx)
-        if choice:
-            self.add_risk_history_entry(ctx.order_info.get("order_id"), "人工处理: 发现同捆提示")
-            return choice
-        if ctx.is_personal:
-            continued = await self._continue_personal_checkout(ctx)
-            if continued:
-                return continued
-        return None
+        return await self._continue_personal_checkout(ctx)
 
     async def step_wait_checkout_form(self, ctx):
         yahoo_page = ctx.yahoo_page
