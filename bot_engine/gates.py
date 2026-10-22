@@ -210,18 +210,34 @@ class GatesMixin:
             return None
 
     async def _3ds_visible_on_page(self, page):
+        """3DS 是同页插入的 dialog+iframe，没有整页刷新。不要用 is_visible，dialog/iframe 经常判成不可见。"""
         if page is None:
             return False
-        loc = page.locator(
-            "dialog[open]:has-text('クレジットカード認証'), "
-            "dialog[aria-labelledby='CardAuthenticationModalLabel'], "
-            "#CardAuthenticationModalLabel, "
-            "h2:has-text('クレジットカード認証'), "
-            "#challengeAuthParentFrame, "
-            "iframe[src*='challengeAuth']"
-        )
         try:
-            if await self.has_visible(loc):
+            found = await page.evaluate(
+                """() => {
+                    const iframe = document.querySelector(
+                        '#challengeAuthParentFrame, iframe[src*="challengeAuth"]'
+                    );
+                    if (iframe) return true;
+                    const dlg = document.querySelector(
+                        '#modalArea dialog[open], dialog[open][aria-labelledby="CardAuthenticationModalLabel"]'
+                    );
+                    if (dlg && (dlg.innerText || '').indexOf('クレジットカード認証') >= 0) return true;
+                    return false;
+                }"""
+            )
+            if found:
+                return True
+        except Exception:
+            pass
+        try:
+            if await page.locator(
+                "#challengeAuthParentFrame, "
+                "iframe[src*='challengeAuth'], "
+                "#modalArea dialog[open], "
+                "dialog[open][aria-labelledby='CardAuthenticationModalLabel']"
+            ).count() > 0:
                 return True
         except Exception:
             pass
@@ -230,14 +246,6 @@ class GatesMixin:
                 url = (fr.url or "").lower()
                 if "challengeauth" in url or "dnp-cdms" in url or "acs-" in url:
                     return True
-                try:
-                    inner = fr.locator(
-                        ".v-challengezone, h1.v-title, input.v-inputcode[name='password']"
-                    )
-                    if await inner.count() and await inner.first.is_visible():
-                        return True
-                except Exception:
-                    continue
         except Exception:
             pass
         return False

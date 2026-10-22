@@ -1339,6 +1339,7 @@ class YahooPurchaseMixin:
             if not await self.click_visible(buy, force=True):
                 await self.log("店铺二次确认按钮可见但点击失败。", "WARNING")
                 return False
+            await self._watch_3ds_after_confirm(yahoo_page, ctx)
             return True
         except Exception as e:
             await self.log(f"店铺二次确认点击失败: {e}", "DEBUG")
@@ -1367,7 +1368,21 @@ class YahooPurchaseMixin:
         if not await self.click_visible(agree):
             await self.log("个人确认按钮可见但点击失败。", "WARNING")
             return False
+        await self._watch_3ds_after_confirm(yahoo_page, ctx)
         return True
+
+    async def _watch_3ds_after_confirm(self, page, ctx=None, timeout_ms=15000):
+        """点完确定后 3DS 同页弹出，立刻轮询 DOM，不要等 navigation。"""
+        await self.log("点完确定，检测同页 3DS 弹窗...")
+
+        async def present():
+            return await self._3ds_visible_on_page(page)
+
+        await self.wait_until(present, timeout_ms=timeout_ms, interval=0.2)
+        if await self._3ds_visible_on_page(page):
+            await self._notify_need_3ds(ctx, page)
+            return True
+        return False
 
     async def _await_and_click_second_confirm(self, yahoo_page, test_mode, ctx=None):
         """点完「確認する」后：关掉再登录提示，检测二次确认并点击。"""
