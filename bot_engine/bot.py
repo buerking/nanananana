@@ -201,6 +201,8 @@ class YahooAutoBot(
             return "本单自动购买是否成功: 未确认（已点确认但未见成功页，请人工核对是否扣款）"
         if status == "SKIPPED_NEED_USER_OPTION":
             return "本单自动购买是否成功: 跳过（需建工单联系用户选择款式）"
+        if status == "SKIPPED_NEED_CVV":
+            return "本单自动购买是否成功: 跳过（需人工填写信用卡安全码）"
         if str(status).startswith("SKIPPED"):
             return f"本单自动购买是否成功: 跳过（{status}）"
         if status == "TEST_SUCCESS":
@@ -331,6 +333,9 @@ class YahooAutoBot(
                         await self._record_order_result(
                             run_stats, order_id_str, status, test_mode=False, gated=True
                         )
+                        if status == "SKIPPED_NEED_CVV":
+                            await self.log("本单需人工填写信用卡安全码，已跳过，进入下一单确认。")
+                            continue
                     except BotStopped:
                         raise
                     except Exception as e:

@@ -173,7 +173,7 @@ YAHOO_CHECKPOINTS = {
     },
     "cvv_dummy_code": {
         "page_name": "信用卡 CVV",
-        "path": "店铺结算页选择クレジットカード后 → 填写 CVV → 确认购买",
+        "path": "店铺结算页出现 input[name=dummy_code] / セキュリティコード时，飞书转人工并跳过本单，不要自动填、不要继续点確認する",
         "looking_for": "CVV 输入框 input[name='dummy_code']",
         "selectors": [
             "input[name='dummy_code']",

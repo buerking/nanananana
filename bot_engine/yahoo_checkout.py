@@ -10,27 +10,7 @@ from .waits import yahoo_done_url_from
 
 class YahooCheckoutMixin:
     async def _fill_cvv(self, page: Page, cvv_code=None):
-        """尝试填写 CVV 安全码，返回是否成功填写"""
-        if cvv_code is None:
-            cvv_code = self.DEFAULT_CVV
-        try:
-            cvv = page.locator("input[name='dummy_code']")
-            if await cvv.count() > 0 and await cvv.first.is_visible():
-                await cvv.first.fill(str(cvv_code))
-                await cvv.first.blur()
-                await self.log(f"已填写 CVV: {cvv_code}")
-                return True
-            body = ""
-            try:
-                body = await page.locator("body").inner_text()
-            except Exception:
-                body = ""
-            if "セキュリティコード" in body or "セキュリティ番号" in body or "CVV" in body.upper():
-                await self.report_missing_yahoo_ui(
-                    page, "cvv_dummy_code", extra="页面提到安全码，但 input[name='dummy_code'] 不存在或不可见。",
-                )
-        except Exception as e:
-            await self.log(f"CVV 填写异常: {e}", "DEBUG")
+        """需要安全码时不要自动填，由 gate_need_cvv 转人工。"""
         return False
 
     async def _dismiss_reauth_note(self, page: Page):

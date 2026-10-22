@@ -194,6 +194,7 @@ class YahooPurchaseMixin:
                 self.step_shipping,
                 self.step_okihai,
                 self.step_credit_card,
+                self.gate_need_cvv,
                 self.step_mark_cod,
                 self.step_extract_messages,
                 self.step_click_pay,
@@ -1357,6 +1358,8 @@ class YahooPurchaseMixin:
             await self._dismiss_reauth_note(yahoo_page)
 
         async def ready():
+            if await self._cvv_required_on_page(yahoo_page):
+                return True
             url = yahoo_page.url or ""
             if self._is_purchase_complete_url(url):
                 return True
@@ -1369,6 +1372,10 @@ class YahooPurchaseMixin:
 
         await self.log("点完確認する，检测二次确认弹窗...")
         await self.wait_until(ready, timeout_ms=WAIT_HANG_MS)
+        if ctx is not None:
+            skipped = await self.gate_need_cvv(ctx)
+            if skipped:
+                return skipped
         if test_mode or self._is_purchase_complete_url(yahoo_page.url or ""):
             return False
         clicked = await self._click_store_purchase_confirm(yahoo_page, test_mode)
@@ -1386,6 +1393,8 @@ class YahooPurchaseMixin:
         """点最终确定后等完成页。匹配到立刻返回，上限 5 分钟。"""
 
         async def arrived():
+            if await self._cvv_required_on_page(page):
+                return True
             url = page.url or ""
             if self._is_yahoo_login_or_reauth_url(url):
                 return False
@@ -1694,6 +1703,9 @@ class YahooPurchaseMixin:
     async def step_click_pay(self, ctx):
         yahoo_page = ctx.yahoo_page
         test_mode = ctx.test_mode
+        skipped = await self.gate_need_cvv(ctx)
+        if skipped:
+            return skipped
         if hasattr(self, "_dismiss_reauth_note"):
             await self._dismiss_reauth_note(yahoo_page)
         if hasattr(self, "_is_yahoo_account_address_url") and self._is_yahoo_account_address_url(yahoo_page.url):
@@ -1773,7 +1785,9 @@ class YahooPurchaseMixin:
             try:
                 if await btn.count() and await btn.is_visible():
                     await self.log(f"发现支付按钮 ({sel})")
-                    await self._fill_cvv(yahoo_page, self.DEFAULT_CVV)
+                    skipped = await self.gate_need_cvv(ctx)
+                    if skipped:
+                        return skipped
                     if test_mode:
                         await self.log("[TestMode] 模拟点击 (不提交)...")
                         break
@@ -1782,12 +1796,22 @@ class YahooPurchaseMixin:
                     if not clicked_pay:
                         continue
                     try:
-                        await self._fill_cvv(yahoo_page, self.DEFAULT_CVV)
-                        await self._await_and_click_second_confirm(
+                        skipped = await self.gate_need_cvv(ctx)
+                        if skipped:
+                            return skipped
+                        second = await self._await_and_click_second_confirm(
                             yahoo_page, test_mode, ctx
                         )
+                        if isinstance(second, dict):
+                            return second
+                        skipped = await self.gate_need_cvv(ctx)
+                        if skipped:
+                            return skipped
                         if not test_mode:
                             await self._wait_purchase_complete(yahoo_page)
+                        skipped = await self.gate_need_cvv(ctx)
+                        if skipped:
+                            return skipped
                         self._remember_yahoo_trade_ids(ctx)
                     except Exception as e:
                         await self.log(f"二次确认或等待完成失败: {e}")
@@ -1828,6 +1852,9 @@ class YahooPurchaseMixin:
 
     async def step_finish(self, ctx):
         yahoo_page = ctx.yahoo_page
+        skipped = await self.gate_need_cvv(ctx)
+        if skipped:
+            return skipped
         if self._is_yahoo_login_or_reauth_url(yahoo_page.url):
             await self.wait_out_yahoo_login_or_reauth(yahoo_page, "购买收尾")
         path = yahoo_host_path(yahoo_page.url or "")[1]

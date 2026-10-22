@@ -209,6 +209,48 @@ class GatesMixin:
             await self.log(f"同捆拒绝检测异常: {e}", "DEBUG")
             return None
 
+    async def _cvv_required_on_page(self, page):
+        dummy = page.locator("input[name='dummy_code']")
+        if await self.has_visible(dummy):
+            return True
+        err = page.locator(
+            "[aria-label='error'], .gv-Message--error"
+        ).filter(has_text="入力・選択された内容に誤り")
+        code_hint = page.locator(
+            "text=セキュリティコードとは, text=セキュリティコード, p:has-text('入力してください')"
+        )
+        try:
+            if await self.has_visible(err) and await code_hint.count():
+                return True
+        except Exception:
+            pass
+        return False
+
+    async def gate_need_cvv(self, ctx):
+        """需要信用卡安全码：飞书转人工，跳过本单。不要自动填、不要继续点确认。"""
+        page = ctx.yahoo_page
+        if page is None:
+            return None
+        try:
+            if not await self._cvv_required_on_page(page):
+                return None
+        except Exception:
+            return None
+        oid = ctx.order_info.get("order_id") or ctx.order.get("order_id") or ""
+        pid = ctx.order_info.get("product_id") or ctx.order.get("product_id") or ""
+        acc = ctx.order.get("account_key") or ctx.order_info.get("account_key") or ""
+        await self.log("结算页需要填写信用卡安全码，转人工。本单跳过。", "WARNING")
+        self.add_risk_history_entry(oid, "人工处理: 需要信用卡安全码")
+        try:
+            await self.trigger_sound("attention")
+        except Exception:
+            pass
+        self.notify_feishu(
+            f"订单 {oid} / 商品 {pid} / 账号 {acc} 结算页需要填写信用卡安全码。"
+            "已跳过本单，请在该窗口人工填写后完成购买。"
+        )
+        return deny("SKIPPED_NEED_CVV")
+
     async def gate_payment_unsupported(self, ctx):
         body_text = ctx.body_text or ""
         blocked = "クレジットカードはご利用できません" in body_text or (
