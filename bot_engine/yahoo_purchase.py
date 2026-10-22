@@ -818,6 +818,8 @@ class YahooPurchaseMixin:
         url = page.url or ""
         if self._is_yahoo_login_or_reauth_url(url):
             return "login"
+        if await self._yahoo_login_form_visible(page) and await self._yahoo_login_account_visible(page):
+            return "login"
         if await self._page_has_yahoo_id_mismatch(page):
             return "id_mismatch"
         if await self._page_is_wait_shipping_address_form(page):

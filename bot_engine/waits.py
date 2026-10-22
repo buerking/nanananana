@@ -6,7 +6,7 @@ import asyncio
 import re
 from urllib.parse import parse_qs, unquote, urlparse
 
-from .constants import WAIT_CLICK_MS, WAIT_HANG_MS
+from .constants import ACCOUNT_EMAILS, WAIT_CLICK_MS, WAIT_HANG_MS
 
 # 登录抽风页（会话还在，却画出 ID 表单）。不要拿「ログイン」单独判断，结算页也有再ログイン。
 YAHOO_LOGIN_FORM_SEL = (
@@ -20,6 +20,26 @@ YAHOO_LOGIN_FORM_SEL = (
     "text=キャプチャ, "
     "text=画像認証"
 )
+
+
+def yahoo_account_login_tokens():
+    """ad / ym 登录页会显示完整邮箱，或「adxez09955でログイン中です」这种本地名。"""
+    tokens = []
+    seen = set()
+    for emails in ACCOUNT_EMAILS.values():
+        for email in emails or []:
+            raw = str(email).strip()
+            if not raw:
+                continue
+            low = raw.lower()
+            if low not in seen:
+                seen.add(low)
+                tokens.append(low)
+            local = low.split("@")[0].strip()
+            if local and local not in seen:
+                seen.add(local)
+                tokens.append(local)
+    return tokens
 
 
 def yahoo_host_path(url):
@@ -179,13 +199,47 @@ class WaitMixin:
     def _is_purchase_complete_url(self, url):
         return is_purchase_complete_url(url)
 
+    async def _yahoo_login_account_visible(self, page):
+        """页上能看到 ad / ym 邮箱或 ID（如 adxez09955でログイン中です）。"""
+        if page is None:
+            return False
+        tokens = yahoo_account_login_tokens()
+        if not tokens:
+            return False
+        loc_parts = ["text=でログイン中です"]
+        loc_parts.extend(f"text={t}" for t in tokens)
+        if await self.has_visible(page.locator(", ".join(loc_parts))):
+            return True
+        try:
+            body = await page.locator("body").inner_text()
+        except Exception:
+            body = ""
+        text = (body or "").lower()
+        if "でログイン中です" in (body or ""):
+            return True
+        return any(t in text for t in tokens)
+
     async def _yahoo_login_form_visible(self, page):
-        """login.yahoo.co.jp 上的 ID 表单 / 已登录提示 / 验证码。"""
+        """ID 表单 / 已登录提示 / 验证码 / ad·ym 邮箱。"""
         if page is None:
             return False
         loc = page.locator(YAHOO_LOGIN_FORM_SEL)
         if await self.has_visible(loc):
             return True
+        if await self._yahoo_login_account_visible(page):
+            try:
+                body = await page.locator("body").inner_text()
+            except Exception:
+                body = ""
+            text = body or ""
+            if (
+                "でログイン中です" in text
+                or "新規取得" in text
+                or "携帯電話番号/メールアドレス/ID" in text
+                or "キャプチャ" in text
+                or "画像認証" in text
+            ):
+                return True
         try:
             body = await page.locator("body").inner_text()
         except Exception:
@@ -211,7 +265,10 @@ class WaitMixin:
         host, _path = yahoo_host_path(url)
         if "wallet.yahoo.co.jp" in host:
             return False
-        if not await self._yahoo_login_form_visible(page):
+        if not (
+            await self._yahoo_login_form_visible(page)
+            or await self._yahoo_login_account_visible(page)
+        ):
             return False
         done = yahoo_done_url_from(url)
         if not is_safe_yahoo_done_url(done):
