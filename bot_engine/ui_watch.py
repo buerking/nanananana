@@ -91,12 +91,15 @@ YAHOO_CHECKPOINTS = {
     },
     "store_won_trade_nav": {
         "page_name": "店铺落札后取引ナビ /order/status",
-        "path": "已结束店铺拍品（没有「購入手続きへ」）→ buy.auctions.yahoo.co.jp/order/status?auctionId= → 点「購入手続きする」→ /order/review。不要打开 contact.auctions /trade/top",
-        "looking_for": "店铺取引ナビ「購入手続きする」（href 含 /order/review）",
+        "path": "已结束店铺拍品（没有「購入手続きへ」）→ buy.auctions.yahoo.co.jp/order/status?auctionId= → 点「購入手続きする」→ /order/review。若出现「まとめて購入手続きする」/「単品で購入手続きする」，跳过转人工，两按钮都不点。不要打开 contact.auctions /trade/top",
+        "looking_for": "店铺取引ナビ「購入手続きする」；同捆二选一则跳过",
         "selectors": [
             "a[href*='/order/review']",
             "#pap a:has-text('購入手続きする')",
             "a:has-text('購入手続きする')",
+            "a:has-text('まとめて購入手続きする')",
+            "a:has-text('単品で購入手続きする')",
+            "#bndl a",
         ],
     },
     "trade_nav_id_mismatch": {

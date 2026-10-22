@@ -23,6 +23,7 @@ from .flow import OrderContext, deny, run_chain
 
 # 旧版「購入手続きする」与新版「購入手続きをする」并存。
 # 店铺落札后取引ナビ是 #pap「購入手続きする」→ /order/review（没有「を」）。
+# 可同捆时变成「まとめて購入手続きする」/「単品で購入手続きする」：跳过转人工，两按钮都不点。
 PURCHASE_PROCEDURE_SELECTORS = (
     "a[href*='buyer/payment/input']",
     "a[href*='/order/review']",
@@ -33,6 +34,26 @@ PURCHASE_PROCEDURE_SELECTORS = (
     "button:has-text('購入手続きする')",
 )
 PURCHASE_PROCEDURE_LOCATOR = ", ".join(PURCHASE_PROCEDURE_SELECTORS)
+STORE_BUNDLE_CHOICE_SEL = (
+    "#bndl a, "
+    "a[data-cl-params*='_cl_link:bndlpap'], "
+    "a[data-cl-params*='_cl_link:sglpap'], "
+    "a:has-text('まとめて購入手続きする'), "
+    "button:has-text('まとめて購入手続きする'), "
+    "a:has-text('単品で購入手続きする'), "
+    "button:has-text('単品で購入手続きする'), "
+    "h2:has-text('まとめて購入手続きできる商品'), "
+    "text=まとめて購入手続き出来る商品があります, "
+    "aside:has-text('まとめて購入手続きができます')"
+)
+STORE_STATUS_READY_SEL = (
+    "h1:has-text('取引ナビ'), "
+    "#pap a, "
+    "a[href*='/order/review'], "
+    "#bndl a, "
+    "a:has-text('まとめて購入手続きする'), "
+    "a:has-text('単品で購入手続きする')"
+)
 
 # 购买手续跳转：人手点很快；goto 等 domcontentloaded 会整页卡死。
 # 卡住时最多等 5 分钟，刷新后再判断是否已到下一页，否则再点，最多 3 次。
@@ -462,28 +483,106 @@ class YahooPurchaseMixin:
             return False
         return "取引ナビにアクセスできません" in text or "異なるYahoo! JAPAN ID" in text
 
-    async def _click_store_purchase_procedure(self, ctx):
-        """店铺取引ナビ #pap「購入手続きする」→ /order/review。"""
-        page = ctx.yahoo_page
-        link = page.locator("a[href*='/order/review']")
-        if await link.count() == 0:
-            link = page.locator(
-                "#pap a:has-text('購入手続きする'), "
-                "a:has-text('購入手続きする'), a:has-text('購入手続きをする')"
-            )
-        if await link.count() == 0:
-            return False
-        href = ""
+    async def _store_bundle_choice_visible(self, page):
+        """店铺取引ナビ把「購入手続きする」换成了まとめて/単品二选一。"""
+        loc = page.locator(STORE_BUNDLE_CHOICE_SEL)
+        if await self.has_visible(loc):
+            return True
         try:
-            href = (await link.first.get_attribute("href")) or ""
+            body = await page.locator("main, #__next, body").first.inner_text()
         except Exception:
-            href = ""
-        if "buyer/payment" in href:
+            body = ""
+        text = body or ""
+        return (
+            "まとめて購入手続きする" in text
+            or "単品で購入手続きする" in text
+            or "まとめて購入手続きできる商品" in text
+            or "まとめて購入手続き出来る商品" in text
+        )
+
+    async def _skip_if_store_bundle_choice(self, ctx):
+        """可同捆：不点まとめて、也不点単品，转人工。后台一单 ≠ 雅虎两件一起买。"""
+        page = ctx.yahoo_page
+        if page is None:
+            return None
+        if not self._is_store_status_url(page.url or ""):
+            return None
+        if not await self._store_bundle_choice_visible(page):
+            return None
+        oid = ctx.order_info.get("order_id") or ctx.order.get("order_id") or ""
+        pid = ctx.order_info.get("product_id") or ctx.order.get("product_id") or ""
+        await self.log(
+            "店铺取引ナビ出现「まとめて購入手続き」（可同捆）。本单不自动点まとめて或単品，转人工。",
+            "WARNING",
+        )
+        self.add_risk_history_entry(oid, "人工处理: 发现同捆提示")
+        try:
+            self.notify_feishu(
+                f"订单 {oid} / 商品 {pid} 店铺取引ナビ出现「まとめて購入手続き」，已跳过转人工。"
+            )
+        except Exception:
+            pass
+        return deny("SKIPPED_COMBINED_SHIPPING")
+
+    async def _store_procedure_link(self, page):
+        """普通店铺入口：/order/review 或「購入手続きする」。同捆の単品/まとめて不在这里点。"""
+        href_link = page.locator("a[href*='/order/review']")
+        n = 0
+        try:
+            n = await href_link.count()
+        except Exception:
+            n = 0
+        for i in range(min(n, 8)):
+            loc = href_link.nth(i)
+            try:
+                if not await loc.is_visible():
+                    continue
+                href = (await loc.get_attribute("href")) or ""
+                if "buyer/payment" in href:
+                    continue
+                return loc, "購入手続きする"
+            except Exception:
+                continue
+        candidates = page.locator(
+            "#pap a:has-text('購入手続きする'), "
+            "a:has-text('購入手続きをする'), "
+            "button:has-text('購入手続きをする'), "
+            "a:has-text('購入手続きする'), "
+            "button:has-text('購入手続きする')"
+        )
+        try:
+            n = await candidates.count()
+        except Exception:
+            n = 0
+        for i in range(min(n, 8)):
+            loc = candidates.nth(i)
+            try:
+                if not await loc.is_visible():
+                    continue
+                text = " ".join(((await loc.inner_text()) or "").split())
+                if "まとめて" in text or "単品で" in text:
+                    continue
+                href = (await loc.get_attribute("href")) or ""
+                if "buyer/payment" in href:
+                    continue
+                return loc, text or "購入手続きする"
+            except Exception:
+                continue
+        return None, ""
+
+    async def _click_store_purchase_procedure(self, ctx):
+        """店铺取引ナビ #pap「購入手続きする」→ /order/review。同捆二选一不在这里点。"""
+        skipped = await self._skip_if_store_bundle_choice(ctx)
+        if skipped:
+            return skipped
+        page = ctx.yahoo_page
+        link, label = await self._store_procedure_link(page)
+        if link is None:
             return False
         ctx.is_store = True
         ctx.is_personal = False
-        await self.log("店铺取引ナビ：发现「購入手続きする」，进入 /order/review")
-        await self._goto_purchase_procedure(ctx, link.first)
+        await self.log(f"店铺取引ナビ：发现「{label}」，进入 /order/review")
+        await self._goto_purchase_procedure(ctx, link)
         return True
 
     async def _try_store_won_checkout(self, ctx):
@@ -506,12 +605,15 @@ class YahooPurchaseMixin:
             ctx.is_store = True
             ctx.is_personal = False
             try:
-                await yahoo_page.locator(
-                    "#pap a, a[href*='/order/review'], h1:has-text('取引ナビ')"
-                ).first.wait_for(state="visible", timeout=WAIT_HANG_MS)
+                await yahoo_page.locator(STORE_STATUS_READY_SEL).first.wait_for(
+                    state="visible", timeout=WAIT_HANG_MS
+                )
             except Exception:
                 pass
-            if await self._click_store_purchase_procedure(ctx):
+            clicked = await self._click_store_purchase_procedure(ctx)
+            if isinstance(clicked, dict):
+                return clicked
+            if clicked:
                 return True
             await self.log("店铺取引ナビ没有「購入手続きする」。", "WARNING")
             return True
@@ -548,10 +650,13 @@ class YahooPurchaseMixin:
             if "/order/review" in (yahoo_page.url or "") or "/order/change" in (yahoo_page.url or ""):
                 return True
             await self.wait_visible(
-                yahoo_page.locator("#pap a, a[href*='/order/review']"),
+                yahoo_page.locator(STORE_STATUS_READY_SEL),
                 timeout_ms=WAIT_HANG_MS,
             )
-            if await self._click_store_purchase_procedure(ctx):
+            clicked = await self._click_store_purchase_procedure(ctx)
+            if isinstance(clicked, dict):
+                return clicked
+            if clicked:
                 return True
             return True
 
@@ -566,15 +671,16 @@ class YahooPurchaseMixin:
             await self.log(f"店铺取引ナビ打开超时: {e}", "WARNING")
             return False
         await self.wait_visible(
-            yahoo_page.locator(
-                "#pap a, a[href*='/order/review'], h1:has-text('取引ナビ')"
-            ),
+            yahoo_page.locator(STORE_STATUS_READY_SEL),
             timeout_ms=WAIT_HANG_MS,
         )
         if await self._page_has_yahoo_id_mismatch(yahoo_page):
             await self.log("店铺 /order/status 返回账号不符页，不按店铺处理。", "WARNING")
             return False
-        if await self._click_store_purchase_procedure(ctx):
+        clicked = await self._click_store_purchase_procedure(ctx)
+        if isinstance(clicked, dict):
+            return clicked
+        if clicked:
             return True
         await self.log("店铺 /order/status 没有「購入手続きする」，改走个人取引ナビ。")
         return False
@@ -691,7 +797,10 @@ class YahooPurchaseMixin:
             )
             return deny("YAHOO_ID_MISMATCH")
         if self._is_store_status_url(yahoo_page.url):
-            if await self._click_store_purchase_procedure(ctx):
+            clicked = await self._click_store_purchase_procedure(ctx)
+            if isinstance(clicked, dict):
+                return clicked
+            if clicked:
                 return None
         adopted = await self._adopt_checkout_tab(ctx, timeout=WAIT_HANG_MS)
         if adopted:
@@ -1088,7 +1197,10 @@ class YahooPurchaseMixin:
         if self._checkout_like_url(ctx.yahoo_page.url):
             return None
         if ctx.is_store or self._is_store_status_url(ctx.yahoo_page.url):
-            if await self._click_store_purchase_procedure(ctx):
+            clicked = await self._click_store_purchase_procedure(ctx)
+            if isinstance(clicked, dict):
+                return clicked
+            if clicked:
                 return None
         choice = await self._dismiss_bundle_choice_page(ctx)
         if choice:
