@@ -194,7 +194,7 @@ YAHOO_CHECKPOINTS = {
     },
     "pay_confirm_button": {
         "page_name": "最终确认",
-        "path": "结算页填完地址/配送/支付 → 点確認する。店铺 /order/review 点完后若出现 #fconfirm「購入を確定しますか？」，再点「購入を確定する」。若跳到 login.yahoo.co.jp 且页上有「ログイン/新規取得/携帯電話番号」或「でログイン中です」，先取 .done= 回跳结算，不要当未登录停机；wallet 二次验证仍等人登完。不要把登录页当改版。",
+        "path": "结算页填完地址/配送/支付 → 点確認する。店铺 /order/review 点完后若出现 #fconfirm「購入を確定しますか？」，再点「購入を確定する」。若跳到 login.yahoo.co.jp 且页上有「ログイン/新規取得/携帯電話番号」或「でログイン中です」，先取 .done= 回跳结算，不要当未登录停机。edit.wallet.../wallet_sub_add 同样取 .done= 回跳；其它 wallet 二次验证仍等人登完。不要把登录页当改版。",
         "looking_for": "最终确认/决定按钮，以及店铺二次确认「購入を確定する」",
         "selectors": [
             "#mBoxConfBt",

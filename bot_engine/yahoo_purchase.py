@@ -186,6 +186,7 @@ class YahooPurchaseMixin:
                 page = inner_ctx.yahoo_page
                 if page is not None:
                     await self._reload_if_yahoo_system_error(page)
+                    await self._try_skip_wallet_sub_add(page)
                 return await step(inner_ctx)
 
             return wrapped

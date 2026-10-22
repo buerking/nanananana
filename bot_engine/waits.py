@@ -50,6 +50,14 @@ def yahoo_host_path(url):
         return "", ""
 
 
+def is_yahoo_wallet_sub_add_url(url):
+    """edit.wallet.../config/wallet_sub_add：抽风跳转，取 .done= 回结算，不是钱包二次验证。"""
+    host, path = yahoo_host_path(url)
+    if "wallet.yahoo.co.jp" not in host:
+        return False
+    return "/wallet_sub_add" in path
+
+
 def is_yahoo_login_or_reauth_url(url):
     """login / 钱包二次验证。不要用整段 URL 子串判断，.done 里会带上结算地址。"""
     host, _path = yahoo_host_path(url)
@@ -314,9 +322,40 @@ class WaitMixin:
             return True
         return hits >= 2
 
+    async def _goto_yahoo_done_url(self, page, done, why):
+        if not is_safe_yahoo_done_url(done):
+            return False
+        await self.log(f"{why}改打开 .done 回跳: {done}")
+        try:
+            await page.goto(done, wait_until="commit", timeout=WAIT_HANG_MS)
+        except Exception as e:
+            await self.log(f"打开 .done 超时: {e}", "WARNING")
+        try:
+            await page.wait_for_load_state("domcontentloaded", timeout=WAIT_HANG_MS)
+        except Exception:
+            pass
+        if is_yahoo_login_or_reauth_url(page.url or ""):
+            await self.log(f"打开 .done 后仍在登录/钱包页: {page.url}", "WARNING")
+            return False
+        await self.log(f"已绕过抽风页: {page.url}")
+        return True
+
+    async def _try_skip_wallet_sub_add(self, page):
+        """edit.wallet.../wallet_sub_add：urldecode .done= 后直接访问，不填卡、不等二次验证。"""
+        url = page.url if page else ""
+        if not is_yahoo_wallet_sub_add_url(url):
+            return False
+        done = yahoo_done_url_from(url)
+        if not is_safe_yahoo_done_url(done):
+            await self.log(f"钱包 wallet_sub_add 无可用 .done: {url}", "WARNING")
+            return False
+        return await self._goto_yahoo_done_url(page, done, "钱包 wallet_sub_add，")
+
     async def _try_skip_ghost_yahoo_login(self, page):
         """会话还在却画出登录表单：取出 .done= 直接打开回跳地址，不填账号、不点次へ。"""
         url = page.url if page else ""
+        if await self._try_skip_wallet_sub_add(page):
+            return True
         if not is_yahoo_login_or_reauth_url(url):
             return False
         host, _path = yahoo_host_path(url)
@@ -338,24 +377,15 @@ class WaitMixin:
         except Exception:
             already = ""
         hint = f"（{already}）" if already else ""
-        await self.log(f"登录页出现ログイン表单{hint}，会话多半还在。改打开 .done 回跳: {done}")
-        try:
-            await page.goto(done, wait_until="commit", timeout=WAIT_HANG_MS)
-        except Exception as e:
-            await self.log(f"打开 .done 超时: {e}", "WARNING")
-        try:
-            await page.wait_for_load_state("domcontentloaded", timeout=WAIT_HANG_MS)
-        except Exception:
-            pass
-        if is_yahoo_login_or_reauth_url(page.url or ""):
-            await self.log(f"打开 .done 后仍在登录页: {page.url}", "WARNING")
-            return False
-        await self.log(f"已绕过登录抽风页: {page.url}")
-        return True
+        return await self._goto_yahoo_done_url(
+            page, done, f"登录页出现ログイン表单{hint}，会话多半还在。"
+        )
 
     async def wait_out_yahoo_login_or_reauth(self, page, why=""):
-        """钱包/登录二次验证：先尝试 .done 回跳；不行再等人在浏览器登完。"""
+        """钱包/登录二次验证：wallet_sub_add 与登录抽风先走 .done；其它钱包验证仍等人登完。"""
         if not is_yahoo_login_or_reauth_url(page.url if page else ""):
+            return True
+        if await self._try_skip_wallet_sub_add(page):
             return True
         if await self._try_skip_ghost_yahoo_login(page):
             return True
