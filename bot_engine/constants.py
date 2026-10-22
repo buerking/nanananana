@@ -4,6 +4,7 @@ DEFAULT_CARD_ID = "23"
 FORCE_SHIPPING_WARNING_SELLERS = ["82meTj3FgR5hnjCcmaDn6vbxatPWC"]
 REMARK_WHITELIST_PATTERNS = [
     r"出价\d+日元失败：竞拍结束。",
+    "下单使用优惠券减免金额",
     "adxez09955@yahoo.co.jp",
     "dxez09955@yahoo.co.jp",
     "ymzjw19369@yahoo.co.jp",
