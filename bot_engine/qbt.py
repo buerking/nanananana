@@ -1,4 +1,5 @@
 import re
+from urllib.parse import unquote
 
 from playwright.async_api import Page
 
@@ -60,22 +61,44 @@ def decode_cf_email(cfemail):
 class QbtMixin:
     """阶段1 扫未购买列表 + 阶段4 回填 qbt 后台。"""
 
+    def _is_qbt_not_buy_list_url(self, url):
+        u = unquote(url or "")
+        return "qbt.jp" in u and "get-auction-not-buy-list" in u
+
     async def find_backend_tab(self):
-        """Finds the tab that looks like the internal backend list"""
+        """优先找未购买列表页；订单卡在详情时不要把 auction-buy 当拉单页。"""
         if not self.browser_context:
             return None
+        any_qbt = None
         for page in self.browser_context.pages:
-            url = page.url or ""
+            url = unquote(page.url or "")
             title = ""
             try:
                 title = await page.title()
             except Exception:
                 title = ""
-            if "qbt.jp" in url and "shopAdmin/order" in url:
+            if "qbt.jp" not in url:
+                continue
+            if "get-auction-not-buy-list" in url:
                 return page
-            if any(k in title for k in ("未购买", "订单列表", "雅虎拍卖")) and "qbt.jp" in url:
-                return page
-        return None
+            if any_qbt is None and (
+                "shopAdmin/order" in url
+                or any(k in title for k in ("未购买", "订单列表", "雅虎拍卖"))
+            ):
+                any_qbt = page
+        return any_qbt
+
+    async def ensure_backend_not_buy_list(self, page=None):
+        """拉单前必须打开 get-auction-not-buy-list，避免停在卡住的订单详情。"""
+        if page is None or page.is_closed():
+            page = await self.find_backend_tab()
+        if page is None or page.is_closed():
+            page = await self.browser_context.new_page()
+        if not self._is_qbt_not_buy_list_url(page.url):
+            await self.log("后台不在未购买列表，直接打开拉单页。")
+            await page.goto(self.BACKEND_URL, wait_until="domcontentloaded")
+        await page.bring_to_front()
+        return page
 
     async def check_risk_order_status(self, order_id):
         """
@@ -180,7 +203,7 @@ class QbtMixin:
         批量：去掉彩色行 → 跳过「未购买待确认」→ 按卖家分组审核，只留一对一。
         单单测试：命中行直接返回（待确认仍跳过；彩色仅警告）。
         """
-        await page.bring_to_front()
+        page = await self.ensure_backend_not_buy_list(page)
         page_total = 0
         try:
             banner = await page.locator("body").inner_text()

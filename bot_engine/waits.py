@@ -123,7 +123,64 @@ def is_purchase_complete_url(url):
     )
 
 
+YAHOO_SYSTEM_ERROR_TEXT = "システムでエラーが発生しました"
+
+
 class WaitMixin:
+    async def _yahoo_system_error_visible(self, page):
+        if page is None:
+            return False
+        loc = page.locator(
+            "text=システムでエラーが発生しました, "
+            "text=お手数ですが再度お試しください"
+        )
+        try:
+            if await self.has_visible(loc):
+                return True
+        except Exception:
+            pass
+        try:
+            body = await page.locator("body").inner_text()
+        except Exception:
+            return False
+        return YAHOO_SYSTEM_ERROR_TEXT in (body or "")
+
+    async def _reload_if_yahoo_system_error(self, page, max_tries=3):
+        """系统错误页刷新即可跳过，不要当失败停住。"""
+        if page is None:
+            return False
+        refreshed = False
+        for i in range(max_tries):
+            try:
+                if not await self._yahoo_system_error_visible(page):
+                    return refreshed
+            except Exception:
+                return refreshed
+            refreshed = True
+            await self.log(
+                f"雅虎系统错误（再度お試しください），刷新页面 ({i + 1}/{max_tries})...",
+                "WARNING",
+            )
+            url = page.url or ""
+            try:
+                await page.reload(wait_until="domcontentloaded", timeout=WAIT_HANG_MS)
+            except Exception as e:
+                await self.log(f"刷新超时，改用重新打开当前地址: {e}", "WARNING")
+                if url:
+                    try:
+                        await page.goto(url, wait_until="domcontentloaded", timeout=WAIT_HANG_MS)
+                    except Exception:
+                        pass
+            try:
+                await page.wait_for_load_state("domcontentloaded", timeout=WAIT_CLICK_MS)
+            except Exception:
+                pass
+        if refreshed and await self._yahoo_system_error_visible(page):
+            await self.log("多次刷新后仍是雅虎系统错误页。", "WARNING")
+        elif refreshed:
+            await self.log("刷新后系统错误已消失，继续。")
+        return refreshed
+
     async def has_visible(self, locator, limit=8):
         try:
             n = await locator.count()

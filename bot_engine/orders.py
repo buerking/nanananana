@@ -187,12 +187,15 @@ class OrderMixin:
         return None
 
     async def mw_cleanup_detail_tab(self, ctx):
-        if not ctx.is_new_tab:
-            return
+        if ctx.is_new_tab:
+            try:
+                if ctx.detail_page and not ctx.detail_page.is_closed():
+                    await self.log("Cleanup: Closing Backend Detail Page (Tab).")
+                    await ctx.detail_page.close()
+            except Exception:
+                pass
         try:
-            if ctx.detail_page and not ctx.detail_page.is_closed():
-                await self.log("Cleanup: Closing Backend Detail Page (Tab).")
-                await ctx.detail_page.close()
+            if ctx.backend_page and not ctx.backend_page.is_closed():
                 await ctx.backend_page.goto(self.BACKEND_URL, wait_until="domcontentloaded")
         except Exception:
             pass

@@ -203,6 +203,8 @@ class YahooAutoBot(
             return "本单自动购买是否成功: 跳过（需建工单联系用户选择款式）"
         if status == "SKIPPED_NEED_CVV":
             return "本单自动购买是否成功: 跳过（需人工填写信用卡安全码）"
+        if status == "SKIPPED_NEED_3DS":
+            return "本单自动购买是否成功: 跳过（需人工完成信用卡3DS验证）"
         if str(status).startswith("SKIPPED"):
             return f"本单自动购买是否成功: 跳过（{status}）"
         if status == "TEST_SUCCESS":
@@ -272,7 +274,7 @@ class YahooAutoBot(
                 if not backend_page:
                     await self.log("未找到后台标签页。尝试打开...", "WARNING")
                     backend_page = await self.browser_context.new_page()
-                    await backend_page.goto(self.BACKEND_URL, wait_until="domcontentloaded")
+                backend_page = await self.ensure_backend_not_buy_list(backend_page)
                 scan_target = None if gated else target_order_id
                 orders = await self.scan_backend_list(backend_page, scan_target)
                 if not orders:

@@ -180,26 +180,36 @@ class YahooPurchaseMixin:
 
     async def _run_purchase_pipeline(self, ctx):
         await self.log(f"阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {ctx.order_info}")
+
+        def wrap(step):
+            async def wrapped(inner_ctx):
+                page = inner_ctx.yahoo_page
+                if page is not None:
+                    await self._reload_if_yahoo_system_error(page)
+                return await step(inner_ctx)
+
+            return wrapped
+
         aborted = await run_chain(
             [
-                self.gate_combined_shipping,
-                self.step_bundle_interstitial,
-                self.step_enter_purchase,
-                self.step_new_trade_choice,
-                self.gate_item_option,
-                self.step_wait_checkout_form,
-                self.step_capture_body_and_payment_gate,
-                self.step_uncheck_newsletter,
-                self.step_address,
-                self.step_shipping,
-                self.step_okihai,
-                self.step_credit_card,
-                self.gate_need_cvv,
-                self.step_mark_cod,
-                self.step_extract_messages,
-                self.step_click_pay,
-                self.gate_paypay_card_redirect,
-                self.step_finish,
+                wrap(self.gate_combined_shipping),
+                wrap(self.step_bundle_interstitial),
+                wrap(self.step_enter_purchase),
+                wrap(self.step_new_trade_choice),
+                wrap(self.gate_item_option),
+                wrap(self.step_wait_checkout_form),
+                wrap(self.step_capture_body_and_payment_gate),
+                wrap(self.step_uncheck_newsletter),
+                wrap(self.step_address),
+                wrap(self.step_shipping),
+                wrap(self.step_okihai),
+                wrap(self.step_credit_card),
+                wrap(self.gate_need_cvv),
+                wrap(self.step_mark_cod),
+                wrap(self.step_extract_messages),
+                wrap(self.step_click_pay),
+                wrap(self.gate_paypay_card_redirect),
+                wrap(self.step_finish),
             ],
             ctx,
         )
@@ -334,6 +344,7 @@ class YahooPurchaseMixin:
         return None
 
     async def _wait_for_checkout_page(self, page, timeout_ms=WAIT_HANG_MS):
+        await self._reload_if_yahoo_system_error(page)
         if self._is_yahoo_login_or_reauth_url(page.url):
             ok = await self.wait_out_yahoo_login_or_reauth(page, "进入购买手续")
             if not ok and self._is_yahoo_login_or_reauth_url(page.url):
@@ -1247,6 +1258,7 @@ class YahooPurchaseMixin:
 
     async def step_wait_checkout_form(self, ctx):
         yahoo_page = ctx.yahoo_page
+        await self._reload_if_yahoo_system_error(yahoo_page)
         form = yahoo_page.locator(
             "#address, h2:has-text('お届け先'), h2:has-text('お届け先住所'), h2:has-text('落札者情報'), "
             "form[name='tradeForm'], input[name='address2'], input[name='home_address2'], #mBoxConfBt"
@@ -1289,12 +1301,12 @@ class YahooPurchaseMixin:
         return None
 
     def _store_second_confirm_locator(self, yahoo_page):
-        """店铺 #fconfirm 里真正可点的「購入を確定する」。外壳 #fconfirm 常驻 DOM，不能用它判断可见。"""
+        """店铺二次确认「購入を確定しますか？」。个人确认页 #fconfirm 也有「購入を確定する」，不能单靠这句话。"""
         return yahoo_page.locator(
-            "#fconfirm a:has-text('購入を確定する'), "
-            "#fconfirm button:has-text('購入を確定する'), "
             "aside:has-text('購入を確定しますか？') a:has-text('購入を確定する'), "
-            "aside:has-text('購入を確定しますか？') a:has-text('上記に同意のうえ')"
+            "aside:has-text('購入を確定しますか？') button:has-text('購入を確定する'), "
+            "#fconfirm:has-text('購入を確定しますか？') a:has-text('購入を確定する'), "
+            "#fconfirm:has-text('購入を確定しますか？') button:has-text('購入を確定する')"
         )
 
     def _second_confirm_locator(self, yahoo_page):
@@ -1310,8 +1322,11 @@ class YahooPurchaseMixin:
     async def _has_visible_second_confirm(self, yahoo_page):
         return await self.has_visible(self._second_confirm_locator(yahoo_page))
 
-    async def _click_store_purchase_confirm(self, yahoo_page, test_mode):
+    async def _click_store_purchase_confirm(self, yahoo_page, test_mode, ctx=None):
         """店铺点完「確認する」后的二次确认：「購入を確定しますか？」→「購入を確定する」。"""
+        if await self._3ds_visible_on_page(yahoo_page):
+            await self._notify_need_3ds(ctx, yahoo_page)
+            return True
         buy = self._store_second_confirm_locator(yahoo_page)
         try:
             if not await self.has_visible(buy):
@@ -1328,11 +1343,15 @@ class YahooPurchaseMixin:
             await self.log(f"店铺二次确认点击失败: {e}", "DEBUG")
             return False
 
-    async def _click_personal_final_confirm(self, yahoo_page, test_mode):
+    async def _click_personal_final_confirm(self, yahoo_page, test_mode, ctx=None):
         """个人 /buyer/payment/confirm：「上記に同意のうえ 購入を確定する」。"""
+        if await self._3ds_visible_on_page(yahoo_page):
+            await self._notify_need_3ds(ctx, yahoo_page)
+            return True
         url = yahoo_page.url or ""
         agree = yahoo_page.locator(
-            "a:has-text('上記に同意のうえ'), button:has-text('上記に同意のうえ')"
+            "button:has-text('上記に同意のうえ'):not([disabled]), "
+            "a:has-text('上記に同意のうえ'):not([disabled])"
         )
         on_confirm = "/buyer/payment/confirm" in url
         visible = await self.has_visible(agree)
@@ -1345,11 +1364,8 @@ class YahooPurchaseMixin:
             await self.log("[TestMode] 不点最终确定。")
             return True
         if not await self.click_visible(agree):
-            buy = yahoo_page.locator(
-                "a:has-text('購入を確定する'), button:has-text('購入を確定する')"
-            )
-            if not await self.click_visible(buy):
-                await buy.first.click(timeout=WAIT_CLICK_MS)
+            await self.log("个人确认按钮可见但点击失败。", "WARNING")
+            return False
         return True
 
     async def _await_and_click_second_confirm(self, yahoo_page, test_mode, ctx=None):
@@ -1357,8 +1373,17 @@ class YahooPurchaseMixin:
         if hasattr(self, "_dismiss_reauth_note"):
             await self._dismiss_reauth_note(yahoo_page)
 
+        syserr_reloads = 0
+
         async def ready():
+            nonlocal syserr_reloads
+            if await self._yahoo_system_error_visible(yahoo_page) and syserr_reloads < 3:
+                syserr_reloads += 1
+                await self._reload_if_yahoo_system_error(yahoo_page, max_tries=1)
+                return False
             if await self._cvv_required_on_page(yahoo_page):
+                return True
+            if await self._3ds_visible_on_page(yahoo_page):
                 return True
             url = yahoo_page.url or ""
             if self._is_purchase_complete_url(url):
@@ -1376,11 +1401,16 @@ class YahooPurchaseMixin:
             skipped = await self.gate_need_cvv(ctx)
             if skipped:
                 return skipped
+        if await self._3ds_visible_on_page(yahoo_page):
+            await self._notify_need_3ds(ctx, yahoo_page)
+            if ctx is not None:
+                ctx.trade_info_submitted = True
+            return True
         if test_mode or self._is_purchase_complete_url(yahoo_page.url or ""):
             return False
-        clicked = await self._click_store_purchase_confirm(yahoo_page, test_mode)
+        clicked = await self._click_store_purchase_confirm(yahoo_page, test_mode, ctx)
         if not clicked:
-            clicked = await self._click_personal_final_confirm(yahoo_page, test_mode)
+            clicked = await self._click_personal_final_confirm(yahoo_page, test_mode, ctx)
         if clicked:
             await self.log("已点击二次确认「購入を確定する」。")
             if ctx is not None:
@@ -1389,12 +1419,24 @@ class YahooPurchaseMixin:
             await self.log("未见二次确认弹窗，继续等購入完了。")
         return clicked
 
-    async def _wait_purchase_complete(self, page, timeout_ms=WAIT_HANG_MS):
-        """点最终确定后等完成页。匹配到立刻返回，上限 5 分钟。"""
+    async def _wait_purchase_complete(self, page, timeout_ms=WAIT_HANG_MS, ctx=None):
+        """点最终确定后等完成页。匹配到立刻返回，上限 5 分钟。3DS 出现时飞书通知并继续等。"""
+        notified_3ds = False
+        syserr_reloads = 0
 
         async def arrived():
+            nonlocal notified_3ds, syserr_reloads
+            if await self._yahoo_system_error_visible(page) and syserr_reloads < 3:
+                syserr_reloads += 1
+                await self._reload_if_yahoo_system_error(page, max_tries=1)
+                return False
             if await self._cvv_required_on_page(page):
                 return True
+            if await self._3ds_visible_on_page(page):
+                if not notified_3ds:
+                    notified_3ds = True
+                    await self._notify_need_3ds(ctx, page)
+                return False
             url = page.url or ""
             if self._is_yahoo_login_or_reauth_url(url):
                 return False
@@ -1731,16 +1773,22 @@ class YahooPurchaseMixin:
             if self._is_yahoo_login_or_reauth_url(yahoo_page.url):
                 await self.log("支付前仍停在登录/钱包验证页，不找确认按钮。", "ERROR")
                 return {"status": "YAHOO_REAUTH"}
-        if await self._click_personal_final_confirm(yahoo_page, test_mode):
+        if await self._click_personal_final_confirm(yahoo_page, test_mode, ctx):
             if not test_mode:
                 ctx.trade_info_submitted = True
-                await self._wait_purchase_complete(yahoo_page)
+                await self._wait_purchase_complete(yahoo_page, ctx=ctx)
+                skipped = await self.gate_need_3ds_timeout(ctx)
+                if skipped:
+                    return skipped
             self._remember_yahoo_trade_ids(ctx)
             return None
-        if await self._click_store_purchase_confirm(yahoo_page, test_mode):
+        if await self._click_store_purchase_confirm(yahoo_page, test_mode, ctx):
             if not test_mode:
                 ctx.trade_info_submitted = True
-                await self._wait_purchase_complete(yahoo_page)
+                await self._wait_purchase_complete(yahoo_page, ctx=ctx)
+                skipped = await self.gate_need_3ds_timeout(ctx)
+                if skipped:
+                    return skipped
             self._remember_yahoo_trade_ids(ctx)
             return None
         classic_confirm = yahoo_page.locator("#mBoxConfBt")
@@ -1808,8 +1856,11 @@ class YahooPurchaseMixin:
                         if skipped:
                             return skipped
                         if not test_mode:
-                            await self._wait_purchase_complete(yahoo_page)
+                            await self._wait_purchase_complete(yahoo_page, ctx=ctx)
                         skipped = await self.gate_need_cvv(ctx)
+                        if skipped:
+                            return skipped
+                        skipped = await self.gate_need_3ds_timeout(ctx)
                         if skipped:
                             return skipped
                         self._remember_yahoo_trade_ids(ctx)
@@ -1855,6 +1906,13 @@ class YahooPurchaseMixin:
         skipped = await self.gate_need_cvv(ctx)
         if skipped:
             return skipped
+        if await self._3ds_visible_on_page(yahoo_page):
+            await self._notify_need_3ds(ctx, yahoo_page)
+            if not ctx.test_mode:
+                await self._wait_purchase_complete(yahoo_page, ctx=ctx)
+            skipped = await self.gate_need_3ds_timeout(ctx)
+            if skipped:
+                return skipped
         if self._is_yahoo_login_or_reauth_url(yahoo_page.url):
             await self.wait_out_yahoo_login_or_reauth(yahoo_page, "购买收尾")
         path = yahoo_host_path(yahoo_page.url or "")[1]
@@ -1862,14 +1920,20 @@ class YahooPurchaseMixin:
             "/buyer/payment/confirm" in path or "/order/review" in path
         ):
             await self.log("仍在购买确认页，检测二次确认...")
-            clicked = await self._click_store_purchase_confirm(yahoo_page, False)
+            clicked = await self._click_store_purchase_confirm(yahoo_page, False, ctx)
             if not clicked:
-                clicked = await self._click_personal_final_confirm(yahoo_page, False)
+                clicked = await self._click_personal_final_confirm(yahoo_page, False, ctx)
             if clicked:
                 ctx.trade_info_submitted = True
-            await self._wait_purchase_complete(yahoo_page)
+            await self._wait_purchase_complete(yahoo_page, ctx=ctx)
+            skipped = await self.gate_need_3ds_timeout(ctx)
+            if skipped:
+                return skipped
         elif not ctx.test_mode:
-            await self._wait_purchase_complete(yahoo_page, timeout_ms=WAIT_HANG_MS)
+            await self._wait_purchase_complete(yahoo_page, timeout_ms=WAIT_HANG_MS, ctx=ctx)
+            skipped = await self.gate_need_3ds_timeout(ctx)
+            if skipped:
+                return skipped
         self._remember_yahoo_trade_ids(ctx)
 
         shows_complete = await self._yahoo_shows_purchase_complete(yahoo_page)

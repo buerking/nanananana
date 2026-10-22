@@ -171,6 +171,19 @@ YAHOO_CHECKPOINTS = {
             "input[name='shipMethodName']",
         ],
     },
+    "card_3ds_auth": {
+        "page_name": "信用卡 3DS",
+        "path": "个人 /buyer/payment/confirm 点「上記に同意のうえ 購入を確定する」后若出现 dialog クレジットカード認証 / #challengeAuthParentFrame / eメールによる認証，飞书通知人工输入验证码，不要自动填，继续等購入完了",
+        "looking_for": "3DS 弹窗标题或 iframe",
+        "selectors": [
+            "dialog[open]:has-text('クレジットカード認証')",
+            "dialog[aria-labelledby='CardAuthenticationModalLabel']",
+            "#challengeAuthParentFrame",
+            "h2:has-text('クレジットカード認証')",
+            ".v-challengezone",
+            "input.v-inputcode[name='password']",
+        ],
+    },
     "cvv_dummy_code": {
         "page_name": "信用卡 CVV",
         "path": "店铺结算页出现 input[name=dummy_code] / セキュリティコード时，飞书转人工并跳过本单，不要自动填、不要继续点確認する",
