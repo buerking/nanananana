@@ -277,7 +277,9 @@ class YahooAutoBot(
                 if not backend_page:
                     await self.log("未找到后台标签页。尝试打开...", "WARNING")
                     backend_page = await self.browser_context.new_page()
-                backend_page = await self.ensure_backend_not_buy_list(backend_page)
+                backend_page = await self.ensure_backend_not_buy_list(
+                    backend_page, force=True
+                )
                 scan_target = None if gated else target_order_id
                 orders = await self.scan_backend_list(backend_page, scan_target)
                 if not orders:

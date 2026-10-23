@@ -184,11 +184,18 @@ class QbtMixin:
         if buy_ready:
             await list_page.bring_to_front()
             return list_page
-        await self.log(f"打开后台未购买列表: {self.BACKEND_URL}")
+        await self.log(
+            "刷新后台未购买列表" if force and already_list else f"打开后台未购买列表: {self.BACKEND_URL}"
+        )
         try:
-            await list_page.goto(
-                self.BACKEND_URL, wait_until="domcontentloaded", timeout=WAIT_CLICK_MS * 2
-            )
+            if force and already_list:
+                await list_page.reload(
+                    wait_until="domcontentloaded", timeout=WAIT_CLICK_MS * 2
+                )
+            else:
+                await list_page.goto(
+                    self.BACKEND_URL, wait_until="domcontentloaded", timeout=WAIT_CLICK_MS * 2
+                )
         except Exception as e:
             await self.log(f"打开未购买列表失败: {e}", "WARNING")
         try:
