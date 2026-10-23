@@ -141,8 +141,8 @@ class QbtMixin:
                 any_qbt = page
         return any_qbt
 
-    async def ensure_backend_not_buy_list(self, page=None):
-        """每次都打开 get-auction-not-buy-list。停在 auction-buy 的详情留给人工看，不要覆盖。"""
+    async def ensure_backend_not_buy_list(self, page=None, force=False):
+        """打开 get-auction-not-buy-list。停在 auction-buy 的详情留给人工看，不要覆盖。"""
         list_page = None
         if self.browser_context:
             for p in list(self.browser_context.pages):
@@ -172,13 +172,16 @@ class QbtMixin:
             list_page = reuse
         table = list_page.locator("table.public_table").first
         already_list = self._is_qbt_not_buy_list_url(list_page.url)
-        table_ready = False
-        if already_list:
+        buy_ready = False
+        if already_list and not force:
             try:
-                table_ready = await table.is_visible()
+                buy_ready = (
+                    await list_page.locator("table.public_table a:has-text('购买')").count()
+                    > 0
+                )
             except Exception:
-                table_ready = False
-        if table_ready:
+                buy_ready = False
+        if buy_ready:
             await list_page.bring_to_front()
             return list_page
         await self.log(f"打开后台未购买列表: {self.BACKEND_URL}")
@@ -190,6 +193,9 @@ class QbtMixin:
             await self.log(f"打开未购买列表失败: {e}", "WARNING")
         try:
             await table.wait_for(state="visible", timeout=15000)
+            await list_page.locator("table.public_table a:has-text('购买')").first.wait_for(
+                state="attached", timeout=10000
+            )
         except Exception as e:
             await self.log(f"未购买列表表格未出现: {e}", "WARNING")
         await list_page.bring_to_front()
@@ -495,6 +501,11 @@ class QbtMixin:
                 continue
             process_queue.append(item)
 
+        if skipped_multi:
+            await self.log(
+                f"跳过非一对一 {len(skipped_multi)} 笔: {skipped_multi}",
+                "INFO",
+            )
         if skipped_account:
             self.notify_feishu(
                 "有订单出价账号无法对应 ad/ym，已跳过: " + ", ".join(str(x) for x in skipped_account)

@@ -371,6 +371,7 @@ class YahooAutoBot(
                     order_id_str = str(order.get("order_id", "Unknown"))
                     self.attempted_orders.add(order_id_str)
                     run_stats["total_processed"] += 1
+                    status = ""
                     try:
                         result = await self.process_order(order, backend_page, test_mode)
                         status = (result or {}).get("status", "UNKNOWN_ERROR") if result else "NoneResult"
@@ -388,7 +389,9 @@ class YahooAutoBot(
                         run_stats["failed"] += 1
                         run_stats["details"].append(f"[{order_id_str}] Failed ({e})")
                         await self.log(f"Loop error: {e}", "ERROR")
-                    backend_page = await self.ensure_backend_not_buy_list(backend_page)
+                    backend_page = await self.ensure_backend_not_buy_list(
+                        backend_page, force=(status == "DETAIL_PAGE_ERROR")
+                    )
                     if target_order_id:
                         await self.log(f"单单测试结束: {order_id_str}。自动停止。", "INFO")
                         self.is_running = False

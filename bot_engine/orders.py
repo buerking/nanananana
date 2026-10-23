@@ -113,64 +113,79 @@ class OrderMixin:
                 "WARNING",
             )
 
-    async def _qbt_purchase_link_for_order(self, page: Page, order):
-        """扫单时的 nth 行定位器在跳过/回填后会失效，按订单号重新找「购买」。"""
-        oid = str((order or {}).get("order_id") or "").strip()
-        selectors = []
-        if oid:
-            selectors = [
-                f"table.public_table tr:has(input[value='{oid}']) a:has-text('购买')",
-                f"table.public_table a[onclick*='{oid}']:has-text('购买')",
-                f"table.public_table tr:has-text('{oid}') >> a:has-text('购买')",
-            ]
-        deadline = asyncio.get_running_loop().time() + 8
-        while asyncio.get_running_loop().time() < deadline:
-            for sel in selectors:
-                link = page.locator(sel)
-                try:
-                    if await link.count() and await link.first.is_visible():
-                        return link.first
-                except Exception:
-                    continue
-            stored = (order or {}).get("purchase_link")
-            if stored is not None:
-                try:
-                    if await stored.count() and await stored.first.is_visible():
-                        return stored.first if hasattr(stored, "first") else stored
-                except Exception:
-                    pass
-            await asyncio.sleep(0.4)
-        return None
+    async def _qbt_click_buy_for_order(self, page: Page, oid: str):
+        """后台「购买」是 onclick=goBuy('key_a724235')，按订单号调 JS，不依赖可见性。"""
+        oid = str(oid or "").strip()
+        if not oid:
+            return False
+        try:
+            await page.locator(
+                f"table.public_table input[value='{oid}']"
+            ).first.wait_for(state="attached", timeout=8000)
+        except Exception:
+            return False
+        try:
+            result = await page.evaluate(
+                """(oid) => {
+                  const inputs = document.querySelectorAll('table.public_table input');
+                  let key = null;
+                  for (const inp of inputs) {
+                    if (String(inp.value || '') !== String(oid)) continue;
+                    const cls = [...inp.classList].find((c) => c.startsWith('key_'));
+                    if (cls) { key = cls; break; }
+                  }
+                  if (key && typeof goBuy === 'function') {
+                    goBuy(key);
+                    return {ok: true, how: 'gobuy', key};
+                  }
+                  const links = document.querySelectorAll('table.public_table a');
+                  for (const a of links) {
+                    const oc = a.getAttribute('onclick') || '';
+                    const text = (a.textContent || '').trim();
+                    if (oc.includes(oid) && text.includes('购买')) {
+                      a.click();
+                      return {ok: true, how: 'anchor', key: oc};
+                    }
+                  }
+                  return {ok: false, how: 'none', key};
+                }""",
+                oid,
+            )
+        except Exception as e:
+            await self.log(f"调用后台 goBuy({oid}) 失败: {e}", "WARNING")
+            return False
+        if not result or not result.get("ok"):
+            await self.log(
+                f"列表里没有订单 {oid} 的 goBuy 入口: {result}",
+                "WARNING",
+            )
+            return False
+        await self.log(
+            f"已触发后台购买: {oid} via {result.get('how')} {result.get('key')}"
+        )
+        return True
 
     async def step_open_detail(self, ctx):
         backend_page = ctx.backend_page
+        oid = str(ctx.order.get("order_id") or "").strip()
         if hasattr(self, "ensure_backend_not_buy_list"):
             backend_page = await self.ensure_backend_not_buy_list(backend_page)
             ctx.backend_page = backend_page
-            ctx.order["purchase_link"] = await self._qbt_purchase_link_for_order(
-                backend_page, ctx.order
-            ) or ctx.order.get("purchase_link")
-        purchase_link = await self._qbt_purchase_link_for_order(backend_page, ctx.order)
-        if purchase_link is None:
+        pages_before = len(backend_page.context.pages)
+        opened = await self._qbt_click_buy_for_order(backend_page, oid)
+        if not opened and hasattr(self, "ensure_backend_not_buy_list"):
+            backend_page = await self.ensure_backend_not_buy_list(
+                backend_page, force=True
+            )
+            ctx.backend_page = backend_page
+            pages_before = len(backend_page.context.pages)
+            opened = await self._qbt_click_buy_for_order(backend_page, oid)
+        if not opened:
             await self.log(
-                f"未购买列表找不到订单 {ctx.order.get('order_id')} 的「购买」链接。",
+                f"未购买列表找不到订单 {oid} 的「购买」入口。",
                 "ERROR",
             )
             return {"status": "DETAIL_PAGE_ERROR"}
-        pages_before = len(backend_page.context.pages)
-        try:
-            await purchase_link.scroll_into_view_if_needed(timeout=WAIT_CLICK_MS)
-        except Exception:
-            pass
-        try:
-            await purchase_link.click(timeout=WAIT_CLICK_MS)
-        except Exception as e:
-            await self.log(f"点击「购买」失败，改强制点击: {e}", "WARNING")
-            try:
-                await purchase_link.click(force=True, timeout=WAIT_CLICK_MS)
-            except Exception as e2:
-                await self.log(f"阶段2失败 (点击购买): {e2}", "ERROR")
-                return {"status": "DETAIL_PAGE_ERROR"}
         await asyncio.sleep(1)
         pages_after = len(backend_page.context.pages)
         ctx.detail_page = backend_page
@@ -366,18 +381,13 @@ class OrderMixin:
                 status = (result or {}).get("status") if result else "无结果"
                 await self.log(f"本单有问题 ({status})，保留标签供人工审查。")
 
-        if ok or ctx.is_new_tab:
+        if ok:
             try:
                 if ctx.backend_page and not ctx.backend_page.is_closed():
-                    if not (
-                        not ok
-                        and hasattr(self, "_is_qbt_auction_buy_url")
-                        and self._is_qbt_auction_buy_url(ctx.backend_page.url)
-                    ):
-                        await self.log("回到未购买列表...")
-                        await ctx.backend_page.goto(
-                            self.BACKEND_URL, wait_until="commit", timeout=WAIT_CLICK_MS * 2
-                        )
+                    await self.log("回到未购买列表...")
+                    ctx.backend_page = await self.ensure_backend_not_buy_list(
+                        ctx.backend_page, force=True
+                    )
             except Exception as e:
                 await self.log(f"回到未购买列表未完成（下一轮扫描会再打开）: {e}", "WARNING")
 
