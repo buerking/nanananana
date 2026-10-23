@@ -91,8 +91,8 @@ YAHOO_CHECKPOINTS = {
     },
     "store_won_trade_nav": {
         "page_name": "店铺落札后取引ナビ /order/status",
-        "path": "已结束店铺拍品（没有「購入手続きへ」）→ buy.auctions.yahoo.co.jp/order/status?auctionId= → 点「購入手続きする」→ /order/review。若出现「まとめて購入手続きする」/「単品で購入手続きする」，跳过转人工，两按钮都不点。不要打开 contact.auctions /trade/top",
-        "looking_for": "店铺取引ナビ「購入手続きする」；同捆二选一则跳过",
+        "path": "已结束店铺拍品（没有「購入手続きへ」）→ buy.auctions.yahoo.co.jp/order/status?auctionId= → 点「購入手続きする」→ /order/review。若页上已是「ご購入ありがとうございます」/「支払いが完了しました」，视为已购买，只读送料回填 QBT。若出现「まとめて購入手続きする」/「単品で購入手続きする」，跳过转人工，两按钮都不点。不要打开 contact.auctions /trade/top",
+        "looking_for": "店铺取引ナビ「購入手続きする」；已购买则读送料；同捆二选一则跳过",
         "selectors": [
             "a[href*='/order/review']",
             "#pap a:has-text('購入手続きする')",
@@ -233,8 +233,11 @@ YAHOO_CHECKPOINTS = {
             "text=購入完了",
             "text=購入が完了",
             "text=ご購入ありがとうございます",
+            "text=支払いが完了しました",
+            "text=発送連絡をお待ちください",
             "#deal a:has-text('取引内容を確認する')",
             "#dtlinfo",
+            "text=お届け情報・お支払い情報などを確認する",
             "button:has-text('情報')",
             "h3:has-text('ストアへのお支払い金額')",
             "text=送料",
@@ -242,12 +245,14 @@ YAHOO_CHECKPOINTS = {
     },
     "wait_shipping_address": {
         "page_name": "待运费只改地址",
-        "path": "点取引后进入 /buyer/edit「取引情報を入力してください」→ 若 address2 折叠则先点「編集する」再改室号 → #mBoxConfBt 決定する → #confSubmitBtn 確定する；卖家之后才报运费。已提交后的等待页是「送料連絡待ち」",
-        "looking_for": "待运费页的地址输入框",
+        "path": "点取引后进入 /buyer/edit「取引情報を入力してください」→ 若 address2 折叠则先点「編集する」再改室号 → #mBoxConfBt 決定する → #confSubmitBtn 確定する；卖家之后才报运费。已提交后的等待页是「出品者からの送料の連絡をお待ちください」/「送料連絡待ち」，此时只回填等待商家确认运费，不要再找購入手続きをする",
+        "looking_for": "待运费页的地址输入框，或已提交后的送料連絡待ち",
         "selectors": [
             "form[name='tradeForm']",
             "text=取引情報を入力してください",
             "text=出品者から送料の連絡があります",
+            "text=出品者からの送料の連絡をお待ちください",
+            "text=送料連絡待ち",
             "input[name='home_address2']",
             "input[name='address2']",
             "a:has-text('編集する')",
@@ -448,6 +453,26 @@ class YahooUiWatchMixin:
             url = (page.url or "") if page and not page.is_closed() else ""
         except Exception:
             url = ""
+        if hasattr(self, "_page_shows_already_purchased"):
+            try:
+                if await self._page_shows_already_purchased(page):
+                    await self.log(
+                        f"当前是已购买完成页，不报改版检查点 {checkpoint_id}。",
+                        "WARNING",
+                    )
+                    return None
+            except Exception:
+                pass
+        if hasattr(self, "_page_shows_wait_shipping_submitted"):
+            try:
+                if await self._page_shows_wait_shipping_submitted(page):
+                    await self.log(
+                        f"当前是送料連絡待ち，不报改版检查点 {checkpoint_id}。",
+                        "WARNING",
+                    )
+                    return None
+            except Exception:
+                pass
         path_key = urlparse(url).path if url else ""
         dedupe = f"{checkpoint_id}:{path_key}"
         reported = getattr(self, "ui_miss_reported", None)

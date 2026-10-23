@@ -462,6 +462,10 @@ class YahooCheckoutMixin:
         yahoo_page = ctx.yahoo_page
         suffix = ctx.suffix
         order_info = ctx.order_info
+        if hasattr(self, "_finish_if_already_done"):
+            done = await self._finish_if_already_done(ctx)
+            if done:
+                return done
         try:
             await self._dismiss_reauth_note(yahoo_page)
             try:
