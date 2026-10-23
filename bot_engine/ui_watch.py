@@ -183,7 +183,7 @@ YAHOO_CHECKPOINTS = {
     },
     "card_3ds_auth": {
         "page_name": "信用卡 3DS",
-        "path": "个人 /buyer/payment/confirm 点「上記に同意のうえ 購入を確定する」后若出现 dialog クレジットカード認証 / #challengeAuthParentFrame / eメールによる認証，飞书通知人工输入验证码，不要自动填，继续等購入完了",
+        "path": "个人 /buyer/payment/confirm 点「上記に同意のうえ 購入を確定する」后若出现 dialog クレジットカード認証 / eメールによる認証，飞书通知人工输入验证码，不要自动填。未输入并确定前一直等这一单，不超时跳过、不进下一单",
         "looking_for": "3DS 弹窗标题或 iframe",
         "selectors": [
             "dialog[open]:has-text('クレジットカード認証')",

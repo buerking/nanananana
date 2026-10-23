@@ -1550,9 +1550,13 @@ class YahooPurchaseMixin:
         return False
 
     async def _wait_purchase_complete(self, page, timeout_ms=WAIT_HANG_MS, ctx=None):
-        """点最终确定后等完成页。匹配到立刻返回，上限 5 分钟。3DS 出现时飞书通知并继续等。"""
+        """点最终确定后等完成页。匹配到立刻返回。
+
+        未出现 3DS 时上限 5 分钟；一旦出现 3DS，一直等到人工输入并确定，不跳过、不进下一单。
+        """
         notified_3ds = False
         syserr_reloads = 0
+        saw_3ds = False
         wait_shipping = bool(
             ctx and getattr(ctx, "is_wait_for_shipping", False)
             and getattr(ctx, "trade_info_submitted", False)
@@ -1561,7 +1565,17 @@ class YahooPurchaseMixin:
             timeout_ms = min(int(timeout_ms or WAIT_HANG_MS), WAIT_CLICK_MS * 2)
 
         async def arrived():
-            nonlocal notified_3ds, syserr_reloads
+            nonlocal notified_3ds, syserr_reloads, saw_3ds
+            if await self._3ds_visible_on_page(page):
+                saw_3ds = True
+                if not notified_3ds:
+                    notified_3ds = True
+                    await self._notify_need_3ds(ctx, page)
+                    await self.log(
+                        "3DS 未完成：本单一直等待人工输入并确定，不超时、不进下一单。",
+                        "WARNING",
+                    )
+                return False
             if await self._yahoo_system_error_visible(page) and syserr_reloads < 3:
                 syserr_reloads += 1
                 await self._reload_if_yahoo_system_error(page, max_tries=1)
@@ -1570,11 +1584,6 @@ class YahooPurchaseMixin:
                 return True
             if await self._cvv_required_on_page(page):
                 return True
-            if await self._3ds_visible_on_page(page):
-                if not notified_3ds:
-                    notified_3ds = True
-                    await self._notify_need_3ds(ctx, page)
-                return False
             url = page.url or ""
             if self._is_yahoo_login_or_reauth_url(url):
                 return False
@@ -1597,8 +1606,38 @@ class YahooPurchaseMixin:
         if wait_shipping:
             await self.log("待运费单已提交取引情報，确认页面收妥（不等購入完了页）...")
         else:
-            await self.log("等待购买完成页（最长 5 分钟）...")
-        return await self.wait_until(arrived, timeout_ms=timeout_ms)
+            await self.log("等待购买完成页（最长 5 分钟；若出现 3DS 则一直等到人工完成）...")
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + (timeout_ms or WAIT_HANG_MS) / 1000.0
+        last_3ds_log = 0.0
+        while True:
+            if hasattr(self, "ensure_running"):
+                self.ensure_running()
+            try:
+                if page is not None and page.is_closed():
+                    return False
+            except Exception:
+                return False
+            try:
+                if await arrived():
+                    return True
+            except BotStopped:
+                raise
+            except Exception:
+                pass
+            now = loop.time()
+            if saw_3ds:
+                if now - last_3ds_log >= 120:
+                    last_3ds_log = now
+                    await self.log("仍在等待人工完成 3DS 验证，本单不超时、不进下一单。")
+                await asyncio.sleep(0.8)
+                continue
+            if now >= deadline:
+                try:
+                    return bool(await arrived())
+                except Exception:
+                    return False
+            await asyncio.sleep(0.4)
 
     def _remember_yahoo_trade_ids(self, ctx, url=None):
         page = ctx.yahoo_page

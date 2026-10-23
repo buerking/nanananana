@@ -262,11 +262,12 @@ class GatesMixin:
             pass
         self.notify_feishu(
             f"订单 {oid} / 商品 {pid} / 账号 {acc} 出现信用卡 3DS 认证（eメールによる認証）。"
-            "请在当前窗口弹窗中输入验证码后点「確認」。机器人会继续等待购买完成。"
+            "请在当前窗口弹窗中输入验证码后点「確認」。"
+            "机器人会一直等这一单，不会超时跳过、也不会进下一单。"
         )
 
     async def gate_need_3ds_timeout(self, ctx):
-        """点完确定后 3DS 仍未完成：飞书已在出现时发出，本单跳过转人工。"""
+        """3DS 还在就一直等人工完成，不要 SKIPPED_NEED_3DS，避免夜间连着弹验证。"""
         page = ctx.yahoo_page
         if page is None:
             return None
@@ -276,8 +277,10 @@ class GatesMixin:
         except Exception:
             return None
         await self._notify_need_3ds(ctx, page)
-        await self.log("3DS 认证仍未完成，转人工。本单跳过。", "WARNING")
-        return deny("SKIPPED_NEED_3DS")
+        await self.log("3DS 仍未完成，继续等待人工输入（不跳过本单）。", "WARNING")
+        if hasattr(self, "_wait_purchase_complete"):
+            await self._wait_purchase_complete(page, ctx=ctx)
+        return None
 
     async def _cvv_required_on_page(self, page):
         dummy = page.locator("input[name='dummy_code']")

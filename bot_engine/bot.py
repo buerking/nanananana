@@ -205,7 +205,7 @@ class YahooAutoBot(
         if status == "SKIPPED_NEED_CVV":
             return "本单自动购买是否成功: 跳过（需人工填写信用卡安全码）"
         if status == "SKIPPED_NEED_3DS":
-            return "本单自动购买是否成功: 跳过（需人工完成信用卡3DS验证）"
+            return "本单自动购买是否成功: 跳过（需人工完成信用卡3DS验证；现网改为一直等待不再跳过）"
         if status == "SKIPPED_NO_PURCHASE_DATA":
             return "本单自动购买是否成功: 跳过（雅虎无购买数据，可能未中标或卖家取消）"
         if str(status).startswith("SKIPPED"):
