@@ -116,22 +116,30 @@ class OrderMixin:
     async def _qbt_purchase_link_for_order(self, page: Page, order):
         """扫单时的 nth 行定位器在跳过/回填后会失效，按订单号重新找「购买」。"""
         oid = str((order or {}).get("order_id") or "").strip()
+        selectors = []
         if oid:
-            link = page.locator(
-                f"table.public_table tr:has-text('{oid}') >> a:has-text('购买')"
-            )
-            try:
-                if await link.count():
-                    return link.first
-            except Exception:
-                pass
-        stored = (order or {}).get("purchase_link")
-        if stored is not None:
-            try:
-                if await stored.count():
-                    return stored.first if hasattr(stored, "first") else stored
-            except Exception:
-                pass
+            selectors = [
+                f"table.public_table tr:has(input[value='{oid}']) a:has-text('购买')",
+                f"table.public_table a[onclick*='{oid}']:has-text('购买')",
+                f"table.public_table tr:has-text('{oid}') >> a:has-text('购买')",
+            ]
+        deadline = asyncio.get_running_loop().time() + 8
+        while asyncio.get_running_loop().time() < deadline:
+            for sel in selectors:
+                link = page.locator(sel)
+                try:
+                    if await link.count() and await link.first.is_visible():
+                        return link.first
+                except Exception:
+                    continue
+            stored = (order or {}).get("purchase_link")
+            if stored is not None:
+                try:
+                    if await stored.count() and await stored.first.is_visible():
+                        return stored.first if hasattr(stored, "first") else stored
+                except Exception:
+                    pass
+            await asyncio.sleep(0.4)
         return None
 
     async def step_open_detail(self, ctx):

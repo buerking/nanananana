@@ -170,13 +170,28 @@ class QbtMixin:
             if reuse is None:
                 reuse = await self.browser_context.new_page()
             list_page = reuse
+        table = list_page.locator("table.public_table").first
+        already_list = self._is_qbt_not_buy_list_url(list_page.url)
+        table_ready = False
+        if already_list:
+            try:
+                table_ready = await table.is_visible()
+            except Exception:
+                table_ready = False
+        if table_ready:
+            await list_page.bring_to_front()
+            return list_page
         await self.log(f"打开后台未购买列表: {self.BACKEND_URL}")
         try:
             await list_page.goto(
-                self.BACKEND_URL, wait_until="commit", timeout=WAIT_CLICK_MS * 2
+                self.BACKEND_URL, wait_until="domcontentloaded", timeout=WAIT_CLICK_MS * 2
             )
         except Exception as e:
             await self.log(f"打开未购买列表失败: {e}", "WARNING")
+        try:
+            await table.wait_for(state="visible", timeout=15000)
+        except Exception as e:
+            await self.log(f"未购买列表表格未出现: {e}", "WARNING")
         await list_page.bring_to_front()
         return list_page
 

@@ -334,6 +334,11 @@ class YahooAutoBot(
                     try:
                         result = await self.process_order(head, backend_page, False)
                         status = (result or {}).get("status", "UNKNOWN_ERROR") if result else "NoneResult"
+                        if status == "DETAIL_PAGE_ERROR":
+                            self.attempted_orders.discard(order_id_str)
+                            await self.log(
+                                f"订单 {order_id_str} 未点到「购买」，不记已尝试，下一轮再试。"
+                            )
                         await self.log(self._verdict_line(status), "INFO")
                         await self._record_order_result(
                             run_stats, order_id_str, status, test_mode=False, gated=True
@@ -369,6 +374,11 @@ class YahooAutoBot(
                     try:
                         result = await self.process_order(order, backend_page, test_mode)
                         status = (result or {}).get("status", "UNKNOWN_ERROR") if result else "NoneResult"
+                        if status == "DETAIL_PAGE_ERROR":
+                            self.attempted_orders.discard(order_id_str)
+                            await self.log(
+                                f"订单 {order_id_str} 未点到「购买」，不记已尝试，下一轮再试。"
+                            )
                         await self._record_order_result(
                             run_stats, order_id_str, status, test_mode, gated=False
                         )
