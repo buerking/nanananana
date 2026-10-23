@@ -36,6 +36,9 @@ class OrderContext:
     yahoo_oid: str = ""
     body_text: str = ""
     result: Optional[dict] = None
+    yahoo_pages_before: list = field(default_factory=list)
+    backfill_blocked: bool = False
+    suffix_confirmed_for_pay: bool = False
 
     @property
     def order_id(self):

@@ -1,13 +1,27 @@
 import re
-from urllib.parse import unquote
+from urllib.parse import parse_qs, unquote, urlparse
 
 from playwright.async_api import Page
 
-from .constants import QBT_BROWSER_ACCOUNT, RISK_STATUS_SEARCH_URL, WAIT_CLICK_MS
+from .constants import (
+    QBT_AUCTION_BUY_URL,
+    QBT_BROWSER_ACCOUNT,
+    RISK_STATUS_SEARCH_URL,
+    WAIT_CLICK_MS,
+)
 
 _CF_EMAIL_RE = re.compile(r"[\w.+-]+@yahoo\.co\.jp", re.I)
 _STORAGE_FROM_ZY_RE = re.compile(r"ZY\d+\s*/\s*([A-Za-z0-9]{5,6})", re.I)
 _STORAGE_ONLY_RE = re.compile(r"^[A-Za-z][A-Za-z0-9]{4,5}$")
+
+
+def qbt_order_id_from_url(url):
+    """auction-buy&id=724271 → 724271。列表页没有 id 则空。"""
+    try:
+        query = parse_qs(urlparse(url or "").query)
+    except Exception:
+        return ""
+    return str((query.get("id") or [""])[0] or "").strip()
 
 
 def parse_storage_code(text):
@@ -61,9 +75,48 @@ def decode_cf_email(cfemail):
 class QbtMixin:
     """阶段1 扫未购买列表 + 阶段4 回填 qbt 后台。"""
 
+    async def ensure_qbt_detail_is_this_order(self, ctx):
+        """买哪单就打开哪单的 QBT 详情。同捆第一项、串页点到别的 auction-buy 都不能拿来改室号/点确定。"""
+        want = str((ctx.order or {}).get("order_id") or "").strip()
+        page = ctx.detail_page
+        if not want or page is None:
+            return None
+        try:
+            if page.is_closed():
+                return {"status": "DETAIL_PAGE_ERROR"}
+        except Exception:
+            return {"status": "DETAIL_PAGE_ERROR"}
+        got = qbt_order_id_from_url(page.url)
+        if got == want:
+            return None
+        target = QBT_AUCTION_BUY_URL.format(order_id=want)
+        await self.log(
+            f"QBT 详情不是本单（当前 id={got or '无'}），改打开订单 {want}。",
+            "WARNING",
+        )
+        try:
+            await page.goto(target, wait_until="domcontentloaded", timeout=WAIT_CLICK_MS * 4)
+            await page.wait_for_selector(".active_form", timeout=15000)
+        except Exception as e:
+            await self.log(f"打开本单 QBT 详情失败: {e}", "ERROR")
+            return {"status": "DETAIL_PAGE_ERROR"}
+        got = qbt_order_id_from_url(page.url)
+        if got != want:
+            await self.log(
+                f"打开后仍不是本单 QBT 详情（当前 id={got or '无'}，本单 {want}）。",
+                "ERROR",
+            )
+            return {"status": "DETAIL_PAGE_ERROR"}
+        await self.log(f"已固定 QBT 详情到本单 {want}。")
+        return None
+
     def _is_qbt_not_buy_list_url(self, url):
         u = unquote(url or "")
         return "qbt.jp" in u and "get-auction-not-buy-list" in u
+
+    def _is_qbt_auction_buy_url(self, url):
+        u = unquote(url or "")
+        return "qbt.jp" in u and "auction-buy" in u
 
     async def find_backend_tab(self):
         """优先找未购买列表页；订单卡在详情时不要把 auction-buy 当拉单页。"""
@@ -89,20 +142,43 @@ class QbtMixin:
         return any_qbt
 
     async def ensure_backend_not_buy_list(self, page=None):
-        """每次都打开 get-auction-not-buy-list，不要沿用停在详情/其它后台页的当前标签。"""
-        if page is None or page.is_closed():
-            page = await self.find_backend_tab()
-        if page is None or page.is_closed():
-            page = await self.browser_context.new_page()
+        """每次都打开 get-auction-not-buy-list。停在 auction-buy 的详情留给人工看，不要覆盖。"""
+        list_page = None
+        if self.browser_context:
+            for p in list(self.browser_context.pages):
+                try:
+                    if p.is_closed():
+                        continue
+                except Exception:
+                    continue
+                if self._is_qbt_not_buy_list_url(p.url):
+                    list_page = p
+                    break
+        if list_page is None:
+            reuse = page
+            try:
+                if reuse is None or reuse.is_closed():
+                    reuse = None
+            except Exception:
+                reuse = None
+            if reuse is not None and self._is_qbt_auction_buy_url(reuse.url):
+                reuse = None
+            if reuse is None:
+                found = await self.find_backend_tab()
+                if found and not self._is_qbt_auction_buy_url(found.url):
+                    reuse = found
+            if reuse is None:
+                reuse = await self.browser_context.new_page()
+            list_page = reuse
         await self.log(f"打开后台未购买列表: {self.BACKEND_URL}")
         try:
-            await page.goto(
+            await list_page.goto(
                 self.BACKEND_URL, wait_until="commit", timeout=WAIT_CLICK_MS * 2
             )
         except Exception as e:
             await self.log(f"打开未购买列表失败: {e}", "WARNING")
-        await page.bring_to_front()
-        return page
+        await list_page.bring_to_front()
+        return list_page
 
     async def check_risk_order_status(self, order_id):
         """

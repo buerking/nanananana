@@ -35,6 +35,9 @@ FEISHU_WEBHOOK = (
     "https://open.feishu.cn/open-apis/bot/v2/hook/0698f195-67e8-4359-b3dc-cd947782d2b4"
 )
 BACKEND_URL = "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list"
+QBT_AUCTION_BUY_URL = (
+    "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id={order_id}"
+)
 EDI_TICKET_URL = "https://edi.jpgoodbuy.com/service.php?func=apiCreateWorkOrder"
 EDI_TICKET_PC_MARK = "nananana"
 # 可用环境变量 EDI_SIGN_SECRET 覆盖。

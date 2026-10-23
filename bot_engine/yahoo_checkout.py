@@ -349,6 +349,24 @@ class YahooCheckoutMixin:
             "button:has-text('編集する')"
         )
 
+    async def _try_click_personal_address_edit(self, page: Page):
+        loc = self._personal_address_edit_locator(page)
+        if await loc.count() == 0:
+            return False
+        try:
+            await loc.first.wait_for(state="visible", timeout=3000)
+        except Exception:
+            pass
+        try:
+            await loc.first.click(timeout=WAIT_CLICK_MS, force=True)
+        except Exception:
+            try:
+                await loc.first.evaluate("el => el.click()")
+            except Exception:
+                return False
+        await asyncio.sleep(0.8)
+        return True
+
     async def _address2_input_value(self, page: Page):
         inp = self._checkout_address2_locator(page)
         try:
@@ -364,18 +382,26 @@ class YahooCheckoutMixin:
         if await self.has_visible(inp):
             return True
         edit = self._personal_address_edit_locator(page)
-        if await self.has_visible(edit):
+        if await edit.count() > 0:
             await self.log("地址输入框折叠，点击「編集する」展开后再改室号...")
-            if not await self.click_visible(edit):
+            try:
+                await edit.first.click(timeout=WAIT_CLICK_MS, force=True)
+            except Exception:
                 try:
-                    await edit.first.click(force=True, timeout=WAIT_CLICK_MS)
+                    await edit.first.evaluate("el => el.click()")
                 except Exception:
                     pass
+            await asyncio.sleep(0.6)
+            if self._is_yahoo_account_address_url(page.url):
+                return False
             try:
-                await inp.first.wait_for(state="visible", timeout=WAIT_CLICK_MS)
+                await page.locator(
+                    "input[name='address2'], input[name='home_address2']"
+                ).first.wait_for(state="visible", timeout=5000)
+                return True
             except Exception:
-                pass
-        return await self.has_visible(inp)
+                return False
+        return False
 
     async def _fill_address2_suffix(self, page: Page, suffix):
         inp = self._checkout_address2_locator(page)
@@ -422,6 +448,81 @@ class YahooCheckoutMixin:
             await self.log(f"填写室号失败: {e}", "WARNING")
             return False
 
+    def _suffix_in_text(self, suffix, *chunks):
+        needle = (suffix or "").replace(" ", "").replace("\t", "").replace("\n", "")
+        if not needle:
+            return False
+        blob = "".join(str(c or "") for c in chunks)
+        blob = blob.replace(" ", "").replace("\t", "").replace("\n", "")
+        return needle in blob
+
+    async def _page_shows_order_suffix(self, page: Page, suffix):
+        if not suffix or page is None:
+            return False
+        try:
+            if page.is_closed():
+                return False
+        except Exception:
+            return False
+        chunks = []
+        chunks.append(await self._visible_ship_address_text(page))
+        chunks.append(await self._address2_input_value(page))
+        for sel in (
+            "#bidinfo",
+            "section:has(#bidinfo)",
+            "section:has(h2:has-text('落札者情報'))",
+            "#address",
+            "section:has(h2:has-text('お届け先'))",
+            "form[name='tradeForm']",
+            "main",
+            "#__next",
+        ):
+            try:
+                loc = page.locator(sel).first
+                if await loc.count():
+                    chunks.append(await loc.inner_text())
+            except Exception:
+                continue
+        return self._suffix_in_text(suffix, *chunks)
+
+    async def _require_suffix_before_pay(self, ctx, where="付款前", required=True):
+        """付款/确定点击前必须看到本单室号。看不到就停，绝不点。"""
+        suffix = (getattr(ctx, "suffix", None) or "").strip()
+        page = ctx.yahoo_page
+        if not suffix:
+            await self.log(f"{where}：没有本单室号，不点确认。", "ERROR")
+            return {"status": "ADDRESS_FAIL"}
+        if await self._page_shows_order_suffix(page, suffix):
+            ctx.suffix_confirmed_for_pay = True
+            await self.log(f"{where}：已确认室号 '{suffix}'，继续点击。")
+            return None
+        if required and hasattr(self, "_ensure_checkout_address_suffix") and page is not None:
+            await self.log(
+                f"{where}：页上未见 '{suffix}'，再补填一次再核对。",
+                "WARNING",
+            )
+            try:
+                await self._ensure_checkout_address_suffix(page, suffix)
+            except Exception as e:
+                await self.log(f"{where}：补填室号失败: {e}", "WARNING")
+            if await self._page_shows_order_suffix(page, suffix):
+                ctx.suffix_confirmed_for_pay = True
+                await self.log(f"{where}：补填后已确认室号 '{suffix}'，继续点击。")
+                return None
+        if not required and getattr(ctx, "suffix_confirmed_for_pay", False):
+            await self.log(
+                f"{where}：确认页未展示室号，沿用付款前已核对的 '{suffix}'。",
+                "WARNING",
+            )
+            return None
+        await self.log(f"{where}：未能确认室号 '{suffix}'，停止点击。", "ERROR")
+        if hasattr(self, "report_missing_yahoo_ui"):
+            await self.report_missing_yahoo_ui(
+                page, "address_edit", ctx,
+                extra=f"{where}未见本单室号 {suffix}，已阻止确认购买。",
+            )
+        return {"status": "ADDRESS_FAIL"}
+
     async def _ensure_checkout_address_suffix(self, page: Page, suffix):
         """隐藏框里可能是上一单室号，不能只看 DOM 里有没有 address2。"""
         current = await self._address2_input_value(page)
@@ -462,17 +563,42 @@ class YahooCheckoutMixin:
         yahoo_page = ctx.yahoo_page
         suffix = ctx.suffix
         order_info = ctx.order_info
+        if hasattr(self, "_deny_wrong_yahoo_product"):
+            denied = await self._deny_wrong_yahoo_product(ctx, "改室号前")
+            if denied:
+                return denied
+            yahoo_page = ctx.yahoo_page
+        await self.log(f"本单 {ctx.order_id} 填写室号 {suffix}")
         if hasattr(self, "_finish_if_already_done"):
             done = await self._finish_if_already_done(ctx)
             if done:
                 return done
         try:
             await self._dismiss_reauth_note(yahoo_page)
+            checkout_form = True
+            if hasattr(self, "_checkout_like_url"):
+                checkout_form = self._checkout_like_url(yahoo_page.url or "")
+            if not checkout_form:
+                done = await self._finish_if_already_done(ctx) if hasattr(self, "_finish_if_already_done") else None
+                if done:
+                    return done
+                await self.log("当前不是结算地址页，跳过改室号，避免空等お届け先。", "WARNING")
+                return {"status": "ADDRESS_FAIL"}
             try:
                 await yahoo_page.locator(
-                    "#address, #bidinfo, h2:has-text('落札者情報'), h2:has-text('お届け先'), "
-                    "input[name='address2'], input[name='home_address2']"
+                    "#address, #bidinfo, form[name='tradeForm'], #elAdressEdit, "
+                    "#bidinfo a:has-text('編集する'), "
+                    "input[name='address2'], input[name='home_address2'], "
+                    "h2:has-text('落札者情報')"
                 ).first.wait_for(state="visible", timeout=WAIT_HANG_MS)
+            except Exception:
+                pass
+            try:
+                await yahoo_page.locator(
+                    "#bidinfo a:has-text('編集する'), #elAdressEdit, "
+                    "form[name='tradeForm'] input[name='address2'], "
+                    "#address a:has-text('変更')"
+                ).first.wait_for(state="visible", timeout=8000)
             except Exception:
                 pass
             await self._dismiss_reauth_note(yahoo_page)
@@ -498,25 +624,13 @@ class YahooCheckoutMixin:
             if not already_on_form:
                 opened = await self._open_store_address_edit(yahoo_page)
                 if not opened:
-                    edit_btn = yahoo_page.locator(
-                        "#bidinfo a:has-text('編集する'), "
-                        "a[data-cl-params*='_cl_link:edit'], "
-                        "#elAdressEdit, a:has-text('編集する'), input[value='編集する'], "
-                        "button:has-text('編集する')"
-                    )
-                    visible_edit = None
-                    for i in range(await edit_btn.count()):
-                        loc = edit_btn.nth(i)
-                        try:
-                            if await loc.is_visible():
-                                visible_edit = loc
-                                break
-                        except Exception:
-                            continue
-                    if visible_edit is not None:
+                    clicked_edit = await self._try_click_personal_address_edit(yahoo_page)
+                    if clicked_edit:
                         await self.log("点击「編集する」展开地址表单...")
-                        if not await self.click_visible(visible_edit):
-                            await visible_edit.click(timeout=WAIT_CLICK_MS)
+                        visible_edit = True
+                    else:
+                        visible_edit = None
+                    if visible_edit is not None:
 
                         async def address_edit_opened():
                             if self._is_yahoo_account_address_url(yahoo_page.url):
@@ -573,6 +687,10 @@ class YahooCheckoutMixin:
                 inp = self._checkout_address2_locator(yahoo_page)
                 if not await self.has_visible(inp):
                     await self._reveal_checkout_address2(yahoo_page)
+                if self._is_yahoo_account_address_url(yahoo_page.url):
+                    ok = await self._fill_yahoo_account_address_and_return(yahoo_page, suffix)
+                    if ok:
+                        return None
                 if await inp.count() and await self._fill_address2_suffix(yahoo_page, suffix):
                     input_found = True
                     break
@@ -581,10 +699,17 @@ class YahooCheckoutMixin:
                 if suffix in displayed and (not current_val or suffix in current_val):
                     await self.log(f"地址检查: お届け先已包含正确后缀 '{suffix}'，跳过修改。")
                     return None
+                clicked_edit = await self._try_click_personal_address_edit(yahoo_page)
+                if clicked_edit:
+                    if self._is_yahoo_account_address_url(yahoo_page.url):
+                        ok = await self._fill_yahoo_account_address_and_return(yahoo_page, suffix)
+                        if ok:
+                            return None
+                    continue
                 opened = await self._open_store_address_edit(yahoo_page)
                 if opened:
                     continue
-                await self.log(f"地址输入框未找到 (第 {i + 1}/8 次)，等待お届け先「変更」...")
+                await self.log(f"地址输入框未找到 (第 {i + 1}/8 次)，等待地址编辑入口...")
                 await asyncio.sleep(1)
             if not input_found and hasattr(self, "_continue_personal_checkout"):
                 url_now = yahoo_page.url or ""

@@ -4,7 +4,13 @@ import re
 
 from playwright.async_api import Page
 
-from .constants import QBT_BROWSER_ACCOUNT, WAIT_CLICK_MS, YAHOO_AUCTION_URL
+from .constants import (
+    QBT_BROWSER_ACCOUNT,
+    SUCCESS_STATUSES,
+    WAIT_CLICK_MS,
+    YAHOO_AUCTION_URL,
+    YAHOO_HOME_URL,
+)
 from .flow import OrderContext, run_chain
 from .qbt import parse_storage_code
 
@@ -16,6 +22,7 @@ class OrderMixin:
         入队规则见 filter_buyable_orders：仅一对一。雅虎页开在对应出价账号的 Chrome。
         """
         ctx = OrderContext(order=order, backend_page=backend_page, test_mode=test_mode)
+        result = None
         await self.log(
             f"开始处理订单 {order.get('order_id')} "
             f"(卖家: {order.get('seller_id')}, 账号: {order.get('account_key') or '?'}, "
@@ -24,44 +31,63 @@ class OrderMixin:
         try:
             denied = await self.gate_blacklist(ctx)
             if denied:
-                return denied
+                result = denied
+                return result
 
             self.ensure_running()
             opened = await self.step_open_detail(ctx)
             if opened:
-                return opened
+                result = opened
+                return result
+
+            pinned = await self.ensure_qbt_detail_is_this_order(ctx)
+            if pinned:
+                result = pinned
+                return result
 
             denied = await self.gate_backend_remark(ctx)
             if denied:
-                return denied
+                result = denied
+                return result
 
             await self.step_parse_bound_items(ctx)
 
             opened = await self.step_open_yahoo(ctx)
             if opened:
-                return opened
+                result = opened
+                return result
 
             denied = await run_chain([self.gate_yahoo_login, self.gate_risk_keywords], ctx)
             if denied:
-                return denied
+                result = denied
+                return result
 
             ctx.sync_order_info()
             result = await self.execute_yahoo_purchase(ctx.yahoo_page, ctx.order_info, test_mode)
             try:
-                if result and (result.get("status") in (
-                    "PURCHASED", "WAIT_SHIPPING", "WAIT_SHIPPING_CONTACT", "TEST_SUCCESS"
-                )):
+                if result and (result.get("status") in SUCCESS_STATUSES):
                     await self._log_suffix_check(ctx)
             except Exception as e:
                 await self.log(f"室号核对失败（不影响结论）: {e}", "DEBUG")
             try:
-                await self.backfill_order(ctx.detail_page, result, ctx.backend_total, test_mode)
+                pinned = await self.ensure_qbt_detail_is_this_order(ctx)
+                if pinned:
+                    ctx.backfill_blocked = True
+                    await self.log(
+                        "回填前无法打开本单 QBT 详情，不点确定，避免更新错单。",
+                        "ERROR",
+                    )
+                else:
+                    await self.backfill_order(
+                        ctx.detail_page, result, ctx.backend_total, test_mode
+                    )
             except Exception as e:
+                ctx.backfill_blocked = True
                 await self.log(f"Navigation error after processing: {e}", "ERROR")
             return result
         finally:
             try:
-                await self.mw_cleanup_detail_tab(ctx)
+                await self.mw_cleanup_after_order(ctx, result)
             except Exception:
                 pass
 
@@ -172,11 +198,12 @@ class OrderMixin:
                     first_id_match = re.search(r"(\d+)", first_id_text or "")
                     if first_id_match:
                         first_id = first_id_match.group(1)
-                        if str(order.get("order_id")) != first_id:
+                        started = str(order.get("order_id") or "")
+                        if started and first_id != started:
                             await self.log(
-                                f"同捆订单：将主要 ID 从 {order.get('order_id')} 切换为第一项 ID {first_id}"
+                                f"同捆详情第一项是 {first_id}，本单仍按 {started} "
+                                "改室号并回填，不切换主 ID。"
                             )
-                            order["order_id"] = first_id
                 bound_items.append(item_data)
             if detail_rows:
                 try:
@@ -225,6 +252,9 @@ class OrderMixin:
             return {"status": "NO_YAHOO_BROWSER"}
         try:
             await self.log(f"切换雅虎浏览器 [{account_key or QBT_BROWSER_ACCOUNT}] 打开: {url}")
+            ctx.yahoo_pages_before = [
+                p for p in list(yahoo_ctx.pages) if not p.is_closed()
+            ]
             ctx.yahoo_page = await self.reuse_or_goto(
                 yahoo_ctx, url, url_hint=f"/auction/{product_id}"
             )
@@ -235,19 +265,113 @@ class OrderMixin:
             return {"status": "DETAIL_PAGE_ERROR"}
         return None
 
-    async def mw_cleanup_detail_tab(self, ctx):
-        if ctx.is_new_tab:
-            try:
-                if ctx.detail_page and not ctx.detail_page.is_closed():
-                    await self.log("Cleanup: Closing Backend Detail Page (Tab).")
-                    await ctx.detail_page.close()
-            except Exception:
-                pass
+    def _order_tabs_ok_to_close(self, ctx, result):
+        if getattr(ctx, "backfill_blocked", False):
+            return False
+        if not result:
+            return False
+        return result.get("status") in SUCCESS_STATUSES
+
+    def _yahoo_tab_belongs_to_order(self, page, ctx):
         try:
-            if ctx.backend_page and not ctx.backend_page.is_closed():
-                await self.log("回到未购买列表...")
-                await ctx.backend_page.goto(
-                    self.BACKEND_URL, wait_until="commit", timeout=WAIT_CLICK_MS * 2
-                )
-        except Exception as e:
-            await self.log(f"回到未购买列表未完成（下一轮扫描会再打开）: {e}", "WARNING")
+            if page is None or page.is_closed():
+                return False
+        except Exception:
+            return False
+        url = (page.url or "").lower()
+        if "qbt.jp" in url:
+            return False
+        product_id = (ctx.order.get("product_id") or "").strip().lower()
+        if product_id and (
+            f"/auction/{product_id}" in url
+            or f"aid={product_id}" in url
+            or f"auctionid={product_id}" in url
+        ):
+            return True
+        before = getattr(ctx, "yahoo_pages_before", None) or []
+        return page not in before
+
+    async def _close_success_yahoo_tabs(self, ctx):
+        page = ctx.yahoo_page
+        if page is None:
+            return
+        try:
+            context = page.context
+        except Exception:
+            return
+        to_close = []
+        for p in list(context.pages):
+            if self._yahoo_tab_belongs_to_order(p, ctx):
+                to_close.append(p)
+        if not to_close:
+            return
+        live = []
+        for p in list(context.pages):
+            try:
+                if not p.is_closed() and p not in to_close:
+                    live.append(p)
+            except Exception:
+                continue
+        if not live:
+            keep = to_close.pop()
+            try:
+                await keep.goto(YAHOO_HOME_URL, wait_until="commit", timeout=WAIT_CLICK_MS * 2)
+                await self.log("本单成功，雅虎窗口只留首页，避免关掉 Chrome。")
+            except Exception as e:
+                await self.log(f"雅虎首页保留失败，改留当前标签: {e}", "DEBUG")
+                to_close.append(keep)
+        closed = 0
+        for p in to_close:
+            try:
+                if p.is_closed():
+                    continue
+                await p.close()
+                closed += 1
+            except Exception:
+                continue
+        if closed:
+            await self.log(f"本单成功，已关闭 {closed} 个雅虎标签。")
+
+    async def mw_cleanup_after_order(self, ctx, result):
+        ok = self._order_tabs_ok_to_close(ctx, result)
+        if ok:
+            await self._close_success_yahoo_tabs(ctx)
+            if ctx.is_new_tab:
+                try:
+                    if ctx.detail_page and not ctx.detail_page.is_closed():
+                        await self.log("本单成功，已关闭 QBT 详情标签。")
+                        await ctx.detail_page.close()
+                except Exception:
+                    pass
+        else:
+            keep_yahoo = False
+            keep_detail = False
+            try:
+                keep_yahoo = ctx.yahoo_page is not None and not ctx.yahoo_page.is_closed()
+            except Exception:
+                keep_yahoo = True
+            try:
+                keep_detail = ctx.detail_page is not None and not ctx.detail_page.is_closed()
+            except Exception:
+                keep_detail = True
+            if keep_yahoo or keep_detail:
+                status = (result or {}).get("status") if result else "无结果"
+                await self.log(f"本单有问题 ({status})，保留标签供人工审查。")
+
+        if ok or ctx.is_new_tab:
+            try:
+                if ctx.backend_page and not ctx.backend_page.is_closed():
+                    if not (
+                        not ok
+                        and hasattr(self, "_is_qbt_auction_buy_url")
+                        and self._is_qbt_auction_buy_url(ctx.backend_page.url)
+                    ):
+                        await self.log("回到未购买列表...")
+                        await ctx.backend_page.goto(
+                            self.BACKEND_URL, wait_until="commit", timeout=WAIT_CLICK_MS * 2
+                        )
+            except Exception as e:
+                await self.log(f"回到未购买列表未完成（下一轮扫描会再打开）: {e}", "WARNING")
+
+    async def mw_cleanup_detail_tab(self, ctx):
+        await self.mw_cleanup_after_order(ctx, None)

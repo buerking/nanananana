@@ -79,7 +79,7 @@ YAHOO_CHECKPOINTS = {
     },
     "personal_purchase_procedure": {
         "page_name": "个人取引ナビ /top 或 /trade/top",
-        "path": "已结束拍品页 #closedNotice「取引ナビ」→ https://contact.auctions.yahoo.co.jp/top?aid={商品ID}（旧版 /trade/top）→ 点「購入手続きをする」→ buyer/payment/input",
+        "path": "已结束拍品页 #closedNotice「取引ナビ」→ https://contact.auctions.yahoo.co.jp/top?aid={商品ID}（旧版 /trade/top）→ 点「購入手続きをする」→ buyer/payment/input。若 /trade/top 已是「商品の発送連絡をお待ちください」/ stepper お支払い完成・発送連絡待ち / Next progressStatus=buyerPayDoneYahoo，视为已付款，只读运费回填，不报缺「購入手続きをする」",
         "looking_for": "个人卖家「購入手続きをする」（或旧版リンク buyer/payment/input）",
         "selectors": [
             "a[href*='buyer/payment/input']",
@@ -91,7 +91,7 @@ YAHOO_CHECKPOINTS = {
     },
     "store_won_trade_nav": {
         "page_name": "店铺落札后取引ナビ /order/status",
-        "path": "已结束店铺拍品（没有「購入手続きへ」）→ buy.auctions.yahoo.co.jp/order/status?auctionId= → 点「購入手続きする」→ /order/review。若页上已是「ご購入ありがとうございます」/「支払いが完了しました」，视为已购买，只读送料回填 QBT。若出现「まとめて購入手続きする」/「単品で購入手続きする」，跳过转人工，两按钮都不点。不要打开 contact.auctions /trade/top",
+        "path": "已结束店铺拍品（没有「購入手続きへ」）→ buy.auctions.yahoo.co.jp/order/status?auctionId= → 点「購入手続きする」→ /order/review。若页上已是「ご購入ありがとうございます」/「支払いが完了しました」/「商品の発送連絡をお待ちください」，视为已购买，只读送料回填 QBT。若出现「まとめて購入手続きする」/「単品で購入手続きする」，跳过转人工，两按钮都不点。不要打开 contact.auctions /trade/top",
         "looking_for": "店铺取引ナビ「購入手続きする」；已购买则读送料；同捆二选一则跳过",
         "selectors": [
             "a[href*='/order/review']",
@@ -109,6 +109,8 @@ YAHOO_CHECKPOINTS = {
         "selectors": [
             "text=取引ナビにアクセスできません",
             "text=異なるYahoo! JAPAN ID",
+            "text=TradeAddressSearchApiAccessError",
+            "text=tradebff-e-AfterHttp-Resource-TradeAddressSearchApiAccessError",
         ],
     },
     "no_purchase_data": {
@@ -234,7 +236,9 @@ YAHOO_CHECKPOINTS = {
             "text=購入が完了",
             "text=ご購入ありがとうございます",
             "text=支払いが完了しました",
+            "text=商品の発送連絡をお待ちください",
             "text=発送連絡をお待ちください",
+            "text=支払い完了の連絡を行いました",
             "#deal a:has-text('取引内容を確認する')",
             "#dtlinfo",
             "text=お届け情報・お支払い情報などを確認する",
