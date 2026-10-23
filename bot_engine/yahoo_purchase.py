@@ -70,6 +70,7 @@ PERSONAL_BUNDLE_SEL = (
 TRADE_KIND_LABEL = {
     "login": "登录页",
     "id_mismatch": "账号不符",
+    "no_purchase_data": "无购买数据",
     "wait_shipping_form": "待运费地址页",
     "checkout": "结算页",
     "store_bundle": "店铺同捆选择",
@@ -78,6 +79,12 @@ TRADE_KIND_LABEL = {
     "personal_nav": "个人取引ナビ",
     "unknown": "未识别页",
 }
+
+# 未中标 / 卖家取消 / 落札数据未反映：不是系统错误，也不要当改版缺按钮。
+NO_PURCHASE_DATA_HINTS = (
+    "購入データが確認できません",
+    "システムに情報の反映が遅延している可能性があります",
+)
 
 # 购买手续跳转：人手点很快；goto 等 domcontentloaded 会整页卡死。
 # 卡住时最多等 5 分钟，刷新后再判断是否已到下一页，否则再点，最多 3 次。
@@ -185,6 +192,8 @@ class YahooPurchaseMixin:
             async def wrapped(inner_ctx):
                 page = inner_ctx.yahoo_page
                 if page is not None:
+                    if await self._page_has_no_purchase_data(page):
+                        return await self._skip_no_purchase_data(inner_ctx)
                     await self._reload_if_yahoo_system_error(page)
                     await self._try_skip_wallet_sub_add(page)
                 return await step(inner_ctx)
@@ -525,6 +534,81 @@ class YahooPurchaseMixin:
             return False
         return "取引ナビにアクセスできません" in text or "異なるYahoo! JAPAN ID" in text
 
+    async def _page_has_no_purchase_data(self, page):
+        """未中标、卖家取消、或落札数据未反映：页上写購入データが確認できません。"""
+        if page is None:
+            return False
+        try:
+            if page.is_closed():
+                return False
+        except Exception:
+            return False
+        try:
+            loc = page.locator("text=購入データが確認できません")
+            if await self.has_visible(loc):
+                return True
+        except Exception:
+            pass
+        try:
+            body = await page.locator("body").inner_text()
+        except Exception:
+            return False
+        text = body or ""
+        return any(h in text for h in NO_PURCHASE_DATA_HINTS)
+
+    async def _skip_no_purchase_data(self, ctx):
+        page = ctx.yahoo_page if ctx else None
+        oid = ""
+        pid = ""
+        acc = ""
+        if ctx:
+            oid = str(ctx.order.get("order_id") or ctx.order_info.get("order_id") or "")
+            pid = str(ctx.order.get("product_id") or ctx.order_info.get("product_id") or "")
+            acc = str(ctx.order.get("account_key") or ctx.order_info.get("account_key") or "")
+        url = ""
+        try:
+            url = (page.url if page else "") or ""
+        except Exception:
+            url = ""
+        await self.log(
+            f"雅虎无购买数据（可能未中标或卖家取消）。订单 {oid} 商品 {pid} URL={url}",
+            "WARNING",
+        )
+        if oid and hasattr(self, "add_risk_history_entry"):
+            self.add_risk_history_entry(oid, "跳过: 雅虎无购买数据（未中标/卖家取消）")
+        self.notify_feishu(
+            f"订单 {oid} 跳过：雅虎无购买数据（可能未中标或卖家取消）\n"
+            f"商品 {pid} 账号 {acc}\n"
+            "ページ：購入データが確認できません"
+        )
+        return deny("SKIPPED_NO_PURCHASE_DATA")
+
+    async def _store_status_page_outcome(self, page):
+        if await self._page_has_no_purchase_data(page):
+            return "no_purchase_data"
+        if await self._page_has_yahoo_id_mismatch(page):
+            return "id_mismatch"
+        if await self._store_bundle_choice_visible(page):
+            return "bundle"
+        if await self.has_visible(page.locator(STORE_STATUS_READY_SEL)):
+            return "ready"
+        return ""
+
+    async def _wait_store_status_outcome(self, page, timeout_ms=WAIT_HANG_MS):
+        found = {"v": ""}
+
+        async def done():
+            if await self._page_has_no_purchase_data(page):
+                found["v"] = "no_purchase_data"
+                return True
+            if await self._yahoo_system_error_visible(page):
+                await self._reload_if_yahoo_system_error(page, max_tries=1)
+            found["v"] = await self._store_status_page_outcome(page)
+            return bool(found["v"])
+
+        await self.wait_until(done, timeout_ms=timeout_ms)
+        return found["v"]
+
     async def _store_bundle_choice_visible(self, page):
         """店铺取引ナビ把「購入手続きする」换成了まとめて/単品二选一。"""
         loc = page.locator(STORE_BUNDLE_CHOICE_SEL)
@@ -646,14 +730,9 @@ class YahooPurchaseMixin:
         if self._is_store_status_url(url):
             ctx.is_store = True
             ctx.is_personal = False
-            try:
-                await self._wait_visible_reload_syserr(
-                    yahoo_page,
-                    yahoo_page.locator(STORE_STATUS_READY_SEL),
-                    timeout_ms=WAIT_HANG_MS,
-                )
-            except Exception:
-                pass
+            outcome = await self._wait_store_status_outcome(yahoo_page)
+            if outcome == "no_purchase_data":
+                return await self._skip_no_purchase_data(ctx)
             clicked = await self._click_store_purchase_procedure(ctx)
             if isinstance(clicked, dict):
                 return clicked
@@ -693,11 +772,12 @@ class YahooPurchaseMixin:
                 return False
             if "/order/review" in (yahoo_page.url or "") or "/order/change" in (yahoo_page.url or ""):
                 return True
-            await self._wait_visible_reload_syserr(
-                yahoo_page,
-                yahoo_page.locator(STORE_STATUS_READY_SEL),
-                timeout_ms=WAIT_HANG_MS,
-            )
+            outcome = await self._wait_store_status_outcome(yahoo_page)
+            if outcome == "no_purchase_data":
+                return await self._skip_no_purchase_data(ctx)
+            if outcome == "id_mismatch":
+                await self.log("店铺取引ナビ返回账号不符页，不按店铺处理。", "WARNING")
+                return False
             clicked = await self._click_store_purchase_procedure(ctx)
             if isinstance(clicked, dict):
                 return clicked
@@ -715,12 +795,10 @@ class YahooPurchaseMixin:
         except Exception as e:
             await self.log(f"店铺取引ナビ打开超时: {e}", "WARNING")
             return False
-        await self._wait_visible_reload_syserr(
-            yahoo_page,
-            yahoo_page.locator(STORE_STATUS_READY_SEL),
-            timeout_ms=WAIT_HANG_MS,
-        )
-        if await self._page_has_yahoo_id_mismatch(yahoo_page):
+        outcome = await self._wait_store_status_outcome(yahoo_page)
+        if outcome == "no_purchase_data":
+            return await self._skip_no_purchase_data(ctx)
+        if outcome == "id_mismatch" or await self._page_has_yahoo_id_mismatch(yahoo_page):
             await self.log("店铺 /order/status 返回账号不符页，不按店铺处理。", "WARNING")
             return False
         clicked = await self._click_store_purchase_procedure(ctx)
@@ -844,6 +922,8 @@ class YahooPurchaseMixin:
             return "login"
         if await self._page_has_yahoo_id_mismatch(page):
             return "id_mismatch"
+        if await self._page_has_no_purchase_data(page):
+            return "no_purchase_data"
         if await self._page_is_wait_shipping_address_form(page):
             return "wait_shipping_form"
         if self._checkout_like_url(url):
@@ -904,6 +984,8 @@ class YahooPurchaseMixin:
             if await self.wait_visible(btn, timeout_ms=WAIT_CLICK_MS):
                 link = await self._visible_action(page, PERSONAL_PROCEDURE_SEL)
         if link is None:
+            if await self._page_has_no_purchase_data(page):
+                return await self._skip_no_purchase_data(ctx)
             await self.log(
                 f"个人取引ナビ没有「購入手続きをする」。URL={page.url}",
                 "WARNING",
@@ -940,6 +1022,9 @@ class YahooPurchaseMixin:
         if kind == "checkout":
             await self.log(f"已在结算/地址页: {yahoo_page.url}")
             return await self._after_purchase_entry(ctx)
+
+        if kind == "no_purchase_data":
+            return await self._skip_no_purchase_data(ctx)
 
         if kind == "id_mismatch":
             await self.log(

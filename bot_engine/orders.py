@@ -21,45 +21,49 @@ class OrderMixin:
             f"(卖家: {order.get('seller_id')}, 账号: {order.get('account_key') or '?'}, "
             f"用户: {order.get('user_name') or '?'})"
         )
-
-        denied = await self.gate_blacklist(ctx)
-        if denied:
-            return denied
-
-        self.ensure_running()
-        opened = await self.step_open_detail(ctx)
-        if opened:
-            return opened
-
-        denied = await self.gate_backend_remark(ctx)
-        if denied:
-            return denied
-
-        await self.step_parse_bound_items(ctx)
-
-        opened = await self.step_open_yahoo(ctx)
-        if opened:
-            return opened
-
-        denied = await run_chain([self.gate_yahoo_login, self.gate_risk_keywords], ctx)
-        if denied:
-            return denied
-
-        ctx.sync_order_info()
-        result = await self.execute_yahoo_purchase(ctx.yahoo_page, ctx.order_info, test_mode)
         try:
-            if result and (result.get("status") in (
-                "PURCHASED", "WAIT_SHIPPING", "WAIT_SHIPPING_CONTACT", "TEST_SUCCESS"
-            )):
-                await self._log_suffix_check(ctx)
-        except Exception as e:
-            await self.log(f"室号核对失败（不影响结论）: {e}", "DEBUG")
-        try:
-            await self.backfill_order(ctx.detail_page, result, ctx.backend_total, test_mode)
-        except Exception as e:
-            await self.log(f"Navigation error after processing: {e}", "ERROR")
-        await self.mw_cleanup_detail_tab(ctx)
-        return result
+            denied = await self.gate_blacklist(ctx)
+            if denied:
+                return denied
+
+            self.ensure_running()
+            opened = await self.step_open_detail(ctx)
+            if opened:
+                return opened
+
+            denied = await self.gate_backend_remark(ctx)
+            if denied:
+                return denied
+
+            await self.step_parse_bound_items(ctx)
+
+            opened = await self.step_open_yahoo(ctx)
+            if opened:
+                return opened
+
+            denied = await run_chain([self.gate_yahoo_login, self.gate_risk_keywords], ctx)
+            if denied:
+                return denied
+
+            ctx.sync_order_info()
+            result = await self.execute_yahoo_purchase(ctx.yahoo_page, ctx.order_info, test_mode)
+            try:
+                if result and (result.get("status") in (
+                    "PURCHASED", "WAIT_SHIPPING", "WAIT_SHIPPING_CONTACT", "TEST_SUCCESS"
+                )):
+                    await self._log_suffix_check(ctx)
+            except Exception as e:
+                await self.log(f"室号核对失败（不影响结论）: {e}", "DEBUG")
+            try:
+                await self.backfill_order(ctx.detail_page, result, ctx.backend_total, test_mode)
+            except Exception as e:
+                await self.log(f"Navigation error after processing: {e}", "ERROR")
+            return result
+        finally:
+            try:
+                await self.mw_cleanup_detail_tab(ctx)
+            except Exception:
+                pass
 
     async def _log_suffix_check(self, ctx):
         suffix = ctx.suffix
@@ -83,11 +87,56 @@ class OrderMixin:
                 "WARNING",
             )
 
+    async def _qbt_purchase_link_for_order(self, page: Page, order):
+        """扫单时的 nth 行定位器在跳过/回填后会失效，按订单号重新找「购买」。"""
+        oid = str((order or {}).get("order_id") or "").strip()
+        if oid:
+            link = page.locator(
+                f"table.public_table tr:has-text('{oid}') >> a:has-text('购买')"
+            )
+            try:
+                if await link.count():
+                    return link.first
+            except Exception:
+                pass
+        stored = (order or {}).get("purchase_link")
+        if stored is not None:
+            try:
+                if await stored.count():
+                    return stored.first if hasattr(stored, "first") else stored
+            except Exception:
+                pass
+        return None
+
     async def step_open_detail(self, ctx):
         backend_page = ctx.backend_page
-        purchase_link = ctx.order["purchase_link"]
+        if hasattr(self, "ensure_backend_not_buy_list"):
+            backend_page = await self.ensure_backend_not_buy_list(backend_page)
+            ctx.backend_page = backend_page
+            ctx.order["purchase_link"] = await self._qbt_purchase_link_for_order(
+                backend_page, ctx.order
+            ) or ctx.order.get("purchase_link")
+        purchase_link = await self._qbt_purchase_link_for_order(backend_page, ctx.order)
+        if purchase_link is None:
+            await self.log(
+                f"未购买列表找不到订单 {ctx.order.get('order_id')} 的「购买」链接。",
+                "ERROR",
+            )
+            return {"status": "DETAIL_PAGE_ERROR"}
         pages_before = len(backend_page.context.pages)
-        await purchase_link.click()
+        try:
+            await purchase_link.scroll_into_view_if_needed(timeout=WAIT_CLICK_MS)
+        except Exception:
+            pass
+        try:
+            await purchase_link.click(timeout=WAIT_CLICK_MS)
+        except Exception as e:
+            await self.log(f"点击「购买」失败，改强制点击: {e}", "WARNING")
+            try:
+                await purchase_link.click(force=True, timeout=WAIT_CLICK_MS)
+            except Exception as e2:
+                await self.log(f"阶段2失败 (点击购买): {e2}", "ERROR")
+                return {"status": "DETAIL_PAGE_ERROR"}
         await asyncio.sleep(1)
         pages_after = len(backend_page.context.pages)
         ctx.detail_page = backend_page
@@ -196,7 +245,7 @@ class OrderMixin:
                 pass
         try:
             if ctx.backend_page and not ctx.backend_page.is_closed():
-                await self.log("回填后回到未购买列表...")
+                await self.log("回到未购买列表...")
                 await ctx.backend_page.goto(
                     self.BACKEND_URL, wait_until="commit", timeout=WAIT_CLICK_MS * 2
                 )

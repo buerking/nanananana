@@ -206,6 +206,8 @@ class YahooAutoBot(
             return "本单自动购买是否成功: 跳过（需人工填写信用卡安全码）"
         if status == "SKIPPED_NEED_3DS":
             return "本单自动购买是否成功: 跳过（需人工完成信用卡3DS验证）"
+        if status == "SKIPPED_NO_PURCHASE_DATA":
+            return "本单自动购买是否成功: 跳过（雅虎无购买数据，可能未中标或卖家取消）"
         if str(status).startswith("SKIPPED"):
             return f"本单自动购买是否成功: 跳过（{status}）"
         if status == "TEST_SUCCESS":
@@ -336,8 +338,8 @@ class YahooAutoBot(
                         await self._record_order_result(
                             run_stats, order_id_str, status, test_mode=False, gated=True
                         )
-                        if status == "SKIPPED_NEED_CVV":
-                            await self.log("本单需人工填写信用卡安全码，已跳过，进入下一单确认。")
+                        if status in ("SKIPPED_NEED_CVV", "SKIPPED_NO_PURCHASE_DATA"):
+                            await self.log("本单已跳过，进入下一单确认。")
                             continue
                     except BotStopped:
                         raise
@@ -376,6 +378,7 @@ class YahooAutoBot(
                         run_stats["failed"] += 1
                         run_stats["details"].append(f"[{order_id_str}] Failed ({e})")
                         await self.log(f"Loop error: {e}", "ERROR")
+                    backend_page = await self.ensure_backend_not_buy_list(backend_page)
                     if target_order_id:
                         await self.log(f"单单测试结束: {order_id_str}。自动停止。", "INFO")
                         self.is_running = False

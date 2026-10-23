@@ -89,16 +89,18 @@ class QbtMixin:
         return any_qbt
 
     async def ensure_backend_not_buy_list(self, page=None):
-        """拉单前必须打开 get-auction-not-buy-list，避免停在卡住的订单详情。"""
+        """每次都打开 get-auction-not-buy-list，不要沿用停在详情/其它后台页的当前标签。"""
         if page is None or page.is_closed():
             page = await self.find_backend_tab()
         if page is None or page.is_closed():
             page = await self.browser_context.new_page()
-        if not self._is_qbt_not_buy_list_url(page.url):
-            await self.log("后台不在未购买列表，直接打开拉单页。")
+        await self.log(f"打开后台未购买列表: {self.BACKEND_URL}")
+        try:
             await page.goto(
                 self.BACKEND_URL, wait_until="commit", timeout=WAIT_CLICK_MS * 2
             )
+        except Exception as e:
+            await self.log(f"打开未购买列表失败: {e}", "WARNING")
         await page.bring_to_front()
         return page
 

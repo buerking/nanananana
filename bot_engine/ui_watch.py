@@ -111,6 +111,16 @@ YAHOO_CHECKPOINTS = {
             "text=異なるYahoo! JAPAN ID",
         ],
     },
+    "no_purchase_data": {
+        "page_name": "无购买数据（未中标/取消）",
+        "path": "店铺 /order/status 或个人 /top 出现「購入データが確認できません」：未中标、卖家取消、或落札未反映。飞书后跳过，不要当改版缺「購入手続き」",
+        "looking_for": "購入データが確認できません / システムに情報の反映が遅延している可能性があります",
+        "selectors": [
+            "text=購入データが確認できません",
+            "text=システムに情報の反映が遅延している可能性があります",
+            "a:has-text('商品詳細に戻る')",
+        ],
+    },
     "checkout_address_form": {
         "page_name": "结算/地址页",
         "path": "店铺：購入手続きへ后的结算页；个人：/top 或 /trade/top 点購入手続きをする后的 buyer/payment，或直接进入 /buyer/edit 落札者情報",
