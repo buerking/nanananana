@@ -1,0 +1,47 @@
+[11:56:00] [INFO] 正在启动浏览器... 模式=cdp
+[11:56:01] [DEBUG] CDP 未就绪 (1/1): BrowserType.connect_over_cdp: connect ECONNREFUSED 127.0.0.1:9222
+Call log:
+  - <ws preparing> retrieving websocket url from http://127.0.0.1:9222
+
+[11:56:01] [INFO] 关闭当前 Chrome（只关这一次），随后用 Profile 14 重新打开。
+[11:56:03] [ERROR] Failed to launch browser: 找不到已登录配置: C:\Users\admin\AppData\Local\Google\Chrome\User Data\Profile 14
+[11:56:04] [INFO] 正在启动浏览器... 模式=cdp
+[11:56:04] [DEBUG] CDP 未就绪 (1/1): BrowserType.connect_over_cdp: connect ECONNREFUSED 127.0.0.1:9222
+Call log:
+  - <ws preparing> retrieving websocket url from http://127.0.0.1:9222
+
+[11:56:05] [INFO] 关闭当前 Chrome（只关这一次），随后用 Profile 14 重新打开。
+[11:56:07] [ERROR] Failed to launch browser: 找不到已登录配置: C:\Users\admin\AppData\Local\Google\Chrome\User Data\Profile 14
+[11:59:14] [INFO] 正在启动浏览器... 模式=cdp
+[11:59:14] [DEBUG] CDP 未就绪 (1/1): BrowserType.connect_over_cdp: connect ECONNREFUSED 127.0.0.1:9222
+Call log:
+  - <ws preparing> retrieving websocket url from http://127.0.0.1:9222
+
+[11:59:14] [INFO] 关闭当前 Chrome（只关这一次），随后用 Profile 14 重新打开。
+[11:59:16] [ERROR] Failed to launch browser: 找不到已登录配置: C:\Users\admin\AppData\Local\Google\Chrome\User Data\Profile 14
+[12:01:10] [INFO] 正在启动浏览器...
+[12:01:10] [ERROR] Failed to launch browser: BrowserType.launch_persistent_context: Executable doesn't exist at C:\Users\admin\AppData\Local\ms-playwright\chromium-1243\chrome-win64\chrome.exe
+╔════════════════════════════════════════════════════════════╗
+║ Looks like Playwright was just installed or updated.       ║
+║ Please run the following command to download new browsers: ║
+║                                                            ║
+║     playwright install                                     ║
+║                                                            ║
+║ <3 Playwright Team                                         ║
+╚════════════════════════════════════════════════════════════╝
+[13:30:27] [INFO] 正在停止机器人...
+[13:36:51] [INFO] 正在启动浏览器...
+[13:36:52] [ERROR] Failed to launch browser: BrowserType.launch_persistent_context: Executable doesn't exist at C:\Users\admin\AppData\Local\ms-playwright\chromium-1243\chrome-win64\chrome.exe
+╔════════════════════════════════════════════════════════════╗
+║ Looks like Playwright was just installed or updated.       ║
+║ Please run the following command to download new browsers: ║
+║                                                            ║
+║     playwright install                                     ║
+║                                                            ║
+║ <3 Playwright Team                                         ║
+╚════════════════════════════════════════════════════════════╝
+[13:57:38] [INFO] 正在启动浏览器...
+[13:57:39] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[13:57:49] [INFO] 浏览器已打开，请手动登录。
+1. 雅虎拍卖
+2. 后台系统 (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)

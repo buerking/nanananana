@@ -1,0 +1,13 @@
+[14:04:22] [INFO] 正在启动浏览器...
+[14:04:23] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[14:04:26] [WARNING] 雅虎首页未快速就绪（将按商品URL直接打开）: Page.goto: net::ERR_PROXY_CONNECTION_FAILED at https://auctions.yahoo.co.jp/
+Call log:
+  - navigating to "https://auctions.yahoo.co.jp/", waiting until "commit"
+
+[14:04:29] [WARNING] Warning: Failed to load Backend (Timeout): Page.goto: net::ERR_PROXY_CONNECTION_FAILED at https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list
+Call log:
+  - navigating to "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list", waiting until "domcontentloaded"
+
+[14:04:29] [INFO] 浏览器已打开，请手动登录。
+1. 雅虎拍卖
+2. 后台系统 (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)

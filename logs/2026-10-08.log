@@ -1,0 +1,1195 @@
+[11:43:02] [INFO] Browser already open.
+[11:43:02] [INFO] 自动化任务已启动。
+[11:43:03] [INFO] 🎯 单单测试模式: 匹配到后台ID 717165 / 商品ID g1241345481
+[11:43:05] [INFO] 开始处理订单 (卖家: 4EVkc6NpDtPVfvFjgKky3uMtoTFbL)
+[11:43:07] [INFO] 已进入后台详情页
+[11:43:07] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[11:43:07] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[11:43:07] [ERROR] 阶段2失败 (读取详情/打开雅虎): 'Page' object has no attribute 'expect_page'
+[11:43:07] [INFO] 单单测试结束: 717165。自动停止。
+[11:43:07] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 11:43:02
+结束时间: 2026-10-08 11:43:07
+运行时长: 0:00:04
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [717165] Failed (DETAIL_PAGE_ERROR)
+
+[11:43:07] [INFO] 自动化已停止。
+[11:44:08] [INFO] Browser already open.
+[11:44:08] [INFO] 自动化任务已启动。
+[11:44:09] [INFO] 🎯 单单测试模式: 匹配到后台ID 717242 / 商品ID m1247154934
+[11:44:10] [INFO] 开始处理订单 (卖家: 5LLeZxoAg3MSJFwRNfyTKwTsMMxYM)
+[11:44:12] [INFO] 已进入后台详情页
+[11:44:12] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[11:44:12] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[11:44:12] [ERROR] 阶段2失败 (读取详情/打开雅虎): 'Page' object has no attribute 'expect_page'
+[11:44:12] [INFO] 单单测试结束: 717242。自动停止。
+[11:44:12] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 11:44:08
+结束时间: 2026-10-08 11:44:12
+运行时长: 0:00:03
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [717242] Failed (DETAIL_PAGE_ERROR)
+
+[11:44:12] [INFO] 自动化已停止。
+[11:57:19] [INFO] 正在启动浏览器...
+[11:57:20] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[11:57:31] [INFO] 浏览器已打开，请手动登录。
+1. 雅虎拍卖
+2. 后台系统 (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[11:58:16] [INFO] Browser already open.
+[11:58:16] [INFO] 自动化任务已启动。
+[11:58:17] [INFO] 🎯 单单测试模式: 匹配到后台ID 717114 / 商品ID l1246541990
+[11:58:18] [INFO] 开始处理订单 (卖家: 9c8jRr73h1e9pMTckHYveCgMXN2Ex)
+[11:58:20] [INFO] 已进入后台详情页
+[11:58:20] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[11:58:20] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[11:58:38] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/l1246541990
+[11:58:46] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=717114&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=45'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=717114&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=45 >> a:has-text('购买') >> nth=0">, 'seller_id': '9c8jRr73h1e9pMTckHYveCgMXN2Ex', 'order_id': '717114', 'product_id': 'l1246541990', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': '', 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[11:58:46] [INFO] 正在检测同捆发货弹窗...
+[11:58:49] [INFO] 已进入购买输入页。等待表单...
+[11:58:49] [INFO] 地址输入框未找到 (第 1/3 次)，等待页面继续加载...
+[11:58:50] [INFO] 地址输入框未找到 (第 2/3 次)，等待页面继续加载...
+[11:58:51] [INFO] 地址输入框未找到 (第 3/3 次)，等待页面继续加载...
+[11:58:52] [ERROR] 严重拦截：无法确认个人买家页面的地址准确性。为防止发错货已强制停止。
+[11:58:53] [ERROR] SNAPSHOT SAVED: error_personal_address_input_missing_1791431932 (in error_snapshots/)
+[11:58:53] [INFO] Stage 4: Backfilling Data to Backend...
+[11:58:53] [INFO] 单单测试结束: 717114。自动停止。
+[11:58:53] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 11:58:16
+结束时间: 2026-10-08 11:58:53
+运行时长: 0:00:36
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [717114] Failed (ADDRESS_FAIL)
+
+[11:58:53] [INFO] 自动化已停止。
+[12:00:22] [INFO] Browser already open.
+[12:00:22] [INFO] 自动化任务已启动。
+[12:00:24] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[12:00:25] [INFO] 开始处理订单 (卖家: 4EVkc6NpDtPVfvFjgKky3uMtoTFbL)
+[12:00:27] [INFO] 已进入后台详情页
+[12:00:27] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[12:00:27] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[12:00:29] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[12:00:37] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=58'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=58 >> a:has-text('购买') >> nth=0">, 'seller_id': '4EVkc6NpDtPVfvFjgKky3uMtoTFbL', 'order_id': '715422', 'product_id': 'b1246929270', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': '', 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[12:00:37] [INFO] 正在检测同捆发货弹窗...
+[12:00:40] [INFO] 检测到个人卖家。正在点击 '取引ナビ'...
+[12:00:48] [WARNING] 警告：未找到 'お届け先'，页面可能不同。继续...
+[12:00:48] [INFO] 地址输入框未找到 (第 1/3 次)，等待页面继续加载...
+[12:00:49] [INFO] 地址输入框未找到 (第 2/3 次)，等待页面继续加载...
+[12:00:50] [INFO] 地址输入框未找到 (第 3/3 次)，等待页面继续加载...
+[12:00:51] [ERROR] 严重拦截：无法确认个人买家页面的地址准确性。为防止发错货已强制停止。
+[12:01:18] [ERROR] SNAPSHOT SAVED: error_personal_address_input_missing_1791432051 (in error_snapshots/)
+[12:01:18] [INFO] Stage 4: Backfilling Data to Backend...
+[12:01:18] [INFO] 单单测试结束: 715422。自动停止。
+[12:01:18] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 12:00:22
+结束时间: 2026-10-08 12:01:18
+运行时长: 0:00:55
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [715422] Failed (ADDRESS_FAIL)
+
+[12:01:18] [INFO] 自动化已停止。
+[13:28:11] [INFO] 正在启动浏览器...
+[13:28:11] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[13:29:14] [INFO] 浏览器已打开，请手动登录。
+1. 雅虎拍卖
+2. 后台系统 (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[13:29:43] [INFO] Browser already open.
+[13:29:43] [INFO] 自动化任务已启动。
+[13:29:45] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[13:29:45] [INFO] All 1 pending orders have been attempted/skipped. Sleeping 10s...
+[13:29:57] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[13:29:57] [INFO] All 1 pending orders have been attempted/skipped. Sleeping 10s...
+[13:30:09] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[13:30:09] [INFO] All 1 pending orders have been attempted/skipped. Sleeping 10s...
+[13:30:21] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[13:30:21] [INFO] All 1 pending orders have been attempted/skipped. Sleeping 10s...
+[13:30:32] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[13:30:33] [INFO] All 1 pending orders have been attempted/skipped. Sleeping 10s...
+[13:30:45] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[13:30:45] [INFO] All 1 pending orders have been attempted/skipped. Sleeping 10s...
+[13:30:57] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[13:30:57] [INFO] All 1 pending orders have been attempted/skipped. Sleeping 10s...
+[13:31:09] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[13:31:09] [INFO] All 1 pending orders have been attempted/skipped. Sleeping 10s...
+[13:31:21] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[13:31:21] [INFO] All 1 pending orders have been attempted/skipped. Sleeping 10s...
+[13:31:33] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[13:31:33] [INFO] All 1 pending orders have been attempted/skipped. Sleeping 10s...
+[13:31:37] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 13:29:43
+结束时间: 2026-10-08 13:31:37
+运行时长: 0:01:53
+----------------------------------------
+处理总数: 0
+成功订单: 0
+失败订单: 0
+跳过订单: 0
+详细记录:
+ - (无处理记录)
+
+[13:31:37] [INFO] 自动化已停止。
+[13:32:06] [INFO] 正在启动浏览器...
+[13:32:06] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[13:33:07] [WARNING] Warning: Failed to load Yahoo Auctions (Timeout): Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://auctions.yahoo.co.jp/", waiting until "domcontentloaded"
+
+[13:33:09] [INFO] 自动化任务已启动。
+[13:33:09] [WARNING] 未找到后台标签页。尝试打开...
+[13:33:10] [INFO] 单单测试: 未能在扫描结果中找到订单 716865。
+[13:33:10] [INFO] 单单测试: 未找到目标订单 716865。继续扫描...
+[13:33:20] [WARNING] 未找到后台标签页。尝试打开...
+[13:33:21] [INFO] 单单测试: 未能在扫描结果中找到订单 716865。
+[13:33:21] [INFO] 单单测试: 未找到目标订单 716865。继续扫描...
+[13:33:31] [WARNING] 未找到后台标签页。尝试打开...
+[13:33:32] [INFO] 单单测试: 未能在扫描结果中找到订单 716865。
+[13:33:32] [INFO] 单单测试: 未找到目标订单 716865。继续扫描...
+[13:33:39] [INFO] Browser already open.
+[13:33:42] [INFO] 正在停止机器人...
+[13:33:42] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 13:32:06
+结束时间: 2026-10-08 13:33:42
+运行时长: 0:01:35
+----------------------------------------
+处理总数: 0
+成功订单: 0
+失败订单: 0
+跳过订单: 0
+详细记录:
+ - (无处理记录)
+
+[13:33:42] [INFO] 自动化已停止。
+[13:33:45] [INFO] Browser already open.
+[13:33:55] [INFO] Browser already open.
+[13:34:08] [INFO] 正在启动浏览器...
+[13:34:08] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[13:35:09] [WARNING] Warning: Failed to load Yahoo Auctions (Timeout): Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://auctions.yahoo.co.jp/", waiting until "domcontentloaded"
+
+[13:35:12] [INFO] 浏览器已打开，请手动登录。
+1. 雅虎拍卖
+2. 后台系统 (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[13:35:38] [INFO] Browser already open.
+[13:35:38] [INFO] 自动化任务已启动。
+[13:35:40] [INFO] 🎯 单单测试模式: 匹配到后台ID 716865 / 商品ID h1246926934
+[13:35:41] [INFO] 开始处理订单 (卖家: 4EVkc6NpDtPVfvFjgKky3uMtoTFbL)
+[13:36:11] [ERROR] Loop error: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("table.public_table tr").nth(46).locator("a:has-text('购买')").first
+    - locator resolved to <a onclick="goBuy('key_a716865')">购买</a>
+  - attempting click action
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - performing click action
+    - click action done
+    - waiting for scheduled navigations to finish
+
+[13:36:11] [INFO] 单单测试结束: 716865。自动停止。
+[13:36:11] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 13:35:38
+结束时间: 2026-10-08 13:36:11
+运行时长: 0:00:32
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [716865] Failed (Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("table.public_table tr").nth(46).locator("a:has-text('购买')").first
+    - locator resolved to <a onclick="goBuy('key_a716865')">购买</a>
+  - attempting click action
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - performing click action
+    - click action done
+    - waiting for scheduled navigations to finish
+)
+
+[13:36:11] [INFO] 自动化已停止。
+[13:37:02] [INFO] Browser already open.
+[13:37:02] [INFO] 自动化任务已启动。
+[13:37:02] [INFO] 单单测试: 未能在扫描结果中找到订单 716865。
+[13:37:02] [INFO] 单单测试: 未找到目标订单 716865。继续扫描...
+[13:37:12] [INFO] 单单测试: 未能在扫描结果中找到订单 716865。
+[13:37:12] [INFO] 单单测试: 未找到目标订单 716865。继续扫描...
+[13:37:22] [INFO] 单单测试: 未能在扫描结果中找到订单 716865。
+[13:37:22] [INFO] 单单测试: 未找到目标订单 716865。继续扫描...
+[13:37:32] [INFO] 单单测试: 未能在扫描结果中找到订单 716865。
+[13:37:32] [INFO] 单单测试: 未找到目标订单 716865。继续扫描...
+[13:37:42] [INFO] 单单测试: 未能在扫描结果中找到订单 716865。
+[13:37:42] [INFO] 单单测试: 未找到目标订单 716865。继续扫描...
+[13:37:52] [INFO] 单单测试: 未能在扫描结果中找到订单 716865。
+[13:37:52] [INFO] 单单测试: 未找到目标订单 716865。继续扫描...
+[13:38:02] [INFO] 单单测试: 未能在扫描结果中找到订单 716865。
+[13:38:02] [INFO] 单单测试: 未找到目标订单 716865。继续扫描...
+[13:38:12] [INFO] 正在停止机器人...
+[13:38:12] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 13:37:02
+结束时间: 2026-10-08 13:38:12
+运行时长: 0:01:10
+----------------------------------------
+处理总数: 0
+成功订单: 0
+失败订单: 0
+跳过订单: 0
+详细记录:
+ - (无处理记录)
+
+[13:38:12] [INFO] 自动化已停止。
+[13:38:18] [INFO] Browser already open.
+[13:39:20] [INFO] 正在启动浏览器...
+[13:39:20] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[13:40:20] [WARNING] Warning: Failed to load Yahoo Auctions (Timeout): Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://auctions.yahoo.co.jp/", waiting until "domcontentloaded"
+
+[13:40:23] [INFO] 浏览器已打开，请手动登录。
+1. 雅虎拍卖
+2. 后台系统 (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[13:42:15] [INFO] Browser already open.
+[13:42:15] [INFO] 自动化任务已启动。
+[13:42:18] [INFO] 🎯 单单测试模式: 匹配到后台ID 715101 / 商品ID d1246738864
+[13:42:18] [INFO] 开始处理订单 (卖家: EqJkwAHcRSx5fqRZ9GUW2N1igRs4c)
+[13:42:20] [INFO] 已进入后台详情页
+[13:42:20] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[13:42:20] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[13:42:35] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/d1246738864
+[13:42:43] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715101&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=80'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715101&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=80 >> a:has-text('购买') >> nth=0">, 'seller_id': 'EqJkwAHcRSx5fqRZ9GUW2N1igRs4c', 'order_id': '715101', 'product_id': 'd1246738864', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': '', 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[13:42:43] [INFO] 正在检测同捆发货弹窗...
+[13:42:46] [INFO] 检测到个人卖家。正在点击 '取引ナビ'...
+[13:43:35] [WARNING] 警告：未找到 'お届け先' 表单，页面可能不同。继续...
+[13:43:35] [INFO] 地址输入框未找到 (第 1/3 次)，等待页面继续加载...
+[13:43:36] [INFO] 地址输入框未找到 (第 2/3 次)，等待页面继续加载...
+[13:43:37] [INFO] 地址输入框未找到 (第 3/3 次)，等待页面继续加载...
+[13:43:38] [ERROR] 严重拦截：无法确认个人买家页面的地址准确性。为防止发错货已强制停止。
+[13:43:45] [ERROR] SNAPSHOT SAVED: error_personal_address_input_missing_1791438218 (in error_snapshots/)
+[13:43:45] [INFO] Stage 4: Backfilling Data to Backend...
+[13:43:45] [INFO] 单单测试结束: 715101。自动停止。
+[13:43:45] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 13:42:15
+结束时间: 2026-10-08 13:43:45
+运行时长: 0:01:30
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [715101] Failed (ADDRESS_FAIL)
+
+[13:43:45] [INFO] 自动化已停止。
+[13:47:15] [INFO] 正在启动浏览器...
+[13:47:15] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[13:48:16] [WARNING] Warning: Failed to load Yahoo Auctions (Timeout): Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://auctions.yahoo.co.jp/", waiting until "domcontentloaded"
+
+[13:48:17] [INFO] 自动化任务已启动。
+[13:48:19] [INFO] 🎯 单单测试模式: 匹配到后台ID 715101 / 商品ID d1246738864
+[13:48:20] [INFO] 开始处理订单 (卖家: EqJkwAHcRSx5fqRZ9GUW2N1igRs4c)
+[13:48:21] [INFO] 已进入后台详情页
+[13:48:21] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[13:48:21] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[13:48:36] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/d1246738864
+[13:48:44] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715101&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=80'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715101&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=80 >> a:has-text('购买') >> nth=0">, 'seller_id': 'EqJkwAHcRSx5fqRZ9GUW2N1igRs4c', 'order_id': '715101', 'product_id': 'd1246738864', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': '', 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[13:48:44] [INFO] 正在检测同捆发货弹窗...
+[13:48:47] [INFO] 检测到个人卖家。正在点击 '取引ナビ'...
+[13:49:11] [WARNING] 警告：未找到 'お届け先' 表单，页面可能不同。继续...
+[13:49:11] [INFO] 地址输入框未找到 (第 1/3 次)，等待页面继续加载...
+[13:49:12] [INFO] 地址输入框未找到 (第 2/3 次)，等待页面继续加载...
+[13:49:13] [INFO] 地址输入框未找到 (第 3/3 次)，等待页面继续加载...
+[13:49:14] [ERROR] 严重拦截：无法确认个人买家页面的地址准确性。为防止发错货已强制停止。
+[13:49:14] [ERROR] SNAPSHOT SAVED: error_personal_address_input_missing_1791438554 (in error_snapshots/)
+[13:49:14] [INFO] Stage 4: Backfilling Data to Backend...
+[13:49:14] [INFO] 单单测试结束: 715101。自动停止。
+[13:49:14] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 13:47:15
+结束时间: 2026-10-08 13:49:14
+运行时长: 0:01:59
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [715101] Failed (ADDRESS_FAIL)
+
+[13:49:14] [INFO] 自动化已停止。
+[13:56:44] [INFO] 正在启动浏览器...
+[13:56:45] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[13:57:45] [WARNING] Warning: Failed to load Yahoo Auctions (Timeout): Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://auctions.yahoo.co.jp/", waiting until "domcontentloaded"
+
+[13:57:50] [INFO] 浏览器已打开，请手动登录。
+1. 雅虎拍卖
+2. 后台系统 (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[13:58:18] [INFO] Browser already open.
+[13:58:18] [INFO] 自动化任务已启动。
+[13:58:19] [INFO] 单单测试: 未能在扫描结果中找到订单 715101。
+[13:58:19] [INFO] 单单测试: 未找到目标订单 715101。继续扫描...
+[13:58:30] [INFO] 单单测试: 未能在扫描结果中找到订单 715101。
+[13:58:30] [INFO] 单单测试: 未找到目标订单 715101。继续扫描...
+[13:58:41] [INFO] 单单测试: 未能在扫描结果中找到订单 715101。
+[13:58:41] [INFO] 单单测试: 未找到目标订单 715101。继续扫描...
+[13:58:53] [INFO] 🎯 单单测试模式: 匹配到后台ID 715101 / 商品ID d1246738864
+[13:58:53] [INFO] 开始处理订单 (卖家: EqJkwAHcRSx5fqRZ9GUW2N1igRs4c)
+[13:58:55] [INFO] 已进入后台详情页
+[13:58:55] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[13:58:55] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[13:59:08] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/d1246738864
+[13:59:16] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715101&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=81'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715101&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=81 >> a:has-text('购买') >> nth=0">, 'seller_id': 'EqJkwAHcRSx5fqRZ9GUW2N1igRs4c', 'order_id': '715101', 'product_id': 'd1246738864', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': '', 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[13:59:16] [INFO] 正在检测同捆发货弹窗...
+[13:59:19] [INFO] 检测到个人卖家。正在点击 '取引ナビ'...
+[13:59:27] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/trade/top?aid=d1246738864&oid=75025691-2991381817-7971352
+[13:59:27] [INFO] 等待新版取引ナビ异步渲染「購入手続きをする」...
+[13:59:27] [INFO] 发现个人卖家「購入手続きをする」。正在进入支付页...
+[13:59:27] [INFO] 进入购买手续页: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=d1246738864&oid=75025691-2991381817-7971352
+[13:59:58] [INFO] 购买手续页当前 URL: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=d1246738864&oid=75025691-2991381817-7971352
+[13:59:58] [INFO] 已进入购买输入页。等待表单...
+[14:00:02] [INFO] 店铺地址已修改并验证: 15101室
+[14:00:02] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[14:00:02] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[14:00:02] [INFO] 卖家留言提取: 订单 715101 (个人) 无留言
+[14:00:02] [INFO] Stage 4: Backfilling Data to Backend...
+[14:00:02] [INFO] 回填：设置 COD 为 NO
+[14:00:02] [INFO] 测试模式：回填表单已填写。请手动点击 '确定'。
+[14:00:32] [WARNING] 测试模式：超时或未检测到手动确认 (Bot 将继续)。
+[14:00:32] [INFO] 单单测试结束: 715101。自动停止。
+[14:00:32] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 13:58:18
+结束时间: 2026-10-08 14:00:32
+运行时长: 0:02:14
+----------------------------------------
+处理总数: 1
+成功订单: 1
+失败订单: 0
+跳过订单: 0
+详细记录:
+ - [715101] Success (TEST_SUCCESS)
+
+[14:00:32] [INFO] 自动化已停止。
+[14:03:15] [INFO] Browser already open.
+[14:03:15] [INFO] 自动化任务已启动。
+[14:03:17] [INFO] 🎯 单单测试模式: 匹配到后台ID 715101 / 商品ID d1246738864
+[14:03:17] [INFO] 开始处理订单 (卖家: EqJkwAHcRSx5fqRZ9GUW2N1igRs4c)
+[14:03:21] [INFO] 已进入后台详情页
+[14:03:21] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[14:03:21] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[14:03:36] [ERROR] 阶段2失败 (读取详情/打开雅虎): Timeout 15000ms exceeded while waiting for event "page"
+[14:03:36] [INFO] 单单测试结束: 715101。自动停止。
+[14:03:36] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 14:03:15
+结束时间: 2026-10-08 14:03:36
+运行时长: 0:00:21
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [715101] Failed (DETAIL_PAGE_ERROR)
+
+[14:03:36] [INFO] 自动化已停止。
+[14:15:46] [INFO] Browser already open.
+[14:15:46] [INFO] 自动化任务已启动。
+[14:15:46] [INFO] 单单测试: 未能在扫描结果中找到订单 715101。
+[14:15:46] [INFO] 单单测试: 未找到目标订单 715101。继续扫描...
+[14:15:58] [INFO] 🎯 单单测试模式: 匹配到后台ID 715101 / 商品ID d1246738864
+[14:15:58] [INFO] 开始处理订单 (卖家: EqJkwAHcRSx5fqRZ9GUW2N1igRs4c)
+[14:16:00] [INFO] 已进入后台详情页
+[14:16:00] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[14:16:00] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[14:16:03] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/d1246738864
+[14:16:11] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715101&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=81'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715101&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=81 >> a:has-text('购买') >> nth=0">, 'seller_id': 'EqJkwAHcRSx5fqRZ9GUW2N1igRs4c', 'order_id': '715101', 'product_id': 'd1246738864', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': '', 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[14:16:11] [INFO] 正在检测同捆发货弹窗...
+[14:16:14] [INFO] 检测到个人卖家。正在点击 '取引ナビ'...
+[14:16:22] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/trade/top?aid=d1246738864&oid=75025691-2991381817-7971352
+[14:16:22] [INFO] 等待新版取引ナビ异步渲染「購入手続きをする」...
+[14:16:22] [INFO] 发现个人卖家「購入手続きをする」。正在进入支付页...
+[14:16:22] [INFO] 进入购买手续页: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=d1246738864&oid=75025691-2991381817-7971352
+[14:16:25] [INFO] 购买手续页当前 URL: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=d1246738864&oid=75025691-2991381817-7971352
+[14:16:25] [INFO] 已进入购买输入页。等待表单...
+[14:16:25] [INFO] 地址输入框未找到 (第 1/3 次)，等待页面继续加载...
+[14:16:28] [INFO] 地址输入框未找到 (第 2/3 次)，等待页面继续加载...
+[14:16:30] [INFO] 店铺地址已修改并验证: 15101室
+[14:16:30] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[14:16:30] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[14:16:30] [INFO] 卖家留言提取: 订单 715101 (个人) 无留言
+[14:16:30] [INFO] Stage 4: Backfilling Data to Backend...
+[14:16:30] [INFO] 回填：设置 COD 为 NO
+[14:16:30] [INFO] 测试模式：回填表单已填写。请手动点击 '确定'。
+[14:17:00] [WARNING] 测试模式：超时或未检测到手动确认 (Bot 将继续)。
+[14:17:00] [INFO] 单单测试结束: 715101。自动停止。
+[14:17:00] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 14:15:46
+结束时间: 2026-10-08 14:17:00
+运行时长: 0:01:13
+----------------------------------------
+处理总数: 1
+成功订单: 1
+失败订单: 0
+跳过订单: 0
+详细记录:
+ - [715101] Success (TEST_SUCCESS)
+
+[14:17:00] [INFO] 自动化已停止。
+[14:17:10] [INFO] Browser already open.
+[14:17:10] [INFO] 自动化任务已启动。
+[14:17:10] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:17:10] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:17:22] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:17:22] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:17:34] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:17:34] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:17:45] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:17:45] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:17:59] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:17:59] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:18:11] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:18:11] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:18:23] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:18:23] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:18:34] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:18:34] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:18:46] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:18:46] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:18:58] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:18:58] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:19:09] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:19:09] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:19:21] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:19:21] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:19:32] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:19:32] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:19:45] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:19:45] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:19:56] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:19:56] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:20:08] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:20:08] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:20:19] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:20:19] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:20:31] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:20:31] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:20:43] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:20:43] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:20:54] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:20:54] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:21:06] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:21:06] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:21:18] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:21:18] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:21:29] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:21:29] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:21:41] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:21:41] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:21:53] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:21:53] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:22:04] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:22:04] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:22:16] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:22:16] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:22:27] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:22:27] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:22:39] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:22:39] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:22:51] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:22:51] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:23:02] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:23:02] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:23:14] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:23:14] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:23:26] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:23:26] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:23:38] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:23:38] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:23:49] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:23:49] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:24:02] [INFO] 单单测试: 未能在扫描结果中找到订单 717114。
+[14:24:02] [INFO] 单单测试: 未找到目标订单 717114。继续扫描...
+[14:24:06] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 14:17:10
+结束时间: 2026-10-08 14:24:06
+运行时长: 0:06:55
+----------------------------------------
+处理总数: 0
+成功订单: 0
+失败订单: 0
+跳过订单: 0
+详细记录:
+ - (无处理记录)
+
+[14:24:06] [INFO] 自动化已停止。
+[14:24:19] [INFO] 正在启动浏览器...
+[14:24:19] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[14:24:25] [INFO] 浏览器已打开，请手动登录。
+1. 雅虎拍卖
+2. 后台系统 (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[14:24:50] [INFO] Browser already open.
+[14:24:50] [INFO] 自动化任务已启动。
+[14:24:50] [INFO] 单单测试：直接打开后台详情 https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=717468
+[14:25:04] [WARNING] 直接打开后台详情失败，回退列表扫描: Page.wait_for_selector: Timeout 12000ms exceeded.
+Call log:
+  - waiting for locator(".active_form") to be visible
+    - waiting for "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=717468" navigation to finish...
+    - navigated to "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=717468"
+    - waiting for "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list" navigation to finish...
+    - navigated to "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list"
+
+[14:25:35] [INFO] 单单测试: 未能在扫描结果中找到订单 717468。
+[14:25:35] [INFO] 单单测试: 未找到目标订单 717468。继续扫描...
+[14:25:45] [INFO] 单单测试：直接打开后台详情 https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=717468
+[14:26:11] [WARNING] 直接打开后台详情失败，回退列表扫描: Page.wait_for_selector: Timeout 12000ms exceeded.
+Call log:
+  - waiting for locator(".active_form") to be visible
+
+[14:26:12] [INFO] 🎯 单单测试模式: 匹配到后台ID 717468 / 商品ID j1247563543
+[14:26:15] [INFO] 开始处理订单 (卖家: A2DDMNRQv6B2hzqCGV5hzpnjP3XYm)
+[14:26:15] [INFO] 直接打开后台详情: https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=717468
+[14:26:45] [WARNING] 后台详情直达失败，回退点击购买: Page.goto: Timeout 30000ms exceeded.
+Call log:
+  - navigating to "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=717468", waiting until "domcontentloaded"
+
+[14:27:15] [ERROR] Loop error: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("table.public_table tr").nth(1).locator("a:has-text('购买')").first
+
+[14:27:15] [INFO] 单单测试结束: 717468。自动停止。
+[14:27:15] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 14:24:50
+结束时间: 2026-10-08 14:27:15
+运行时长: 0:02:25
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [717468] Failed (Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("table.public_table tr").nth(1).locator("a:has-text('购买')").first
+)
+
+[14:27:15] [INFO] 自动化已停止。
+[14:28:00] [INFO] Browser already open.
+[14:28:00] [INFO] 自动化任务已启动。
+[14:28:00] [INFO] 单单测试：直接打开后台详情 https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422
+[14:28:15] [WARNING] 直接打开后台详情失败，回退列表扫描: Page.wait_for_selector: Timeout 12000ms exceeded.
+Call log:
+  - waiting for locator(".active_form") to be visible
+    - waiting for "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list" navigation to finish...
+    - navigated to "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list"
+
+[14:28:18] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[14:28:18] [INFO] 开始处理订单 (卖家: 4EVkc6NpDtPVfvFjgKky3uMtoTFbL)
+[14:28:18] [INFO] 直接打开后台详情: https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422
+[14:28:37] [WARNING] 后台详情直达失败，回退点击购买: Page.wait_for_selector: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator(".active_form") to be visible
+    - waiting for "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list" navigation to finish...
+    - navigated to "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list"
+
+[14:28:38] [INFO] 已进入后台详情页
+[14:28:38] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[14:28:38] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[14:28:38] [INFO] 直接打开雅虎拍品页: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[14:28:40] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[14:28:48] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=55'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=55 >> a:has-text('购买') >> nth=0">, 'seller_id': '4EVkc6NpDtPVfvFjgKky3uMtoTFbL', 'order_id': '715422', 'product_id': 'b1246929270', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': '', 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[14:28:48] [INFO] 正在检测同捆发货弹窗...
+[14:28:49] [INFO] 直接打开取引ナビ: https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270
+[14:28:54] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270
+[14:28:55] [INFO] 检测到新版同捆选择页。点击「単品で取引する」（不申请まとめて取引）。
+[14:28:59] [INFO] 等待新版取引ナビ异步渲染「購入手続きをする」...
+[14:29:24] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270']
+[14:29:34] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270']
+[14:29:34] [WARNING] 取引ナビ页没有「購入手続きをする」。URL=https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270
+[14:29:34] [INFO] 检测到新版同捆选择页。点击「単品で取引する」（不申请まとめて取引）。
+[14:30:04] [ERROR] 雅虎下单执行异常: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('単品で取引する'), a:has-text('単品で取引する')").first
+    - locator resolved to <button type="button" class="gv-Button--yimO_UuGzSZbwqISHVu4 gv-Button--fullWidth--QEZaJf1hZPETRSQqwrWa">単品で取引する</button>
+  - attempting click action
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <section class="gv-Modal__inner--PuqAueyiJIseOpYsaZCl">…</section> from <div id="modalArea">…</div> subtree intercepts pointer events
+  - retrying click action
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <dialog open="" aria-modal="true" aria-labelledby="label-:r0:" aria-describedby="description-:r0:" class="gv-Modal--XWi2k5JJPBZRFEPeUoBo">…</dialog> from <div id="modalArea">…</div> subtree intercepts pointer events
+  - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <section class="gv-Modal__inner--PuqAueyiJIseOpYsaZCl">…</section> from <div id="modalArea">…</div> subtree intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    14 × waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <section class="gv-Modal__inner--PuqAueyiJIseOpYsaZCl">…</section> from <div id="modalArea">…</div> subtree intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <dialog open="" aria-modal="true" aria-labelledby="label-:r0:" aria-describedby="description-:r0:" class="gv-Modal--XWi2k5JJPBZRFEPeUoBo">…</dialog> from <div id="modalArea">…</div> subtree intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <section class="gv-Modal__inner--PuqAueyiJIseOpYsaZCl">…</section> from <div id="modalArea">…</div> subtree intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <section class="gv-Modal__inner--PuqAueyiJIseOpYsaZCl">…</section> from <div id="modalArea">…</div> subtree intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <section class="gv-Modal__inner--PuqAueyiJIseOpYsaZCl">…</section> from <div id="modalArea">…</div> subtree intercepts pointer events
+  - retrying click action
+    - waiting 500ms
+
+[14:30:05] [ERROR] SNAPSHOT SAVED: error_purchase_exception_1791441004 (in error_snapshots/)
+[14:30:05] [INFO] Stage 4: Backfilling Data to Backend...
+[14:30:35] [INFO] 单单测试结束: 715422。自动停止。
+[14:30:35] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 14:28:00
+结束时间: 2026-10-08 14:30:35
+运行时长: 0:02:34
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [715422] Failed (ERROR)
+
+[14:30:35] [INFO] 自动化已停止。
+[14:33:12] [INFO] 正在启动浏览器...
+[14:33:12] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[14:33:18] [INFO] 浏览器已打开，请手动登录。
+1. 雅虎拍卖
+2. 后台系统 (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[14:34:02] [INFO] Browser already open.
+[14:34:02] [INFO] 自动化任务已启动。
+[14:34:04] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[14:34:05] [INFO] 开始处理订单 (卖家: 4EVkc6NpDtPVfvFjgKky3uMtoTFbL)
+[14:34:10] [INFO] 已进入后台详情页
+[14:34:10] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[14:34:10] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[14:34:10] [INFO] 直接打开雅虎拍品页: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[14:34:22] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[14:34:30] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=55'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=55 >> a:has-text('购买') >> nth=0">, 'seller_id': '4EVkc6NpDtPVfvFjgKky3uMtoTFbL', 'order_id': '715422', 'product_id': 'b1246929270', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': '', 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[14:34:30] [INFO] 正在检测同捆发货弹窗...
+[14:34:31] [INFO] 直接打开取引ナビ: https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270
+[14:34:34] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270
+[14:34:35] [INFO] 检测到新版同捆选择页。点击「単品で取引する」（不申请まとめて取引）。
+[14:34:36] [INFO] 等待新版取引ナビ异步渲染「購入手続きをする」...
+[14:35:02] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270']
+[14:35:12] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270']
+[14:35:12] [WARNING] 取引ナビ页没有「購入手続きをする」。URL=https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270
+[14:35:12] [INFO] 检测到新版同捆选择页。点击「単品で取引する」（不申请まとめて取引）。
+[14:35:42] [ERROR] 雅虎下单执行异常: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('単品で取引する'), a:has-text('単品で取引する')").first
+    - locator resolved to <button type="button" class="gv-Button--yimO_UuGzSZbwqISHVu4 gv-Button--fullWidth--QEZaJf1hZPETRSQqwrWa">単品で取引する</button>
+  - attempting click action
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <section class="gv-Modal__inner--PuqAueyiJIseOpYsaZCl">…</section> from <div id="modalArea">…</div> subtree intercepts pointer events
+  - retrying click action
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <dialog open="" aria-modal="true" aria-labelledby="label-:r0:" aria-describedby="description-:r0:" class="gv-Modal--XWi2k5JJPBZRFEPeUoBo">…</dialog> from <div id="modalArea">…</div> subtree intercepts pointer events
+  - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <section class="gv-Modal__inner--PuqAueyiJIseOpYsaZCl">…</section> from <div id="modalArea">…</div> subtree intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    14 × waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <section class="gv-Modal__inner--PuqAueyiJIseOpYsaZCl">…</section> from <div id="modalArea">…</div> subtree intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <dialog open="" aria-modal="true" aria-labelledby="label-:r0:" aria-describedby="description-:r0:" class="gv-Modal--XWi2k5JJPBZRFEPeUoBo">…</dialog> from <div id="modalArea">…</div> subtree intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <section class="gv-Modal__inner--PuqAueyiJIseOpYsaZCl">…</section> from <div id="modalArea">…</div> subtree intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <section class="gv-Modal__inner--PuqAueyiJIseOpYsaZCl">…</section> from <div id="modalArea">…</div> subtree intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <section class="gv-Modal__inner--PuqAueyiJIseOpYsaZCl">…</section> from <div id="modalArea">…</div> subtree intercepts pointer events
+  - retrying click action
+    - waiting 500ms
+
+[14:35:42] [ERROR] SNAPSHOT SAVED: error_purchase_exception_1791441342 (in error_snapshots/)
+[14:35:42] [INFO] Stage 4: Backfilling Data to Backend...
+[14:35:42] [INFO] 单单测试结束: 715422。自动停止。
+[14:35:42] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 14:34:02
+结束时间: 2026-10-08 14:35:42
+运行时长: 0:01:39
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [715422] Failed (ERROR)
+
+[14:35:42] [INFO] 自动化已停止。
+[14:37:40] [INFO] 正在启动浏览器...
+[14:37:40] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[14:37:43] [INFO] 浏览器已打开，请手动登录。
+1. 雅虎拍卖
+2. 后台系统 (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[14:37:54] [INFO] Browser already open.
+[14:37:54] [INFO] 自动化任务已启动。
+[14:37:56] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[14:37:57] [INFO] 开始处理订单 (卖家: 4EVkc6NpDtPVfvFjgKky3uMtoTFbL)
+[14:37:59] [INFO] 已进入后台详情页
+[14:37:59] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[14:37:59] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[14:37:59] [INFO] 直接打开雅虎拍品页: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[14:38:29] [ERROR] 阶段2失败 (读取详情/打开雅虎): Page.goto: Timeout 30000ms exceeded.
+Call log:
+  - navigating to "https://auctions.yahoo.co.jp/jp/auction/b1246929270", waiting until "domcontentloaded"
+
+[14:38:29] [INFO] 单单测试结束: 715422。自动停止。
+[14:38:29] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 14:37:54
+结束时间: 2026-10-08 14:38:29
+运行时长: 0:00:34
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [715422] Failed (DETAIL_PAGE_ERROR)
+
+[14:38:29] [INFO] 自动化已停止。
+[14:39:48] [INFO] Browser already open.
+[14:39:48] [INFO] 自动化任务已启动。
+[14:39:48] [INFO] 单单测试: 未能在扫描结果中找到订单 715422。
+[14:39:48] [INFO] 单单测试: 未找到目标订单 715422。继续扫描...
+[14:39:59] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[14:40:00] [INFO] 开始处理订单 (卖家: 4EVkc6NpDtPVfvFjgKky3uMtoTFbL)
+[14:40:02] [INFO] 已进入后台详情页
+[14:40:02] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[14:40:02] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[14:40:02] [INFO] 直接打开雅虎拍品页: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[14:40:02] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[14:40:10] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=55'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=55 >> a:has-text('购买') >> nth=0">, 'seller_id': '4EVkc6NpDtPVfvFjgKky3uMtoTFbL', 'order_id': '715422', 'product_id': 'b1246929270', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': '', 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[14:40:10] [INFO] 正在检测同捆发货弹窗...
+[14:40:11] [INFO] 直接打开取引ナビ: https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270
+[14:40:41] [ERROR] 雅虎下单执行异常: Page.goto: Timeout 30000ms exceeded.
+Call log:
+  - navigating to "https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270", waiting until "domcontentloaded"
+
+[14:41:11] [WARNING] Snapshot Screenshot Failed: Page.screenshot: Timeout 30000ms exceeded.
+Call log:
+  - taking page screenshot
+  - waiting for fonts to load...
+
+[14:41:11] [ERROR] SNAPSHOT SAVED: error_purchase_exception_1791441641 (in error_snapshots/)
+[14:41:11] [INFO] Stage 4: Backfilling Data to Backend...
+[14:41:11] [INFO] 单单测试结束: 715422。自动停止。
+[14:41:11] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 14:39:48
+结束时间: 2026-10-08 14:41:11
+运行时长: 0:01:23
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [715422] Failed (ERROR)
+
+[14:41:11] [INFO] 自动化已停止。
+[14:44:11] [INFO] Browser already open.
+[14:44:11] [INFO] 自动化任务已启动。
+[14:44:13] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[14:44:13] [INFO] 开始处理订单 (卖家: 4EVkc6NpDtPVfvFjgKky3uMtoTFbL)
+[14:44:15] [INFO] 已进入后台详情页
+[14:44:15] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[14:44:15] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[14:44:15] [INFO] 直接打开雅虎拍品页: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[14:44:16] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[14:44:24] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=55'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=55 >> a:has-text('购买') >> nth=0">, 'seller_id': '4EVkc6NpDtPVfvFjgKky3uMtoTFbL', 'order_id': '715422', 'product_id': 'b1246929270', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': '', 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[14:44:24] [INFO] 正在检测同捆发货弹窗...
+[14:44:25] [INFO] 直接打开取引ナビ: https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270
+[14:44:31] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270
+[14:44:31] [INFO] 检测到新版同捆选择页。点击「単品で取引する」（不申请まとめて取引）。
+[14:44:32] [INFO] 确认弹窗：本当に単品で取引しますか？ 点击确定。
+[14:44:57] [INFO] 等待新版取引ナビ异步渲染「購入手続きをする」...
+[14:45:24] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270', 'https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6']
+[14:45:34] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270', 'https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6']
+[14:45:34] [WARNING] 取引ナビ页没有「購入手続きをする」。URL=https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6
+[14:45:34] [INFO] 等待新版取引ナビ异步渲染「購入手続きをする」...
+[14:46:01] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270', 'https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6']
+[14:46:10] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270', 'https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6']
+[14:46:10] [WARNING] 取引ナビ页没有「購入手続きをする」。URL=https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6
+[14:46:20] [WARNING] 警告：未找到 'お届け先' 表单，页面可能不同。继续...
+[14:46:50] [DEBUG] Payment Method Check Error: Locator.inner_text: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("h2:has-text('お支払い方法'), h3:has-text('お支払い方法')").first.locator("xpath=ancestor::section")
+
+[14:46:50] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[14:46:50] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[14:46:50] [INFO] 卖家留言提取: 订单 715422 (个人) 无留言
+[14:46:50] [INFO] 发现支付按钮 (a:has-text('決定する'))
+[14:46:50] [INFO] [TestMode] 模拟点击 (不提交)...
+[14:46:50] [INFO] Stage 4: Backfilling Data to Backend...
+[14:46:50] [INFO] 回填：设置 COD 为 NO
+[14:46:50] [INFO] 测试模式：回填表单已填写。请手动点击 '确定'。
+[14:47:20] [WARNING] 测试模式：超时或未检测到手动确认 (Bot 将继续)。
+[14:47:20] [INFO] 单单测试结束: 715422。自动停止。
+[14:47:20] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 14:44:11
+结束时间: 2026-10-08 14:47:20
+运行时长: 0:03:08
+----------------------------------------
+处理总数: 1
+成功订单: 1
+失败订单: 0
+跳过订单: 0
+详细记录:
+ - [715422] Success (TEST_SUCCESS)
+
+[14:47:20] [INFO] 自动化已停止。
+[15:04:59] [INFO] Browser already open.
+[15:04:59] [INFO] 自动化任务已启动。
+[15:05:01] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[15:05:02] [INFO] 开始处理订单 (卖家: 4EVkc6NpDtPVfvFjgKky3uMtoTFbL)
+[15:05:03] [INFO] 已进入后台详情页
+[15:05:03] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[15:05:03] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[15:05:03] [INFO] 直接打开雅虎拍品页: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[15:05:06] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[15:05:15] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=57'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=57 >> a:has-text('购买') >> nth=0">, 'seller_id': '4EVkc6NpDtPVfvFjgKky3uMtoTFbL', 'order_id': '715422', 'product_id': 'b1246929270', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': '', 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[15:05:15] [INFO] 正在检测同捆发货弹窗...
+[15:05:16] [INFO] 直接打开取引ナビ: https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270
+[15:05:34] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270
+[15:05:35] [INFO] 检测到新版同捆选择页。点击「単品で取引する」（不申请まとめて取引）。
+[15:05:35] [INFO] 确认弹窗：本当に単品で取引しますか？ 点击确定。
+[15:05:40] [INFO] 等待新版取引ナビ异步渲染「購入手続きをする」...
+[15:06:05] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270', 'https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6', 'https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6', 'https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6']
+[15:06:14] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270', 'https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6', 'https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6', 'https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6']
+[15:06:14] [WARNING] 取引ナビ页没有「購入手続きをする」。URL=https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6
+[15:06:14] [INFO] 等待新版取引ナビ异步渲染「購入手続きをする」...
+[15:06:40] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270', 'https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6', 'https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6', 'https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6']
+[15:06:48] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270', 'https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6', 'https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6', 'https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6']
+[15:06:48] [WARNING] 取引ナビ页没有「購入手続きをする」。URL=https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6
+[15:06:58] [WARNING] 警告：未找到 'お届け先' 表单，页面可能不同。继续...
+[15:07:29] [DEBUG] Payment Method Check Error: Locator.inner_text: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("h2:has-text('お支払い方法'), h3:has-text('お支払い方法')").first.locator("xpath=ancestor::section")
+
+[15:07:29] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[15:07:29] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[15:07:29] [INFO] 卖家留言提取: 订单 715422 (个人) 无留言
+[15:07:29] [INFO] 发现支付按钮 (a:has-text('決定する'))
+[15:07:29] [INFO] [TestMode] 模拟点击 (不提交)...
+[15:07:29] [INFO] Stage 4: Backfilling Data to Backend...
+[15:07:29] [WARNING] 回填：未找到 COD 选项。
+[15:07:29] [INFO] 测试模式：回填表单已填写。请手动点击 '确定'。
+[15:07:29] [INFO] 测试模式：回填已手动确认。
+[15:07:29] [INFO] 单单测试结束: 715422。自动停止。
+[15:07:29] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 15:04:59
+结束时间: 2026-10-08 15:07:29
+运行时长: 0:02:29
+----------------------------------------
+处理总数: 1
+成功订单: 1
+失败订单: 0
+跳过订单: 0
+详细记录:
+ - [715422] Success (TEST_SUCCESS)
+
+[15:07:29] [INFO] 自动化已停止。
+[15:07:50] [INFO] 正在启动浏览器...
+[15:07:50] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[15:08:02] [WARNING] 雅虎首页未快速就绪（将按商品URL直接打开）: Page.goto: Timeout 12000ms exceeded.
+Call log:
+  - navigating to "https://auctions.yahoo.co.jp/", waiting until "commit"
+
+[15:08:03] [INFO] 自动化任务已启动。
+[15:08:03] [WARNING] 未找到后台标签页。尝试打开...
+[15:08:08] [INFO] 单单测试: 未能在扫描结果中找到订单 715422。
+[15:08:08] [INFO] 单单测试: 未找到目标订单 715422。继续扫描...
+[15:08:20] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[15:08:20] [INFO] 开始处理订单 (卖家: 4EVkc6NpDtPVfvFjgKky3uMtoTFbL)
+[15:08:23] [INFO] 已进入后台详情页
+[15:08:23] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[15:08:23] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[15:08:23] [INFO] 直接打开雅虎拍品页: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[15:08:53] [ERROR] 阶段2失败 (读取详情/打开雅虎): Page.goto: Timeout 30000ms exceeded.
+Call log:
+  - navigating to "https://auctions.yahoo.co.jp/jp/auction/b1246929270", waiting until "commit"
+
+[15:08:53] [INFO] 单单测试结束: 715422。自动停止。
+[15:08:53] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 15:07:50
+结束时间: 2026-10-08 15:08:53
+运行时长: 0:01:03
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [715422] Failed (DETAIL_PAGE_ERROR)
+
+[15:08:53] [INFO] 自动化已停止。
+[15:30:07] [INFO] Browser already open.
+[15:30:07] [INFO] 自动化任务已启动。
+[15:30:07] [INFO] 单单测试: 未能在扫描结果中找到订单 715422。
+[15:30:07] [INFO] 单单测试: 未找到目标订单 715422。继续扫描...
+[15:30:19] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[15:30:19] [INFO] 开始处理订单 (卖家: 4EVkc6NpDtPVfvFjgKky3uMtoTFbL)
+[15:30:21] [INFO] 已进入后台详情页
+[15:30:21] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[15:30:21] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[15:30:21] [INFO] 直接打开雅虎拍品页: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[15:30:21] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[15:30:29] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=57'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=57 >> a:has-text('购买') >> nth=0">, 'seller_id': '4EVkc6NpDtPVfvFjgKky3uMtoTFbL', 'order_id': '715422', 'product_id': 'b1246929270', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': '', 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[15:30:29] [INFO] 正在检测同捆发货弹窗...
+[15:30:30] [INFO] 直接打开取引ナビ: https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270
+[15:30:34] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270
+[15:30:36] [INFO] 检测到新版同捆选择页。点击「単品で取引する」（不申请まとめて取引）。
+[15:30:36] [INFO] 确认弹窗：本当に単品で取引しますか？ 点击确定。
+[15:31:06] [ERROR] 雅虎下单执行异常: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#modalArea dialog[open] button.gv-Button--primary, dialog[open] button.gv-Button--primary:has-text('単品で取引する')").last
+
+[15:31:07] [ERROR] SNAPSHOT SAVED: error_purchase_exception_1791444666 (in error_snapshots/)
+[15:31:07] [INFO] Stage 4: Backfilling Data to Backend...
+[15:31:07] [INFO] 单单测试结束: 715422。自动停止。
+[15:31:07] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 15:30:07
+结束时间: 2026-10-08 15:31:07
+运行时长: 0:00:59
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [715422] Failed (ERROR)
+
+[15:31:07] [INFO] 自动化已停止。
+[15:35:43] [INFO] 正在启动浏览器...
+[15:35:43] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[15:35:55] [WARNING] 雅虎首页未快速就绪（将按商品URL直接打开）: Page.goto: Timeout 12000ms exceeded.
+Call log:
+  - navigating to "https://auctions.yahoo.co.jp/", waiting until "commit"
+
+[15:36:03] [INFO] 浏览器已打开，请手动登录。
+1. 雅虎拍卖
+2. 后台系统 (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[15:48:21] [INFO] Browser already open.
+[15:48:21] [INFO] 自动化任务已启动。
+[15:48:24] [INFO] 🎯 单单测试模式: 匹配到后台ID 715422 / 商品ID b1246929270
+[15:48:24] [INFO] 开始处理订单 (卖家: 4EVkc6NpDtPVfvFjgKky3uMtoTFbL)
+[15:48:27] [INFO] 已进入后台详情页
+[15:48:27] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[15:48:27] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[15:48:27] [INFO] 直接打开雅虎拍品页: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[15:48:31] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/b1246929270
+[15:48:39] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=57'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=715422&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=57 >> a:has-text('购买') >> nth=0">, 'seller_id': '4EVkc6NpDtPVfvFjgKky3uMtoTFbL', 'order_id': '715422', 'product_id': 'b1246929270', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': '', 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[15:48:39] [INFO] 正在检测同捆发货弹窗...
+[15:48:40] [INFO] 直接打开取引ナビ: https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270
+[15:48:52] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/trade/top?aid=b1246929270
+[15:48:54] [INFO] 检测到新版同捆选择页。点击「単品で取引する」（不申请まとめて取引）。
+[15:48:54] [INFO] 确认弹窗：本当に単品で取引しますか？ 点击确定。
+[15:48:57] [INFO] 已切换到结算/地址页: https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6
+[15:48:57] [INFO] 单品确认后当前页: https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6
+[15:48:57] [INFO] 已在结算/地址页: https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6
+[15:48:57] [INFO] 已进入结算/地址页。等待表单... https://contact.auctions.yahoo.co.jp/buyer/edit?aid=b1246929270&oid=75234819-8891364317-2165572&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ&seller_auc_user_id=4EVkc6NpDtPVfvFjgKky3uMtoTFbL&.crumb=478e2383b631bcc7bd0cca6268b0b03380fad48bf62afd02c6c56cc7305183a6
+[15:48:57] [INFO] 本页需先提交交易信息，之后等待卖家联系运费。
+[15:48:57] [INFO] 点击「編集する」展开地址表单...
+[15:48:58] [INFO] 已填写ビル名/室号: 15422室
+[15:48:58] [INFO] 店铺地址已修改并验证: 15422室
+[15:48:58] [INFO] 店铺：选择最佳配送: ゆうパケット
+
+230円 (230円)
+[15:48:58] [INFO] 支付方式非信用卡 (检测到: 
+
+    配送時間帯
+
+
+    
+        
+    
+       ...)。尝试切换...
+[15:48:58] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[15:48:58] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[15:48:58] [INFO] 卖家留言提取: 订单 715422 (个人) 无留言
+[15:48:58] [INFO] 发现旧版取引ナビ「決定する」(#mBoxConfBt)
+[15:48:58] [INFO] [TestMode] 模拟点击决定（不提交，也不点弹窗「確定する」）...
+[15:48:58] [INFO] Stage 4: Backfilling Data to Backend...
+[15:48:58] [INFO] 测试模式：已填写物流偏好。请手动点击 '等待商家确认运费'。
+[15:49:18] [WARNING] 测试模式：未检测到手动确认 (Bot 将继续)。
+[15:49:18] [INFO] 单单测试结束: 715422。自动停止。
+[15:49:18] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-08 15:48:21
+结束时间: 2026-10-08 15:49:18
+运行时长: 0:00:56
+----------------------------------------
+处理总数: 1
+成功订单: 1
+失败订单: 0
+跳过订单: 0
+详细记录:
+ - [715422] Success (WAIT_SHIPPING_CONTACT)
+
+[15:49:18] [INFO] 自动化已停止。

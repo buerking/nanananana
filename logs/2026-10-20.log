@@ -1,0 +1,141 @@
+[15:58:25] [INFO] 正在启动 ad / ym 两套 Chrome...
+[15:58:27] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[15:58:28] [ERROR] Failed to launch browser: BrowserType.launch_persistent_context: Target page, context or browser has been closed
+Browser logs:
+
+<launching> C:\Program Files\Google\Chrome\Application\chrome.exe --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --no-sandbox --start-maximized --disable-blink-features=AutomationControlled --user-data-dir=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data --remote-debugging-pipe about:blank
+<launched> pid=14428
+[pid=14428][err] libpng warning: iCCP: known incorrect sRGB profile
+[pid=14428][err] libpng warning: iCCP: known incorrect sRGB profile
+[pid=14428][err] libpng warning: iCCP: known incorrect sRGB profile
+[pid=14428][err] libpng warning: iCCP: known incorrect sRGB profile
+[pid=14428][err] libpng warning: iCCP: known incorrect sRGB profile
+[pid=14428][err] libpng warning: iCCP: known incorrect sRGB profile
+[pid=14428][err] libpng warning: iCCP: known incorrect sRGB profile
+[pid=14428][err] libpng warning: iCCP: known incorrect sRGB profile
+[pid=14428][err] libpng warning: tRNS: invalid with alpha channel
+[pid=14428][err] libpng warning: tRNS: invalid with alpha channel
+[pid=14428][err] libpng warning: tRNS: invalid with alpha channel
+Call log:
+  - <launching> C:\Program Files\Google\Chrome\Application\chrome.exe --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --no-sandbox --start-maximized --disable-blink-features=AutomationControlled --user-data-dir=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data --remote-debugging-pipe about:blank
+  - <launched> pid=14428
+  8 × [pid=14428][err] libpng warning: iCCP: known incorrect sRGB profile
+  3 × [pid=14428][err] libpng warning: tRNS: invalid with alpha channel
+  - [pid=14428] <gracefully close start>
+  - [pid=14428] <kill>
+  - [pid=14428] <will force kill>
+  - [pid=14428] taskkill stderr: ����: û���ҵ����� "14428"��
+  - [pid=14428] <process did exit: exitCode=0, signal=null>
+  - [pid=14428] starting temporary directories cleanup
+  - [pid=14428] finished temporary directories cleanup
+  - [pid=14428] <gracefully close end>
+
+[15:58:34] [INFO] 正在启动 ad / ym 两套 Chrome...
+[15:58:34] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[15:58:37] [INFO] 正在启动 ad / ym 两套 Chrome...
+[15:58:37] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[15:58:37] [ERROR] Failed to launch browser: BrowserType.launch_persistent_context: Target page, context or browser has been closed
+Browser logs:
+
+<launching> C:\Program Files\Google\Chrome\Application\chrome.exe --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --no-sandbox --start-maximized --disable-blink-features=AutomationControlled --user-data-dir=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data --remote-debugging-pipe about:blank
+<launched> pid=12432
+[pid=12432][out] �������е�������Ự�д򿪡�
+Call log:
+  - <launching> C:\Program Files\Google\Chrome\Application\chrome.exe --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --no-sandbox --start-maximized --disable-blink-features=AutomationControlled --user-data-dir=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data --remote-debugging-pipe about:blank
+  - <launched> pid=12432
+  - [pid=12432][out] �������е�������Ự�д򿪡�
+  - [pid=12432] <gracefully close start>
+  - [pid=12432] <kill>
+  - [pid=12432] <will force kill>
+  - [pid=12432] taskkill stderr: ����: û���ҵ����� "12432"��
+  - [pid=12432] <process did exit: exitCode=0, signal=null>
+  - [pid=12432] starting temporary directories cleanup
+  - [pid=12432] finished temporary directories cleanup
+  - [pid=12432] <gracefully close end>
+
+[15:58:39] [INFO] 已启动 Chrome [ad] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data 账号=adxez09955@yahoo.co.jp / dxez09955@yahoo.co.jp
+[15:58:39] [ERROR] Failed to launch browser: 'NoneType' object has no attribute 'chromium'
+[15:59:39] [INFO] 正在启动 ad / ym 两套 Chrome...
+[15:59:40] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[15:59:43] [INFO] 已启动 Chrome [ad] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data 账号=adxez09955@yahoo.co.jp / dxez09955@yahoo.co.jp
+[15:59:45] [INFO] 已启动 Chrome [ym] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data_ym 账号=ymzjw19369@yahoo.co.jp
+[15:59:45] [INFO] 请分别登录：
+1. Chrome [ad] 雅虎 adxez09955@yahoo.co.jp
+2. Chrome [ym] 雅虎 ymzjw19369@yahoo.co.jp
+3. QBT 后台固定在 [ad] (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[16:00:12] [INFO] Browser already open.
+[16:00:12] [INFO] 自动化任务已启动。
+[16:00:17] [INFO] 去掉后台彩色行 17 笔: ['723173', '723163', '723137', '723096', '723059', '722990', '722945', '722939', '722936', '722932', '722900', '722882', '722881', '722171', '722407', '721603', '719940']
+[16:00:17] [INFO] 跳过未购买待确认 20 笔: ['723258', '723168', '723156', '723126', '723115', '723111', '723088', '723076', '723064', '723039', '723019', '723006', '722851', '722730', '722517', '722443', '722194', '720849', '720760', '719847']
+[16:00:17] [WARNING] 未识别出价账号，跳过订单 723289 email=ymzwj19369@yahoo.co.jp
+[16:00:17] [WARNING] 未识别出价账号，跳过订单 723284 email=ymzwj19369@yahoo.co.jp
+[16:00:17] [WARNING] 未识别出价账号，跳过订单 723067 email=ymzwj19369@yahoo.co.jp
+[16:00:17] [WARNING] 未识别出价账号，跳过订单 723028 email=ymzwj19369@yahoo.co.jp
+[16:00:17] [WARNING] 未识别出价账号，跳过订单 722965 email=ymzwj19369@yahoo.co.jp
+[16:00:17] [WARNING] 未识别出价账号，跳过订单 722960 email=ymzwj19369@yahoo.co.jp
+[16:00:17] [INFO] 一对一可购买 4 笔（722971, 722970, 722956, 722844）
+[16:00:17] [INFO] 运行成功，以下订单可以处理:
+  1. 722971 / h1248652162 / 卖家 DhfZfWsZHnUTEhE3UVr7ChJwZonQw / 账号 ad / 用户 OHAET
+  2. 722970 / h1248399959 / 卖家 5WeXhDQbk8NAVLWRBzuXFRYgaMCNF / 账号 ad / 用户 JKWHU
+  3. 722956 / w1247755435 / 卖家 7dsNX6wrN22RbmMv51RgPHoXjg6Yk / 账号 ad / 用户 BNAJR
+  4. 722844 / e1225246571 / 卖家 8YBmqAvmz8V9B7ehwCSVND3GZQ36R / 账号 ad / 用户 ALIXM
+[16:00:17] [WARNING] 请回复 y 确认，将真实购买队列中的第 1 单 722971（账号 ad）。输入 n 跳过，stop 结束本批。【会真实扣款】
+[16:17:22] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-20 16:00:12
+结束时间: 2026-10-20 16:17:22
+运行时长: 0:17:09
+----------------------------------------
+处理总数: 0
+成功订单: 0
+失败订单: 0
+跳过订单: 0
+详细记录:
+ - (无处理记录)
+
+[16:17:22] [INFO] 自动化已停止。
+[16:17:47] [INFO] 正在启动 ad / ym 两套 Chrome...
+[16:17:47] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[16:17:50] [INFO] 已启动 Chrome [ad] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data 账号=adxez09955@yahoo.co.jp / dxez09955@yahoo.co.jp
+[16:17:52] [INFO] 已启动 Chrome [ym] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data_ym 账号=ymzjw19369@yahoo.co.jp / ymzwj19369@yahoo.co.jp
+[16:17:52] [INFO] 请分别登录：
+1. Chrome [ad] 雅虎 adxez09955@yahoo.co.jp
+2. Chrome [ym] 雅虎 ymzjw19369@yahoo.co.jp
+3. QBT 后台固定在 [ad] (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[16:18:28] [INFO] Browser already open.
+[16:18:28] [INFO] 自动化任务已启动。
+[16:18:32] [INFO] 去掉后台彩色行 17 笔: ['723173', '723163', '723137', '723096', '723059', '722990', '722945', '722939', '722936', '722932', '722900', '722882', '722881', '722171', '722407', '721603', '719940']
+[16:18:32] [INFO] 跳过未购买待确认 20 笔: ['723258', '723168', '723156', '723126', '723115', '723111', '723088', '723076', '723064', '723039', '723019', '723006', '722851', '722730', '722517', '722443', '722194', '720849', '720760', '719847']
+[16:18:32] [INFO] 代购买合计 64 笔，可以单条购买 10 笔（723289, 723284, 723067, 723028, 722971, 722970, 722965, 722960, 722956, 722844）
+[16:18:32] [INFO] 运行成功。代购买合计 64 笔，可以单条购买 10 笔。
+以下订单可以处理:
+  1. 723289 / h1050946339 / 卖家 5sWfUBZ71SAkT3xAdLL1xwRaeDtdK / 账号 ym / 用户 BDMIG
+  2. 723284 / s1244288477 / 卖家 FpbairJLYTh6ZnNiUaz8NC7YiCxtW / 账号 ym / 用户 UOYFT
+  3. 723067 / u1248220654 / 卖家 C8GvSYn5QJc9dSq7bdKgfesiBWJpf / 账号 ym / 用户 OHAET
+  4. 723028 / v1247678582 / 卖家 CP8d1PMyBBobU8WaMUNjE9HprR8QW / 账号 ym / 用户 OHAET
+  5. 722971 / h1248652162 / 卖家 DhfZfWsZHnUTEhE3UVr7ChJwZonQw / 账号 ad / 用户 OHAET
+  6. 722970 / h1248399959 / 卖家 5WeXhDQbk8NAVLWRBzuXFRYgaMCNF / 账号 ad / 用户 JKWHU
+  7. 722965 / e1248779739 / 卖家 FVZtefbhscXtaa4E3JzDifmV42KAx / 账号 ym / 用户 OHAET
+  8. 722960 / f1247408356 / 卖家 481984gU84VqFWG9ge9C47orwvbPr / 账号 ym / 用户 BNAJR
+  9. 722956 / w1247755435 / 卖家 7dsNX6wrN22RbmMv51RgPHoXjg6Yk / 账号 ad / 用户 BNAJR
+  10. 722844 / e1225246571 / 卖家 8YBmqAvmz8V9B7ehwCSVND3GZQ36R / 账号 ad / 用户 ALIXM
+[16:18:32] [WARNING] 请回复 y 确认，将真实购买队列中的第 1 单 723289（账号 ym）。输入 n 跳过，stop 结束本批。【会真实扣款】
+[16:48:32] [WARNING] 等待确认超时（30分钟）。结束本批。
+[16:48:32] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-20 16:18:28
+结束时间: 2026-10-20 16:48:32
+运行时长: 0:30:03
+----------------------------------------
+处理总数: 0
+成功订单: 0
+失败订单: 0
+跳过订单: 0
+详细记录:
+ - (无处理记录)
+
+[16:48:33] [INFO] 自动化已停止。

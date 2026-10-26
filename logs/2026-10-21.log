@@ -1,0 +1,1056 @@
+[11:20:30] [INFO] 正在启动 ad / ym 两套 Chrome...
+[11:20:31] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[11:20:34] [INFO] 已启动 Chrome [ad] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data 账号=adxez09955@yahoo.co.jp / dxez09955@yahoo.co.jp
+[11:20:37] [INFO] 已启动 Chrome [ym] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data_ym 账号=ymzjw19369@yahoo.co.jp / ymzwj19369@yahoo.co.jp
+[11:20:37] [INFO] 请分别登录：
+1. Chrome [ad] 雅虎 adxez09955@yahoo.co.jp
+2. Chrome [ym] 雅虎 ymzjw19369@yahoo.co.jp
+3. QBT 后台固定在 [ad] (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[13:01:35] [INFO] Browser already open.
+[13:01:35] [INFO] 自动化任务已启动。
+[13:01:39] [INFO] 去掉后台彩色行 11 笔: ['723408', '723389', '720451', '720446', '723377', '723376', '723375', '723146', '722860', '723073', '723062']
+[13:01:39] [INFO] 跳过未购买待确认 10 笔: ['723421', '723410', '723355', '723268', '723260', '723067', '722443', '721504', '720788', '720379']
+[13:01:39] [INFO] 代购买合计 71 笔，可以单条购买 49 笔（723662, 723660, 723638, 723581, 723532, 723505, 723483, 723475, 723472, 723470, 723468, 723465, 723463, 723453, 723451, 723434, 723432, 723430, 723426, 723425, 723418, 723412, 723401, 723392, 723385, 723373, 723366, 723360, 723348, 723342, 723326, 723320, 723299, 723276, 723271, 723265, 723244, 723148, 723071, 722863, 722852, 722739, 722668, 722067, 722029, 721789, 720841, 720342, 720284）
+[13:01:39] [INFO] 运行成功。代购买合计 71 笔，可以单条购买 49 笔。
+以下订单可以处理:
+  1. 723662 / m1082199009 / 卖家 9h4bSPKv73vnmUhkZUszRzrq4nbN5 / 账号 ym / 用户 HHLGY
+  2. 723660 / b1182934231 / 卖家 ECyAov3RLEnKRAmxtJGQM7N2efV8w / 账号 ym / 用户 微信22072704347136
+  3. 723638 / w1233155027 / 卖家 D2fgywjU9ansVdv1geE5yduqnqwuU / 账号 ym / 用户 VQZIV
+  4. 723581 / b1205499006 / 卖家 GFCzBvi6P1xa1anRFcgDEguMm2h3E / 账号 ym / 用户 near_sun
+  5. 723532 / c1241049745 / 卖家 6xqw37qr9hETbewN2fmk779xyCMkT / 账号 ym / 用户 OHVZO
+  6. 723505 / q1248602172 / 卖家 9LToPSVH3zMpcSFky8wcjjp9eiJAo / 账号 ym / 用户 微信23052209507135
+  7. 723483 / d1247316218 / 卖家 EqPsh6r5CMmg9iFub24wJSpo3EjpU / 账号 ym / 用户 JRHAP
+  8. 723475 / f1248562151 / 卖家 G3pLWmqzCC2cJFxFCgH5B6nQTKAdw / 账号 ym / 用户 LWRZE
+  9. 723472 / k1248154327 / 卖家 AC9XjewHmcMT4ZdfeF7rdePyXqpmm / 账号 ym / 用户 BDOMC
+  10. 723470 / s1248817521 / 卖家 8GwLRLXmNdYJGMv671M4xRrPGf8nu / 账号 ym / 用户 MKGFP
+  11. 723468 / s1248697757 / 卖家 6zbcrLCtv6hmRsvcZm6YsVAjJ73Gh / 账号 ad / 用户 AYONT
+  12. 723465 / g1248823725 / 卖家 BaC83PWdYmMyGgMXEBHgLpFg5NK6f / 账号 ad / 用户 KBMYV
+  13. 723463 / p1246510915 / 卖家 BYmXojTpVjLxJVyr7o8MtXBMnUQCj / 账号 ym / 用户 FMFTP
+  14. 723453 / v1248815941 / 卖家 2xiaBHtzga38d8QPg1WQuEbQngF5y / 账号 ym / 用户 APMOY
+  15. 723451 / w1239725636 / 卖家 dgStrAUkfHNQXaPWNhhZscw8EVFm / 账号 ym / 用户 JKWHU
+  16. 723434 / l1225667341 / 卖家 gcxwPCMxZy7MqEWAS9mYPyrsmkCJ / 账号 ym / 用户 NWWPI
+  17. 723432 / u1248606392 / 卖家 Ey5mDYgTPoyaayW5dcTS3fsuGYGo4 / 账号 ym / 用户 KBMYV
+  18. 723430 / p1248165761 / 卖家 wLC9EmvLEYnd8Bmr9KxAU85VsE7i / 账号 ym / 用户 JackWang
+  19. 723426 / v1248240519 / 卖家 DN39GAWWNfFNZoBR7hDJxtrdDHt5k / 账号 ym / 用户 FJTNF
+  20. 723425 / b1247935194 / 卖家 Cf6bzqJdCxHbUpMSHv8Ct2AjptRCG / 账号 ym / 用户 FMFTP
+  21. 723418 / m1248454441 / 卖家 D1Wzh6jzmdWwGUiRXxzHjvoorskGf / 账号 ym / 用户 czhengh
+  22. 723412 / e1248724113 / 卖家 EZVFXyVtVzLxm9q8nNTBmthapUacq / 账号 ym / 用户 JDQPC
+  23. 723401 / f1249072723 / 卖家 44q7iTybBwb31q4uWYn2GFCcNg4FM / 账号 ym / 用户 BGJZO
+  24. 723392 / r1248210546 / 卖家 6PM4etxiqD1uxJg2A2wu3DbhhwLoJ / 账号 ym / 用户 BZNHS
+  25. 723385 / h1248164962 / 卖家 FAyn1CJckwijqxAASovHWKnjtUGez / 账号 ym / 用户 tanxuchang
+  26. 723373 / r1248215503 / 卖家 9ZZXfTL9RxJbD5pRodPX35VLLWT2q / 账号 ym / 用户 BRIBR
+  27. 723366 / t1248238158 / 卖家 3wpSr7CSEF4zu1Rjq9LU92G4YVGv8 / 账号 ym / 用户 LWRZE
+  28. 723360 / u1248208989 / 卖家 AnSGvBej7ugRhXhATRKvt6Gym8iRn / 账号 ym / 用户 GPLYO
+  29. 723348 / q1248810714 / 卖家 BjJ7yhEvGm2LXbzixE6BTsXfEt5He / 账号 ym / 用户 RINSX
+  30. 723342 / k1184383977 / 卖家 5fW7YSmdb3KpA5j6LeQuagLe1z4fe / 账号 ym / 用户 KBLMY
+  31. 723326 / u1248465487 / 卖家 AM85ooRGS9CpiVQFEaFp2RuTPCStg / 账号 ym / 用户 微信21041107444495
+  32. 723320 / k1248317326 / 卖家 DfYVB9YPZB8p92Ni3GempbnMmgxgQ / 账号 ym / 用户 IMHHM
+  33. 723299 / t1247943221 / 卖家 467vsC6E9tLNdDGS9D5udmduFR6Fk / 账号 ym / 用户 AWPYL
+  34. 723276 / c1247046360 / 卖家 Dah8ECabwz8yDjJUBK8icuKkAicDQ / 账号 ym / 用户 UOYFT
+  35. 723271 / b1248800251 / 卖家 F5iMKZqCu4W1HxMmNH8faDWLWVi82 / 账号 ym / 用户 YMNMK
+  36. 723265 / b1238152573 / 卖家 5yNFAV9mBKVASYitqzeKf2jcRLESu / 账号 ym / 用户 LTJKN
+  37. 723244 / w1248210123 / 卖家 6vzAow31e6e6kLVX41LLfszCJMmPR / 账号 ym / 用户 JackWang
+  38. 723148 / q1248703804 / 卖家 FGdty3rqQaxdyeJEgGACki7usKJXC / 账号 ym / 用户 WVSMN
+  39. 723071 / t1248594673 / 卖家 CMkGa2DL1UvwSTrK9PSvufgo7DUEn / 账号 ym / 用户 CWPNW
+  40. 722863 / h1246418132 / 卖家 6nDReqaduPW5Hpw3fh6fwQFAavquE / 账号 ym / 用户 moodguitar
+  41. 722852 / k1248205629 / 卖家 4pMrvDVWBsmmHAGsn3NreJgKGm7mM / 账号 ym / 用户 KEZEF
+  42. 722739 / w1248693007 / 卖家 AiKUKAPfqb1DNwnduLKqwZrZANszy / 账号 ym / 用户 LKBJW
+  43. 722668 / d1248617336 / 卖家 ex52Sva44S6Wuj9yB4CLudswCEHx / 账号 ym / 用户 NGRSS
+  44. 722067 / h1240194591 / 卖家 6VKTR6WwmXg8bMzbs6pKr5WmVsmzb / 账号 ym / 用户 LTJKN
+  45. 722029 / q1247940525 / 卖家 6wRynHCTNm2zXWrLdR1Y2s5pWaD8e / 账号 ym / 用户 MKRME
+  46. 721789 / r1236943328 / 卖家 9NqGKD6F68uwWt6WkQFFVFqH9tUYW / 账号 ym / 用户 OKTSQ
+  47. 720841 / n1248157379 / 卖家 D1XLHFjY98pYPrL4sAgzLi69txRHB / 账号 ym / 用户 NJSWU
+  48. 720342 / t1248198036 / 卖家 4sYV79fRqU8RozMKKLkAkd6XoMnQ5 / 账号 ym / 用户 LKBJW
+  49. 720284 / d1248094991 / 卖家 3gfjiB7TUwLnSqp9fyyfFThwZHCi8 / 账号 ym / 用户 LKBJW
+[13:01:39] [WARNING] 请回复 y 确认，将真实购买队列中的第 1 单 723662（账号 ym）。输入 n 跳过，stop 结束本批。【会真实扣款】
+[13:02:29] [INFO] 开始处理订单 723662 (卖家: 9h4bSPKv73vnmUhkZUszRzrq4nbN5, 账号: ym, 用户: HHLGY)
+[13:02:30] [INFO] 已进入后台详情页
+[13:02:30] [INFO] 备注符合白名单规则，已忽略并继续: ymzwj19369@yahoo.co.jp一口价购买失败，无可用账号 确认订单失败: 認証に失敗しました。 (code: user_authentication_skip_error)
+[13:02:30] [INFO] 同捆订单：将主要 ID 从 723662 切换为第一项 ID 723664
+[13:02:30] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[13:02:30] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[13:02:30] [INFO] 切换雅虎浏览器 [ym] 打开: https://auctions.yahoo.co.jp/jp/auction/m1082199009
+[13:02:33] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/m1082199009
+[13:02:41] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723664&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=1'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723664&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=1 >> a:has-text('购买') >> nth=0">, 'seller_id': '9h4bSPKv73vnmUhkZUszRzrq4nbN5', 'order_id': '723664', 'product_id': 'm1082199009', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': '', 'bid_email': 'ymzwj19369@yahoo.co.jp', 'account_key': 'ym', 'user_name': 'HHLGY', 'has_color': False, 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[13:02:41] [INFO] 正在检测同捆发货弹窗...
+[13:02:43] [INFO] 已结束店铺拍品，打开店铺取引ナビ: https://buy.auctions.yahoo.co.jp/order/status?auctionId=m1082199009
+[13:02:52] [INFO] 店铺取引ナビ：发现「購入手続きする」，进入 /order/review
+[13:02:52] [INFO] 进入购买手续页: https://buy.auctions.yahoo.co.jp/order/review?auctionId=m1082199009
+[13:02:53] [INFO] 购买手续页当前 URL: https://buy.auctions.yahoo.co.jp/order/review?auctionId=m1082199009
+[13:02:53] [INFO] 卖家留言提取: 订单 723664 (店铺) 无留言
+[13:02:53] [INFO] 已进入结算/地址页。等待表单... https://buy.auctions.yahoo.co.jp/order/review?auctionId=m1082199009
+[13:02:53] [INFO] 地址输入框未找到 (第 1/5 次)，等待页面继续加载...
+[13:02:54] [INFO] 地址输入框未找到 (第 2/5 次)，等待页面继续加载...
+[13:02:55] [INFO] 地址输入框未找到 (第 3/5 次)，等待页面继续加载...
+[13:02:56] [INFO] 地址输入框未找到 (第 4/5 次)，等待页面继续加载...
+[13:02:57] [INFO] 地址输入框未找到 (第 5/5 次)，等待页面继续加载...
+[13:02:58] [ERROR] 严重拦截：无法确认个人买家页面的地址准确性。为防止发错货已强制停止。
+[13:02:58] [ERROR] 【雅虎页面改版】约定元素没找到，需要人工对照
+检查点: address_edit
+页面: 改地址
+路径: 店铺 /order/review 的 #address 旁「変更」（h2 兄弟，不是 h2 内部）→ お届け先編集 input[name=address2] → #confirm「変更する」；个人仍是「編集する」
+找不到: 地址编辑入口或室号输入框
+旧选择器:
+  - #address a:has-text('変更')
+  - header:has(h2:has-text('お届け先')) a:has-text('変更')
+  - a[data-cl-params*='_cl_link:address']
+  - h1:has-text('お届け先編集')
+  - #confirm a:has-text('変更する')
+  - a[data-cl-params*='_cl_link:update']
+  - #elAdressEdit
+  - a:has-text('編集する')
+  - input[value='編集する']
+  - button:has-text('編集する')
+  - input[name='address2']
+  - input[name='home_address2']
+当前URL: https://buy.auctions.yahoo.co.jp/order/review?auctionId=m1082199009
+订单: 723664 / 商品: m1082199009
+说明: 结算页没有お届け先「変更」/「編集する」，也没有 address2/home_address2。
+结算区可见按钮/标题: 閉じる、購入内容の確認、マイオク、クーポン、クーポンが表示されない場合、PayPayポイント、お支払い方法、変更、クレジットカード一括払い、PayPayカード入会特典、特典を確認する、お支払い方法の変更はこちら
+事故目录: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792558978_723664_address_edit
+截图: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792558978_723664_address_edit\screenshot.png
+活DOM: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792558978_723664_address_edit\dom.outer.html
+对照表: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792558978_723664_address_edit\meta.json
+请在本仓库对 Cursor 说：修最新失败
+（不要在群里回复 class，由 Cursor 读 DOM 修改选择器）
+[13:02:58] [INFO] Stage 4: Backfilling Data to Backend...
+[13:02:58] [INFO] 本单自动购买是否成功: 否（ADDRESS_FAIL）
+[13:02:59] [WARNING] 人工核查窗口。订单 723662 已跑完。核查完毕后输入 y 开始下一单，n 跳过下一单队首，stop 结束本批。
+[13:09:19] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-21 13:01:35
+结束时间: 2026-10-21 13:09:19
+运行时长: 0:07:44
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [723662] Failed (ADDRESS_FAIL)
+
+[13:09:20] [INFO] 自动化已停止。
+[13:09:40] [INFO] 正在启动 ad / ym 两套 Chrome...
+[13:09:40] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[13:09:43] [INFO] 已启动 Chrome [ad] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data 账号=adxez09955@yahoo.co.jp / dxez09955@yahoo.co.jp
+[13:09:45] [INFO] 已启动 Chrome [ym] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data_ym 账号=ymzjw19369@yahoo.co.jp / ymzwj19369@yahoo.co.jp
+[13:09:45] [INFO] 请分别登录：
+1. Chrome [ad] 雅虎 adxez09955@yahoo.co.jp
+2. Chrome [ym] 雅虎 ymzjw19369@yahoo.co.jp
+3. QBT 后台固定在 [ad] (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[13:10:06] [INFO] Browser already open.
+[13:10:06] [INFO] 自动化任务已启动。
+[13:10:13] [INFO] 去掉后台彩色行 31 笔: ['723408', '723389', '720451', '720446', '723377', '723376', '723375', '723146', '722860', '723073', '723062', '722254', '722252', '722244', '722243', '722242', '722231', '722230', '722228', '722227', '722226', '722225', '722224', '722223', '722222', '722221', '722219', '722218', '722217', '722216', '722214']
+[13:10:13] [INFO] 跳过未购买待确认 10 笔: ['723421', '723410', '723355', '723268', '723260', '723067', '722443', '721504', '720788', '720379']
+[13:10:13] [INFO] 代购买合计 94 笔，可以单条购买 52 笔（723664, 723663, 723662, 723660, 723638, 723581, 723532, 723505, 723483, 723475, 723472, 723470, 723468, 723465, 723463, 723453, 723451, 723434, 723432, 723430, 723426, 723425, 723418, 723412, 723401, 723392, 723385, 723373, 723366, 723360, 723348, 723342, 723326, 723320, 723299, 723276, 723271, 723265, 723244, 723148, 723071, 722903, 722863, 722852, 722739, 722668, 722067, 722029, 721789, 720841, 720342, 720284）
+[13:10:13] [INFO] 运行成功。代购买合计 94 笔，可以单条购买 52 笔。
+以下订单可以处理:
+  1. 723664 / m1203011989 / 卖家 9ujKntZrkTMRttACQvPMU1Aoi3UBr / 账号 ym / 用户 HHLGY
+  2. 723663 / d1233664443 / 卖家 BuGQnHw4Kk1eugUD2LuULmPzuxfhs / 账号 ym / 用户 HHLGY
+  3. 723662 / m1082199009 / 卖家 9h4bSPKv73vnmUhkZUszRzrq4nbN5 / 账号 ym / 用户 HHLGY
+  4. 723660 / b1182934231 / 卖家 ECyAov3RLEnKRAmxtJGQM7N2efV8w / 账号 ym / 用户 微信22072704347136
+  5. 723638 / w1233155027 / 卖家 D2fgywjU9ansVdv1geE5yduqnqwuU / 账号 ym / 用户 VQZIV
+  6. 723581 / b1205499006 / 卖家 GFCzBvi6P1xa1anRFcgDEguMm2h3E / 账号 ym / 用户 near_sun
+  7. 723532 / c1241049745 / 卖家 6xqw37qr9hETbewN2fmk779xyCMkT / 账号 ym / 用户 OHVZO
+  8. 723505 / q1248602172 / 卖家 9LToPSVH3zMpcSFky8wcjjp9eiJAo / 账号 ym / 用户 微信23052209507135
+  9. 723483 / d1247316218 / 卖家 EqPsh6r5CMmg9iFub24wJSpo3EjpU / 账号 ym / 用户 JRHAP
+  10. 723475 / f1248562151 / 卖家 G3pLWmqzCC2cJFxFCgH5B6nQTKAdw / 账号 ym / 用户 LWRZE
+  11. 723472 / k1248154327 / 卖家 AC9XjewHmcMT4ZdfeF7rdePyXqpmm / 账号 ym / 用户 BDOMC
+  12. 723470 / s1248817521 / 卖家 8GwLRLXmNdYJGMv671M4xRrPGf8nu / 账号 ym / 用户 MKGFP
+  13. 723468 / s1248697757 / 卖家 6zbcrLCtv6hmRsvcZm6YsVAjJ73Gh / 账号 ad / 用户 AYONT
+  14. 723465 / g1248823725 / 卖家 BaC83PWdYmMyGgMXEBHgLpFg5NK6f / 账号 ad / 用户 KBMYV
+  15. 723463 / p1246510915 / 卖家 BYmXojTpVjLxJVyr7o8MtXBMnUQCj / 账号 ym / 用户 FMFTP
+  16. 723453 / v1248815941 / 卖家 2xiaBHtzga38d8QPg1WQuEbQngF5y / 账号 ym / 用户 APMOY
+  17. 723451 / w1239725636 / 卖家 dgStrAUkfHNQXaPWNhhZscw8EVFm / 账号 ym / 用户 JKWHU
+  18. 723434 / l1225667341 / 卖家 gcxwPCMxZy7MqEWAS9mYPyrsmkCJ / 账号 ym / 用户 NWWPI
+  19. 723432 / u1248606392 / 卖家 Ey5mDYgTPoyaayW5dcTS3fsuGYGo4 / 账号 ym / 用户 KBMYV
+  20. 723430 / p1248165761 / 卖家 wLC9EmvLEYnd8Bmr9KxAU85VsE7i / 账号 ym / 用户 JackWang
+  21. 723426 / v1248240519 / 卖家 DN39GAWWNfFNZoBR7hDJxtrdDHt5k / 账号 ym / 用户 FJTNF
+  22. 723425 / b1247935194 / 卖家 Cf6bzqJdCxHbUpMSHv8Ct2AjptRCG / 账号 ym / 用户 FMFTP
+  23. 723418 / m1248454441 / 卖家 D1Wzh6jzmdWwGUiRXxzHjvoorskGf / 账号 ym / 用户 czhengh
+  24. 723412 / e1248724113 / 卖家 EZVFXyVtVzLxm9q8nNTBmthapUacq / 账号 ym / 用户 JDQPC
+  25. 723401 / f1249072723 / 卖家 44q7iTybBwb31q4uWYn2GFCcNg4FM / 账号 ym / 用户 BGJZO
+  26. 723392 / r1248210546 / 卖家 6PM4etxiqD1uxJg2A2wu3DbhhwLoJ / 账号 ym / 用户 BZNHS
+  27. 723385 / h1248164962 / 卖家 FAyn1CJckwijqxAASovHWKnjtUGez / 账号 ym / 用户 tanxuchang
+  28. 723373 / r1248215503 / 卖家 9ZZXfTL9RxJbD5pRodPX35VLLWT2q / 账号 ym / 用户 BRIBR
+  29. 723366 / t1248238158 / 卖家 3wpSr7CSEF4zu1Rjq9LU92G4YVGv8 / 账号 ym / 用户 LWRZE
+  30. 723360 / u1248208989 / 卖家 AnSGvBej7ugRhXhATRKvt6Gym8iRn / 账号 ym / 用户 GPLYO
+  31. 723348 / q1248810714 / 卖家 BjJ7yhEvGm2LXbzixE6BTsXfEt5He / 账号 ym / 用户 RINSX
+  32. 723342 / k1184383977 / 卖家 5fW7YSmdb3KpA5j6LeQuagLe1z4fe / 账号 ym / 用户 KBLMY
+  33. 723326 / u1248465487 / 卖家 AM85ooRGS9CpiVQFEaFp2RuTPCStg / 账号 ym / 用户 微信21041107444495
+  34. 723320 / k1248317326 / 卖家 DfYVB9YPZB8p92Ni3GempbnMmgxgQ / 账号 ym / 用户 IMHHM
+  35. 723299 / t1247943221 / 卖家 467vsC6E9tLNdDGS9D5udmduFR6Fk / 账号 ym / 用户 AWPYL
+  36. 723276 / c1247046360 / 卖家 Dah8ECabwz8yDjJUBK8icuKkAicDQ / 账号 ym / 用户 UOYFT
+  37. 723271 / b1248800251 / 卖家 F5iMKZqCu4W1HxMmNH8faDWLWVi82 / 账号 ym / 用户 YMNMK
+  38. 723265 / b1238152573 / 卖家 5yNFAV9mBKVASYitqzeKf2jcRLESu / 账号 ym / 用户 LTJKN
+  39. 723244 / w1248210123 / 卖家 6vzAow31e6e6kLVX41LLfszCJMmPR / 账号 ym / 用户 JackWang
+  40. 723148 / q1248703804 / 卖家 FGdty3rqQaxdyeJEgGACki7usKJXC / 账号 ym / 用户 WVSMN
+  41. 723071 / t1248594673 / 卖家 CMkGa2DL1UvwSTrK9PSvufgo7DUEn / 账号 ym / 用户 CWPNW
+  42. 722903 / e1248783933 / 卖家 5mT2G5XzZ7rZAtz41euvyoqZwTh2e / 账号 ym / 用户 XHKLJ
+  43. 722863 / h1246418132 / 卖家 6nDReqaduPW5Hpw3fh6fwQFAavquE / 账号 ym / 用户 moodguitar
+  44. 722852 / k1248205629 / 卖家 4pMrvDVWBsmmHAGsn3NreJgKGm7mM / 账号 ym / 用户 KEZEF
+  45. 722739 / w1248693007 / 卖家 AiKUKAPfqb1DNwnduLKqwZrZANszy / 账号 ym / 用户 LKBJW
+  46. 722668 / d1248617336 / 卖家 ex52Sva44S6Wuj9yB4CLudswCEHx / 账号 ym / 用户 NGRSS
+  47. 722067 / h1240194591 / 卖家 6VKTR6WwmXg8bMzbs6pKr5WmVsmzb / 账号 ym / 用户 LTJKN
+  48. 722029 / q1247940525 / 卖家 6wRynHCTNm2zXWrLdR1Y2s5pWaD8e / 账号 ym / 用户 MKRME
+  49. 721789 / r1236943328 / 卖家 9NqGKD6F68uwWt6WkQFFVFqH9tUYW / 账号 ym / 用户 OKTSQ
+  50. 720841 / n1248157379 / 卖家 D1XLHFjY98pYPrL4sAgzLi69txRHB / 账号 ym / 用户 NJSWU
+  51. 720342 / t1248198036 / 卖家 4sYV79fRqU8RozMKKLkAkd6XoMnQ5 / 账号 ym / 用户 LKBJW
+  52. 720284 / d1248094991 / 卖家 3gfjiB7TUwLnSqp9fyyfFThwZHCi8 / 账号 ym / 用户 LKBJW
+[13:10:13] [WARNING] 请回复 y 确认，将真实购买队列中的第 1 单 723664（账号 ym）。输入 n 跳过，stop 结束本批。【会真实扣款】
+[13:10:39] [INFO] 开始处理订单 723664 (卖家: 9ujKntZrkTMRttACQvPMU1Aoi3UBr, 账号: ym, 用户: HHLGY)
+[13:10:41] [INFO] 已进入后台详情页
+[13:10:41] [INFO] 备注符合白名单规则，已忽略并继续: ymzwj19369@yahoo.co.jp一口价购买失败，无可用账号 确认订单失败: 認証に失敗しました。 (code: user_authentication_skip_error)
+[13:10:41] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[13:10:41] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[13:10:41] [INFO] 切换雅虎浏览器 [ym] 打开: https://auctions.yahoo.co.jp/jp/auction/m1203011989
+[13:10:42] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/m1203011989
+[13:10:50] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723664&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=1'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723664&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=1 >> a:has-text('购买') >> nth=0">, 'seller_id': '9ujKntZrkTMRttACQvPMU1Aoi3UBr', 'order_id': '723664', 'product_id': 'm1203011989', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': '', 'bid_email': 'ymzwj19369@yahoo.co.jp', 'account_key': 'ym', 'user_name': 'HHLGY', 'has_color': False, 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[13:10:50] [INFO] 正在检测同捆发货弹窗...
+[13:10:51] [INFO] 检测到店铺结算入口 (購入手続きへ)。正在点击...
+[13:11:04] [WARNING] 警告：未找到 'お届け先' 表单，页面可能不同。继续...
+[13:11:04] [ERROR] 【雅虎页面改版】约定元素没找到，需要人工对照
+检查点: checkout_address_form
+页面: 结算/地址页
+路径: 店铺：購入手続きへ后的结算页；个人：/top 或 /trade/top 点購入手続きをする后的 buyer/payment，或直接进入 /buyer/edit 落札者情報
+找不到: 收件地址区域（お届け先 / address2 / home_address2 / 落札者情報）
+旧选择器:
+  - #address
+  - h2:has-text('お届け先')
+  - h2:has-text('お届け先住所')
+  - h2:has-text('落札者情報')
+  - form[name='tradeForm']
+  - input[name='address2']
+  - input[name='home_address2']
+  - #mBoxConfBt
+当前URL: https://buy.auctions.yahoo.co.jp/order/select-option?auctionId=m1203011989
+订单: 723664 / 商品: m1203011989
+说明: 已进入结算相关 URL，但地址表单约定选择器都没命中。
+结算区可见按钮/标题: 購入手続き、マイオク、次へ、戻る
+事故目录: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792559464_723664_checkout_address_form
+截图: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792559464_723664_checkout_address_form\screenshot.png
+活DOM: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792559464_723664_checkout_address_form\dom.outer.html
+对照表: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792559464_723664_checkout_address_form\meta.json
+请在本仓库对 Cursor 说：修最新失败
+（不要在群里回复 class，由 Cursor 读 DOM 修改选择器）
+[13:11:18] [INFO] 地址输入框未找到 (第 1/8 次)，等待お届け先「変更」...
+[13:11:19] [INFO] 地址输入框未找到 (第 2/8 次)，等待お届け先「変更」...
+[13:11:20] [INFO] 地址输入框未找到 (第 3/8 次)，等待お届け先「変更」...
+[13:11:21] [INFO] 地址输入框未找到 (第 4/8 次)，等待お届け先「変更」...
+[13:11:22] [INFO] 地址输入框未找到 (第 5/8 次)，等待お届け先「変更」...
+[13:11:23] [INFO] 地址输入框未找到 (第 6/8 次)，等待お届け先「変更」...
+[13:11:24] [INFO] 地址输入框未找到 (第 7/8 次)，等待お届け先「変更」...
+[13:11:25] [INFO] 地址输入框未找到 (第 8/8 次)，等待お届け先「変更」...
+[13:11:26] [ERROR] 严重拦截：无法确认个人买家页面的地址准确性。为防止发错货已强制停止。
+[13:11:27] [ERROR] 【雅虎页面改版】约定元素没找到，需要人工对照
+检查点: address_edit
+页面: 改地址
+路径: 店铺 /order/review 的 #address 旁「変更」（h2 兄弟，不是 h2 内部）→ お届け先編集 input[name=address2] → #confirm「変更する」；个人仍是「編集する」
+找不到: 地址编辑入口或室号输入框
+旧选择器:
+  - #address a:has-text('変更')
+  - #address a[data-cl-params*='_cl_link:address']
+  - header:has(h2:has-text('お届け先')) a:has-text('変更')
+  - a[data-cl-params*='_cl_link:address']
+  - h1:has-text('お届け先編集')
+  - #confirm a:has-text('変更する')
+  - a[data-cl-params*='_cl_link:update']
+  - #elAdressEdit
+  - a:has-text('編集する')
+  - input[value='編集する']
+  - button:has-text('編集する')
+  - input[name='address2']
+  - input[name='home_address2']
+当前URL: https://buy.auctions.yahoo.co.jp/order/select-option?auctionId=m1203011989
+订单: 723664 / 商品: m1203011989
+说明: 结算页没有お届け先「変更」/「編集する」，也没有 address2/home_address2。
+结算区可见按钮/标题: 購入手続き、マイオク、次へ、戻る
+事故目录: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792559486_723664_address_edit
+截图: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792559486_723664_address_edit\screenshot.png
+活DOM: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792559486_723664_address_edit\dom.outer.html
+对照表: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792559486_723664_address_edit\meta.json
+请在本仓库对 Cursor 说：修最新失败
+（不要在群里回复 class，由 Cursor 读 DOM 修改选择器）
+[13:11:27] [INFO] Stage 4: Backfilling Data to Backend...
+[13:11:27] [INFO] 本单自动购买是否成功: 否（ADDRESS_FAIL）
+[13:11:27] [WARNING] 人工核查窗口。订单 723664 已跑完。核查完毕后输入 y 开始下一单，n 跳过下一单队首，stop 结束本批。
+[13:41:27] [WARNING] 等待确认超时（30分钟）。结束本批。
+[13:41:27] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-21 13:10:06
+结束时间: 2026-10-21 13:41:27
+运行时长: 0:31:21
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [723664] Failed (ADDRESS_FAIL)
+
+[13:41:28] [INFO] 自动化已停止。
+[14:36:14] [INFO] 正在启动 ad / ym 两套 Chrome...
+[14:36:14] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[14:36:18] [INFO] 已启动 Chrome [ad] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data 账号=adxez09955@yahoo.co.jp / dxez09955@yahoo.co.jp
+[14:36:22] [INFO] 已启动 Chrome [ym] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data_ym 账号=ymzjw19369@yahoo.co.jp / ymzwj19369@yahoo.co.jp
+[14:36:22] [INFO] 请分别登录：
+1. Chrome [ad] 雅虎 adxez09955@yahoo.co.jp
+2. Chrome [ym] 雅虎 ymzjw19369@yahoo.co.jp
+3. QBT 后台固定在 [ad] (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[14:40:46] [INFO] Browser already open.
+[14:40:46] [INFO] 自动化任务已启动。
+[14:40:46] [WARNING] 未找到后台标签页。尝试打开...
+[14:40:47] [INFO] 代购买合计 0 笔，可以单条购买 0 笔
+[14:40:47] [INFO] 未发现可购买的一对一订单。休眠10秒...
+[14:41:01] [INFO] 去掉后台彩色行 44 笔: ['723702', '723701', '723699', '723698', '723697', '723694', '723693', '723692', '723690', '723689', '723688', '723687', '723685', '723684', '723683', '723681', '723680', '723679', '723678', '723677', '723408', '723377', '723146', '723073', '722254', '722252', '722244', '722243', '722242', '722231', '722230', '722228', '722227', '722226', '722225', '722224', '722223', '722222', '722221', '722219', '722218', '722217', '722216', '722214']
+[14:41:01] [INFO] 跳过未购买待确认 16 笔: ['723532', '723505', '723432', '723426', '723421', '723410', '723366', '723355', '723268', '723260', '723067', '722443', '721504', '720841', '720788', '720379']
+[14:41:01] [INFO] 代购买合计 70 笔，可以单条购买 5 笔（723675, 723597, 723468, 723465, 722504）
+[14:41:01] [INFO] 运行成功。代购买合计 70 笔，可以单条购买 5 笔。
+以下订单可以处理:
+  1. 723675 / w1247803025 / 卖家 FNWs2YUxjcBKn4suZ8p58a7aMp9pR / 账号 ad / 用户 HLHNZ
+  2. 723597 / e1231271420 / 卖家 GVS63iKEgJUbPjWj5d2B8Ds2WyVf8 / 账号 ad / 用户 RHGXM
+  3. 723468 / s1248697757 / 卖家 6zbcrLCtv6hmRsvcZm6YsVAjJ73Gh / 账号 ad / 用户 AYONT
+  4. 723465 / g1248823725 / 卖家 BaC83PWdYmMyGgMXEBHgLpFg5NK6f / 账号 ad / 用户 KBMYV
+  5. 722504 / b1248443445 / 卖家 iMhqCrSihF6DgA4Z54huESaDphDU / 账号 ad / 用户 KFTRO
+[14:41:01] [WARNING] 请回复 y 确认，将真实购买队列中的第 1 单 723675（账号 ad）。输入 n 跳过，stop 结束本批。【会真实扣款】
+[14:41:31] [INFO] 开始处理订单 723675 (卖家: FNWs2YUxjcBKn4suZ8p58a7aMp9pR, 账号: ad, 用户: HLHNZ)
+[14:41:33] [INFO] 已进入后台详情页
+[14:41:33] [INFO] 入库码: HLHNZ
+[14:41:33] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[14:41:33] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[14:41:33] [INFO] 切换雅虎浏览器 [ad] 打开: https://auctions.yahoo.co.jp/jp/auction/w1247803025
+[14:41:36] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/w1247803025
+[14:41:44] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723675&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=21'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723675&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=21 >> a:has-text('购买') >> nth=0">, 'seller_id': 'FNWs2YUxjcBKn4suZ8p58a7aMp9pR', 'order_id': '723675', 'product_id': 'w1247803025', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': 'HLHNZ', 'bid_email': 'adxez09955@yahoo.co.jp', 'account_key': 'ad', 'user_name': 'HLHNZ', 'has_color': False, 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[14:41:44] [INFO] 正在检测同捆发货弹窗...
+[14:41:45] [INFO] 拍品页取引ナビ指向个人 contact.auctions，不走店铺 /order/status。
+[14:41:45] [INFO] 已结束拍品页 #closedNotice「取引ナビ」。
+[14:41:45] [INFO] 打开取引ナビ: https://contact.auctions.yahoo.co.jp/top?aid=w1247803025&seller_auc_user_id=FNWs2YUxjcBKn4suZ8p58a7aMp9pR&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ
+[14:41:52] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/trade/top?aid=w1247803025&oid=75842176-3292560117-8273071
+[14:41:52] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[14:41:52] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[14:41:52] [INFO] 卖家留言提取: 订单 723675 (个人) 无留言
+[14:42:06] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723675&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=w1247803025&oid=75842176-3292560117-8273071']
+[14:42:06] [INFO] 等待新版取引ナビ异步渲染「購入手続きをする」...
+[14:42:06] [INFO] 发现个人卖家「購入手続きをする」。正在进入支付页...
+[14:42:06] [INFO] 进入购买手续页: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=w1247803025&oid=75842176-3292560117-8273071
+[14:42:42] [INFO] 购买手续页当前 URL: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=w1247803025&oid=75842176-3292560117-8273071
+[14:42:44] [INFO] 已进入结算/地址页。等待表单... https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=w1247803025&oid=75842176-3292560117-8273071
+[14:42:44] [INFO] 点击「編集する」展开地址表单...
+[14:42:47] [INFO] 已填写ビル名/室号: 23675室
+[14:42:58] [WARNING] 已提交改地址，但お届け先展示里还没看到 '23675室'。继续结算。
+[14:42:58] [INFO] 支付方式为 Yahoo!かんたん決済（个人取引ナビ），继续。
+[14:42:58] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[14:42:58] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[14:42:58] [INFO] 卖家留言提取: 订单 723675 (个人) 无留言
+[14:42:58] [ERROR] 【雅虎页面改版】约定元素没找到，需要人工对照
+检查点: pay_confirm_button
+页面: 最终确认
+路径: 结算页填完地址/配送/支付 → 点確認する/確認し購入を進める → 店铺弹 #fconfirm「購入を確定する」；旧版个人待运费是 #mBoxConfBt 再弹 #confSubmitBtn
+找不到: 最终确认/决定按钮
+旧选择器:
+  - #mBoxConfBt
+  - #confSubmitBtn
+  - #confirm a:has-text('確認する')
+  - a:has-text('確認し購入を進める')
+  - input[value='確認する']
+  - button:has-text('確認する')
+  - input[value='決定する']
+  - button:has-text('決定する')
+  - #fconfirm a:has-text('購入を確定する')
+  - a:has-text('購入を確定する')
+  - button:has-text('購入を確定する')
+当前URL: https://account.edit.yahoo.co.jp/address?.done=https%3A%2F%2Fcontact.auctions.yahoo.co.jp%2Fbuyer%2Fpayment%2Finput%3Faid%3Dw1247803025%26oid%3D75842176-3292560117-8273071
+订单: 723675 / 商品: w1247803025
+说明: 结算页找不到 #mBoxConfBt / 確認する / 決定する / 購入を確定する。
+结算区可见按钮/标题: ヘルプ、エラーが発生しました、ご利用中のサービスに戻る、プライバシーポリシー、プライバシーセンター、利用規約、ヘルプ・お問い合わせ
+事故目录: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792564978_723675_pay_confirm_button
+截图: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792564978_723675_pay_confirm_button\screenshot.png
+活DOM: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792564978_723675_pay_confirm_button\dom.outer.html
+对照表: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792564978_723675_pay_confirm_button\meta.json
+请在本仓库对 Cursor 说：修最新失败
+（不要在群里回复 class，由 Cursor 读 DOM 修改选择器）
+[14:43:00] [WARNING] 购买未确认：未检测到「購入が完了しました」成功页面。可能未完成支付，需人工确认。
+[14:43:02] [ERROR] 【雅虎页面改版】约定元素没找到，需要人工对照
+检查点: purchase_success_page
+页面: 购买完成页
+路径: 点最终确认之后 → thank-you / 「購入完了」/「購入が完了しました」
+找不到: 购买成功页特征（URL thank-you 或文案 購入完了）
+旧选择器:
+  - text=購入完了
+  - text=購入が完了
+  - text=ご購入ありがとうございます
+当前URL: https://account.edit.yahoo.co.jp/address?.done=https%3A%2F%2Fcontact.auctions.yahoo.co.jp%2Fbuyer%2Fpayment%2Finput%3Faid%3Dw1247803025%26oid%3D75842176-3292560117-8273071
+订单: 723675 / 商品: w1247803025
+说明: 正式模式已点确认，但 URL/标题/正文都没有 thank-you、購入完了。
+结算区可见按钮/标题: 氏名・住所情報、氏名、自宅、住所を自動入力、勤務先/学校、登録する、ご利用中のサービスに戻る
+事故目录: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792564980_723675_purchase_success_page
+截图: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792564980_723675_purchase_success_page\screenshot.png
+活DOM: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792564980_723675_purchase_success_page\dom.outer.html
+对照表: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792564980_723675_purchase_success_page\meta.json
+请在本仓库对 Cursor 说：修最新失败
+（不要在群里回复 class，由 Cursor 读 DOM 修改选择器）
+[14:43:03] [INFO] Stage 4: Backfilling Data to Backend...
+[14:43:03] [INFO] 本单自动购买是否成功: 未确认（已点确认但未见成功页，请人工核对是否扣款）
+[14:43:03] [WARNING] 人工核查窗口。订单 723675 已跑完。核查完毕后输入 y 开始下一单，n 跳过下一单队首，stop 结束本批。
+[14:53:05] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-21 14:40:46
+结束时间: 2026-10-21 14:53:05
+运行时长: 0:12:19
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [723675] Failed (PURCHASE_UNCONFIRMED)
+
+[14:53:06] [INFO] 自动化已停止。
+[14:53:29] [INFO] 正在启动 ad / ym 两套 Chrome...
+[14:53:30] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[14:53:34] [INFO] 已启动 Chrome [ad] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data 账号=adxez09955@yahoo.co.jp / dxez09955@yahoo.co.jp
+[14:53:37] [INFO] 已启动 Chrome [ym] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data_ym 账号=ymzjw19369@yahoo.co.jp / ymzwj19369@yahoo.co.jp
+[14:53:37] [INFO] 请分别登录：
+1. Chrome [ad] 雅虎 adxez09955@yahoo.co.jp
+2. Chrome [ym] 雅虎 ymzjw19369@yahoo.co.jp
+3. QBT 后台固定在 [ad] (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[14:55:17] [INFO] Browser already open.
+[14:55:17] [INFO] 自动化任务已启动。
+[14:55:21] [INFO] 去掉后台彩色行 44 笔: ['723702', '723701', '723699', '723698', '723697', '723694', '723693', '723692', '723690', '723689', '723688', '723687', '723685', '723684', '723683', '723681', '723680', '723679', '723678', '723677', '723408', '723377', '723146', '723073', '722254', '722252', '722244', '722243', '722242', '722231', '722230', '722228', '722227', '722226', '722225', '722224', '722223', '722222', '722221', '722219', '722218', '722217', '722216', '722214']
+[14:55:21] [INFO] 跳过未购买待确认 16 笔: ['723532', '723505', '723432', '723426', '723421', '723410', '723366', '723355', '723268', '723260', '723067', '722443', '721504', '720841', '720788', '720379']
+[14:55:21] [INFO] 代购买合计 70 笔，可以单条购买 5 笔（723675, 723597, 723468, 723465, 722504）
+[14:55:21] [INFO] 运行成功。代购买合计 70 笔，可以单条购买 5 笔。
+以下订单可以处理:
+  1. 723675 / w1247803025 / 卖家 FNWs2YUxjcBKn4suZ8p58a7aMp9pR / 账号 ad / 用户 HLHNZ
+  2. 723597 / e1231271420 / 卖家 GVS63iKEgJUbPjWj5d2B8Ds2WyVf8 / 账号 ad / 用户 RHGXM
+  3. 723468 / s1248697757 / 卖家 6zbcrLCtv6hmRsvcZm6YsVAjJ73Gh / 账号 ad / 用户 AYONT
+  4. 723465 / g1248823725 / 卖家 BaC83PWdYmMyGgMXEBHgLpFg5NK6f / 账号 ad / 用户 KBMYV
+  5. 722504 / b1248443445 / 卖家 iMhqCrSihF6DgA4Z54huESaDphDU / 账号 ad / 用户 KFTRO
+[14:55:21] [WARNING] 请回复 y 确认，将真实购买队列中的第 1 单 723675（账号 ad）。输入 n 跳过，stop 结束本批。【会真实扣款】
+[14:55:39] [INFO] 开始处理订单 723675 (卖家: FNWs2YUxjcBKn4suZ8p58a7aMp9pR, 账号: ad, 用户: HLHNZ)
+[14:55:41] [INFO] 已进入后台详情页
+[14:55:41] [INFO] 入库码: HLHNZ
+[14:55:41] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[14:55:41] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[14:55:41] [INFO] 切换雅虎浏览器 [ad] 打开: https://auctions.yahoo.co.jp/jp/auction/w1247803025
+[14:55:43] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/w1247803025
+[14:55:51] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723675&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=21'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723675&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=21 >> a:has-text('购买') >> nth=0">, 'seller_id': 'FNWs2YUxjcBKn4suZ8p58a7aMp9pR', 'order_id': '723675', 'product_id': 'w1247803025', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': 'HLHNZ', 'bid_email': 'adxez09955@yahoo.co.jp', 'account_key': 'ad', 'user_name': 'HLHNZ', 'has_color': False, 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[14:55:51] [INFO] 正在检测同捆发货弹窗...
+[14:55:52] [INFO] 拍品页取引ナビ指向个人 contact.auctions，不走店铺 /order/status。
+[14:55:52] [INFO] 已结束拍品页 #closedNotice「取引ナビ」。
+[14:55:52] [INFO] 打开取引ナビ: https://contact.auctions.yahoo.co.jp/top?aid=w1247803025&seller_auc_user_id=FNWs2YUxjcBKn4suZ8p58a7aMp9pR&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ
+[14:55:56] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/trade/top?aid=w1247803025&oid=75842176-3292560117-8273071
+[14:55:57] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[14:55:57] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[14:55:57] [INFO] 卖家留言提取: 订单 723675 (个人) 无留言
+[14:56:11] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723675&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=w1247803025&oid=75842176-3292560117-8273071']
+[14:56:11] [INFO] 等待新版取引ナビ异步渲染「購入手続きをする」...
+[14:56:11] [INFO] 发现个人卖家「購入手続きをする」。正在进入支付页...
+[14:56:11] [INFO] 进入购买手续页: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=w1247803025&oid=75842176-3292560117-8273071
+[14:57:11] [ERROR] 雅虎下单执行异常: Page.goto: Timeout 60000ms exceeded.
+Call log:
+  - navigating to "https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=w1247803025&oid=75842176-3292560117-8273071", waiting until "domcontentloaded"
+
+[14:57:49] [WARNING] 事故包截图失败: Page.screenshot: Timeout 30000ms exceeded.
+Call log:
+  - taking page screenshot
+  - waiting for fonts to load...
+  - fonts loaded
+
+[14:59:16] [ERROR] 【雅虎页面改版】约定元素没找到，需要人工对照
+检查点: purchase_exception
+页面: purchase_exception
+路径: 
+找不到: purchase_exception
+旧选择器:
+  (无)
+当前URL: https://contact.auctions.yahoo.co.jp/trade/top?aid=w1247803025&oid=75842176-3292560117-8273071
+订单: - / 商品: -
+说明: save_error_snapshot
+结算区可见按钮/标题: 取引ナビ マイオク ガイド、マイオク、ガイド、取引、メッセージ、情報、商品情報 商品ページ、商品ページ、59、購入手続きをする、プライバシーポリシー
+事故目录: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792565831_na_purchase_exception
+截图: (失败)
+活DOM: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792565831_na_purchase_exception\dom.outer.html
+对照表: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792565831_na_purchase_exception\meta.json
+请在本仓库对 Cursor 说：修最新失败
+（不要在群里回复 class，由 Cursor 读 DOM 修改选择器）
+[14:59:16] [INFO] Stage 4: Backfilling Data to Backend...
+[14:59:16] [INFO] 本单自动购买是否成功: 否（ERROR）
+[14:59:16] [WARNING] 人工核查窗口。订单 723675 已跑完。核查完毕后输入 y 开始下一单，n 跳过下一单队首，stop 结束本批。
+[15:09:26] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-21 14:55:17
+结束时间: 2026-10-21 15:09:26
+运行时长: 0:14:08
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [723675] Failed (ERROR)
+
+[15:09:26] [INFO] 自动化已停止。
+[15:10:01] [INFO] 正在启动 ad / ym 两套 Chrome...
+[15:10:02] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[15:10:05] [INFO] 已启动 Chrome [ad] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data 账号=adxez09955@yahoo.co.jp / dxez09955@yahoo.co.jp
+[15:10:10] [INFO] 已启动 Chrome [ym] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data_ym 账号=ymzjw19369@yahoo.co.jp / ymzwj19369@yahoo.co.jp
+[15:10:10] [INFO] 请分别登录：
+1. Chrome [ad] 雅虎 adxez09955@yahoo.co.jp
+2. Chrome [ym] 雅虎 ymzjw19369@yahoo.co.jp
+3. QBT 后台固定在 [ad] (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[15:10:43] [INFO] Browser already open.
+[15:10:43] [INFO] 自动化任务已启动。
+[15:10:47] [INFO] 去掉后台彩色行 44 笔: ['723702', '723701', '723699', '723698', '723697', '723694', '723693', '723692', '723690', '723689', '723688', '723687', '723685', '723684', '723683', '723681', '723680', '723679', '723678', '723677', '723408', '723377', '723146', '723073', '722254', '722252', '722244', '722243', '722242', '722231', '722230', '722228', '722227', '722226', '722225', '722224', '722223', '722222', '722221', '722219', '722218', '722217', '722216', '722214']
+[15:10:47] [INFO] 跳过未购买待确认 16 笔: ['723532', '723505', '723432', '723426', '723421', '723410', '723366', '723355', '723268', '723260', '723067', '722443', '721504', '720841', '720788', '720379']
+[15:10:47] [INFO] 代购买合计 70 笔，可以单条购买 5 笔（723675, 723597, 723468, 723465, 722504）
+[15:10:47] [INFO] 运行成功。代购买合计 70 笔，可以单条购买 5 笔。
+以下订单可以处理:
+  1. 723675 / w1247803025 / 卖家 FNWs2YUxjcBKn4suZ8p58a7aMp9pR / 账号 ad / 用户 HLHNZ
+  2. 723597 / e1231271420 / 卖家 GVS63iKEgJUbPjWj5d2B8Ds2WyVf8 / 账号 ad / 用户 RHGXM
+  3. 723468 / s1248697757 / 卖家 6zbcrLCtv6hmRsvcZm6YsVAjJ73Gh / 账号 ad / 用户 AYONT
+  4. 723465 / g1248823725 / 卖家 BaC83PWdYmMyGgMXEBHgLpFg5NK6f / 账号 ad / 用户 KBMYV
+  5. 722504 / b1248443445 / 卖家 iMhqCrSihF6DgA4Z54huESaDphDU / 账号 ad / 用户 KFTRO
+[15:10:47] [WARNING] 请回复 y 确认，将真实购买队列中的第 1 单 723675（账号 ad）。输入 n 跳过，stop 结束本批。【会真实扣款】
+[15:10:55] [INFO] 开始处理订单 723675 (卖家: FNWs2YUxjcBKn4suZ8p58a7aMp9pR, 账号: ad, 用户: HLHNZ)
+[15:10:58] [INFO] 已进入后台详情页
+[15:10:58] [INFO] 入库码: HLHNZ
+[15:10:58] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[15:10:58] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[15:10:58] [INFO] 切换雅虎浏览器 [ad] 打开: https://auctions.yahoo.co.jp/jp/auction/w1247803025
+[15:11:10] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/w1247803025
+[15:11:18] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723675&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=21'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723675&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=21 >> a:has-text('购买') >> nth=0">, 'seller_id': 'FNWs2YUxjcBKn4suZ8p58a7aMp9pR', 'order_id': '723675', 'product_id': 'w1247803025', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': 'HLHNZ', 'bid_email': 'adxez09955@yahoo.co.jp', 'account_key': 'ad', 'user_name': 'HLHNZ', 'has_color': False, 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[15:11:18] [INFO] 正在检测同捆发货弹窗...
+[15:11:19] [INFO] 拍品页取引ナビ指向个人 contact.auctions，不走店铺 /order/status。
+[15:11:19] [INFO] 已结束拍品页 #closedNotice「取引ナビ」。
+[15:11:19] [INFO] 打开取引ナビ: https://contact.auctions.yahoo.co.jp/top?aid=w1247803025&seller_auc_user_id=FNWs2YUxjcBKn4suZ8p58a7aMp9pR&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ
+[15:11:25] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/trade/top?aid=w1247803025&oid=75842176-3292560117-8273071
+[15:11:25] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[15:11:25] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[15:11:25] [INFO] 卖家留言提取: 订单 723675 (个人) 无留言
+[15:11:39] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723675&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=w1247803025&oid=75842176-3292560117-8273071']
+[15:11:39] [INFO] 等待新版取引ナビ异步渲染「購入手続きをする」...
+[15:11:39] [INFO] 发现个人卖家「購入手続きをする」。正在进入支付页...
+[15:11:39] [INFO] 进入购买手续页: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=w1247803025&oid=75842176-3292560117-8273071
+[15:11:45] [INFO] 购买手续页当前 URL: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=w1247803025&oid=75842176-3292560117-8273071
+[15:11:47] [INFO] 已进入结算/地址页。等待表单... https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=w1247803025&oid=75842176-3292560117-8273071
+[15:11:47] [INFO] 点击「編集する」展开地址表单...
+[15:11:48] [INFO] 已进入 Yahoo 账号地址页。
+[15:11:48] [INFO] 账号地址页已填写建物名: 23675室
+[15:11:54] [ERROR] 账号地址页未能完成修改。
+[15:11:54] [ERROR] 【雅虎页面改版】约定元素没找到，需要人工对照
+检查点: address_edit
+页面: 改地址
+路径: 店铺 /order/review 的 #address 旁「変更」（h2 兄弟，不是 h2 内部）→ お届け先編集 input[name=address2] → #confirm「変更する」；个人仍是「編集する」
+找不到: 地址编辑入口或室号输入框
+旧选择器:
+  - #address a:has-text('変更')
+  - #address a[data-cl-params*='_cl_link:address']
+  - header:has(h2:has-text('お届け先')) a:has-text('変更')
+  - a[data-cl-params*='_cl_link:address']
+  - h1:has-text('お届け先編集')
+  - #confirm a:has-text('変更する')
+  - a[data-cl-params*='_cl_link:update']
+  - #elAdressEdit
+  - a:has-text('編集する')
+  - input[value='編集する']
+  - button:has-text('編集する')
+  - input[name='address2']
+  - input[name='home_address2']
+  - #home_address2
+  - h1:has-text('氏名・住所情報')
+  - form[name='address'] button[type='submit']
+  - button:has-text('登録する')
+  - a:has-text('ご利用中のサービスに戻る')
+当前URL: https://account.edit.yahoo.co.jp/address?.done=https%3A%2F%2Fcontact.auctions.yahoo.co.jp%2Fbuyer%2Fpayment%2Finput%3Faid%3Dw1247803025%26oid%3D75842176-3292560117-8273071
+订单: 723675 / 商品: w1247803025
+说明: account.edit.yahoo.co.jp/address 刷新3次后仍无表单，或登録する后未回到结算页。
+结算区可见按钮/标题: ヘルプ、エラーが発生しました、ご利用中のサービスに戻る、プライバシーポリシー、プライバシーセンター、利用規約、ヘルプ・お問い合わせ
+事故目录: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792566714_723675_address_edit
+截图: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792566714_723675_address_edit\screenshot.png
+活DOM: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792566714_723675_address_edit\dom.outer.html
+对照表: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792566714_723675_address_edit\meta.json
+请在本仓库对 Cursor 说：修最新失败
+（不要在群里回复 class，由 Cursor 读 DOM 修改选择器）
+[15:11:54] [INFO] Stage 4: Backfilling Data to Backend...
+[15:11:54] [INFO] 本单自动购买是否成功: 否（ADDRESS_FAIL）
+[15:11:55] [WARNING] 人工核查窗口。订单 723675 已跑完。核查完毕后输入 y 开始下一单，n 跳过下一单队首，stop 结束本批。
+[15:41:55] [WARNING] 等待确认超时（30分钟）。结束本批。
+[15:41:55] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-21 15:10:43
+结束时间: 2026-10-21 15:41:55
+运行时长: 0:31:12
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [723675] Failed (ADDRESS_FAIL)
+
+[15:41:55] [INFO] 自动化已停止。
+[15:52:48] [INFO] 正在启动 ad / ym 两套 Chrome...
+[15:52:49] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[15:52:53] [INFO] 已启动 Chrome [ad] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data 账号=adxez09955@yahoo.co.jp / dxez09955@yahoo.co.jp
+[15:52:55] [INFO] 已启动 Chrome [ym] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data_ym 账号=ymzjw19369@yahoo.co.jp / ymzwj19369@yahoo.co.jp
+[15:52:55] [INFO] 请分别登录：
+1. Chrome [ad] 雅虎 adxez09955@yahoo.co.jp
+2. Chrome [ym] 雅虎 ymzjw19369@yahoo.co.jp
+3. QBT 后台固定在 [ad] (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[15:54:06] [INFO] Browser already open.
+[15:54:06] [INFO] 自动化任务已启动。
+[15:54:11] [INFO] 去掉后台彩色行 44 笔: ['723702', '723701', '723699', '723698', '723697', '723694', '723693', '723692', '723690', '723689', '723688', '723687', '723685', '723684', '723683', '723681', '723680', '723679', '723678', '723677', '723408', '723377', '723146', '723073', '722254', '722252', '722244', '722243', '722242', '722231', '722230', '722228', '722227', '722226', '722225', '722224', '722223', '722222', '722221', '722219', '722218', '722217', '722216', '722214']
+[15:54:11] [INFO] 跳过未购买待确认 16 笔: ['723532', '723505', '723432', '723426', '723421', '723410', '723366', '723355', '723268', '723260', '723067', '722443', '721504', '720841', '720788', '720379']
+[15:54:11] [INFO] 代购买合计 70 笔，可以单条购买 5 笔（723675, 723597, 723468, 723465, 722504）
+[15:54:11] [INFO] 运行成功。代购买合计 70 笔，可以单条购买 5 笔。
+以下订单可以处理:
+  1. 723675 / w1247803025 / 卖家 FNWs2YUxjcBKn4suZ8p58a7aMp9pR / 账号 ad / 用户 HLHNZ
+  2. 723597 / e1231271420 / 卖家 GVS63iKEgJUbPjWj5d2B8Ds2WyVf8 / 账号 ad / 用户 RHGXM
+  3. 723468 / s1248697757 / 卖家 6zbcrLCtv6hmRsvcZm6YsVAjJ73Gh / 账号 ad / 用户 AYONT
+  4. 723465 / g1248823725 / 卖家 BaC83PWdYmMyGgMXEBHgLpFg5NK6f / 账号 ad / 用户 KBMYV
+  5. 722504 / b1248443445 / 卖家 iMhqCrSihF6DgA4Z54huESaDphDU / 账号 ad / 用户 KFTRO
+[15:54:11] [WARNING] 请回复 y 确认，将真实购买队列中的第 1 单 723675（账号 ad）。输入 n 跳过，stop 结束本批。【会真实扣款】
+[15:54:18] [INFO] 开始处理订单 723675 (卖家: FNWs2YUxjcBKn4suZ8p58a7aMp9pR, 账号: ad, 用户: HLHNZ)
+[15:54:20] [INFO] 已进入后台详情页
+[15:54:20] [INFO] 入库码: HLHNZ
+[15:54:20] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[15:54:20] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[15:54:20] [INFO] 切换雅虎浏览器 [ad] 打开: https://auctions.yahoo.co.jp/jp/auction/w1247803025
+[15:54:21] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/w1247803025
+[15:54:29] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723675&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=21'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723675&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=21 >> a:has-text('购买') >> nth=0">, 'seller_id': 'FNWs2YUxjcBKn4suZ8p58a7aMp9pR', 'order_id': '723675', 'product_id': 'w1247803025', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': 'HLHNZ', 'bid_email': 'adxez09955@yahoo.co.jp', 'account_key': 'ad', 'user_name': 'HLHNZ', 'has_color': False, 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[15:54:29] [INFO] 正在检测同捆发货弹窗...
+[15:54:30] [INFO] 拍品页取引ナビ指向个人 contact.auctions，不走店铺 /order/status。
+[15:54:31] [INFO] 已结束拍品页 #closedNotice「取引ナビ」。
+[15:54:31] [INFO] 打开取引ナビ: https://contact.auctions.yahoo.co.jp/top?aid=w1247803025&seller_auc_user_id=FNWs2YUxjcBKn4suZ8p58a7aMp9pR&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ
+[15:54:42] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/trade/top?aid=w1247803025&oid=75842176-3292560117-8273071
+[15:54:42] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[15:54:42] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[15:54:42] [INFO] 卖家留言提取: 订单 723675 (个人) 无留言
+[15:54:56] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723675&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=w1247803025&oid=75842176-3292560117-8273071']
+[15:54:56] [INFO] 等待新版取引ナビ异步渲染「購入手続きをする」...
+[15:54:57] [INFO] 发现个人卖家「購入手続きをする」。正在进入支付页...
+[15:54:57] [INFO] 进入购买手续页: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=w1247803025&oid=75842176-3292560117-8273071
+[15:55:00] [INFO] 购买手续页当前 URL: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=w1247803025&oid=75842176-3292560117-8273071
+[15:55:03] [INFO] 已进入结算/地址页。等待表单... https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=w1247803025&oid=75842176-3292560117-8273071
+[15:55:03] [INFO] 点击「編集する」展开地址表单...
+[15:55:07] [INFO] 已进入 Yahoo 账号地址页。
+[15:55:08] [INFO] 账号地址页已填写建物名: 23675室
+[15:55:08] [ERROR] 账号地址页未能完成修改。
+[15:55:08] [ERROR] 【雅虎页面改版】约定元素没找到，需要人工对照
+检查点: address_edit
+页面: 改地址
+路径: 店铺 /order/review 的 #address 旁「変更」（h2 兄弟，不是 h2 内部）→ お届け先編集 input[name=address2] → #confirm「変更する」；个人仍是「編集する」
+找不到: 地址编辑入口或室号输入框
+旧选择器:
+  - #address a:has-text('変更')
+  - #address a[data-cl-params*='_cl_link:address']
+  - header:has(h2:has-text('お届け先')) a:has-text('変更')
+  - a[data-cl-params*='_cl_link:address']
+  - h1:has-text('お届け先編集')
+  - #confirm a:has-text('変更する')
+  - a[data-cl-params*='_cl_link:update']
+  - #elAdressEdit
+  - a:has-text('編集する')
+  - input[value='編集する']
+  - button:has-text('編集する')
+  - input[name='address2']
+  - input[name='home_address2']
+  - #home_address2
+  - h1:has-text('氏名・住所情報')
+  - form[name='address'] button[type='submit']
+  - button:has-text('登録する')
+  - a:has-text('ご利用中のサービスに戻る')
+当前URL: https://account.edit.yahoo.co.jp/address?.done=https%3A%2F%2Fcontact.auctions.yahoo.co.jp%2Fbuyer%2Fpayment%2Finput%3Faid%3Dw1247803025%26oid%3D75842176-3292560117-8273071
+订单: 723675 / 商品: w1247803025
+说明: account.edit.yahoo.co.jp/address 等加载后仍报错，重新打开3次后仍无表单。
+结算区可见按钮/标题: 氏名・住所情報、Yahoo!ウォレットの住所情報はこちら。、氏名、自宅、住所を自動入力、勤務先/学校、登録する、ご利用中のサービスに戻る
+事故目录: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792569308_723675_address_edit
+截图: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792569308_723675_address_edit\screenshot.png
+活DOM: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792569308_723675_address_edit\dom.outer.html
+对照表: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792569308_723675_address_edit\meta.json
+请在本仓库对 Cursor 说：修最新失败
+（不要在群里回复 class，由 Cursor 读 DOM 修改选择器）
+[15:55:09] [INFO] Stage 4: Backfilling Data to Backend...
+[15:55:09] [INFO] 本单自动购买是否成功: 否（ADDRESS_FAIL）
+[15:55:09] [WARNING] 人工核查窗口。订单 723675 已跑完。核查完毕后输入 y 开始下一单，n 跳过下一单队首，stop 结束本批。
+[16:02:26] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-21 15:54:06
+结束时间: 2026-10-21 16:02:26
+运行时长: 0:08:19
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [723675] Failed (ADDRESS_FAIL)
+
+[16:02:27] [INFO] 自动化已停止。
+[16:02:42] [INFO] 正在启动 ad / ym 两套 Chrome...
+[16:02:42] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[16:02:47] [INFO] 已启动 Chrome [ad] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data 账号=adxez09955@yahoo.co.jp / dxez09955@yahoo.co.jp
+[16:02:51] [INFO] 已启动 Chrome [ym] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data_ym 账号=ymzjw19369@yahoo.co.jp / ymzwj19369@yahoo.co.jp
+[16:02:51] [INFO] 请分别登录：
+1. Chrome [ad] 雅虎 adxez09955@yahoo.co.jp
+2. Chrome [ym] 雅虎 ymzjw19369@yahoo.co.jp
+3. QBT 后台固定在 [ad] (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[16:03:05] [INFO] Browser already open.
+[16:03:05] [INFO] 自动化任务已启动。
+[16:03:10] [INFO] 去掉后台彩色行 46 笔: ['723702', '723701', '723699', '723698', '723697', '723694', '723693', '723692', '723690', '723689', '723688', '723687', '723685', '723684', '723683', '723681', '723680', '723679', '723678', '723677', '723408', '723377', '723350', '723349', '723146', '723073', '722254', '722252', '722244', '722243', '722242', '722231', '722230', '722228', '722227', '722226', '722225', '722224', '722223', '722222', '722221', '722219', '722218', '722217', '722216', '722214']
+[16:03:10] [INFO] 跳过未购买待确认 16 笔: ['723532', '723505', '723432', '723426', '723421', '723410', '723366', '723355', '723268', '723260', '723067', '722443', '721504', '720841', '720788', '720379']
+[16:03:10] [INFO] 代购买合计 73 笔，可以单条购买 6 笔（723675, 723597, 723468, 723465, 723353, 722504）
+[16:03:10] [INFO] 运行成功。代购买合计 73 笔，可以单条购买 6 笔。
+以下订单可以处理:
+  1. 723675 / w1247803025 / 卖家 FNWs2YUxjcBKn4suZ8p58a7aMp9pR / 账号 ad / 用户 HLHNZ
+  2. 723597 / e1231271420 / 卖家 GVS63iKEgJUbPjWj5d2B8Ds2WyVf8 / 账号 ad / 用户 RHGXM
+  3. 723468 / s1248697757 / 卖家 6zbcrLCtv6hmRsvcZm6YsVAjJ73Gh / 账号 ad / 用户 AYONT
+  4. 723465 / g1248823725 / 卖家 BaC83PWdYmMyGgMXEBHgLpFg5NK6f / 账号 ad / 用户 KBMYV
+  5. 723353 / c1248443445 / 卖家 3TV8xUDuA11Bhz6Zqp4XRTC9cUSs8 / 账号 ym / 用户 junzhaoli
+  6. 722504 / b1248443445 / 卖家 iMhqCrSihF6DgA4Z54huESaDphDU / 账号 ad / 用户 KFTRO
+[16:03:10] [WARNING] 请回复 y 确认，将真实购买队列中的第 1 单 723675（账号 ad）。输入 n 跳过，stop 结束本批。【会真实扣款】
+[16:03:20] [INFO] 开始处理订单 723675 (卖家: FNWs2YUxjcBKn4suZ8p58a7aMp9pR, 账号: ad, 用户: HLHNZ)
+[16:03:22] [INFO] 已进入后台详情页
+[16:03:22] [INFO] 入库码: HLHNZ
+[16:03:22] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[16:03:22] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[16:03:22] [INFO] 切换雅虎浏览器 [ad] 打开: https://auctions.yahoo.co.jp/jp/auction/w1247803025
+[16:03:23] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/w1247803025
+[16:03:31] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723675&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=21'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723675&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=21 >> a:has-text('购买') >> nth=0">, 'seller_id': 'FNWs2YUxjcBKn4suZ8p58a7aMp9pR', 'order_id': '723675', 'product_id': 'w1247803025', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': 'HLHNZ', 'bid_email': 'adxez09955@yahoo.co.jp', 'account_key': 'ad', 'user_name': 'HLHNZ', 'has_color': False, 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[16:03:31] [INFO] 正在检测同捆发货弹窗...
+[16:03:32] [INFO] 拍品页取引ナビ指向个人 contact.auctions，不走店铺 /order/status。
+[16:03:32] [INFO] 已结束拍品页 #closedNotice「取引ナビ」。
+[16:03:32] [INFO] 打开取引ナビ: https://contact.auctions.yahoo.co.jp/top?aid=w1247803025&seller_auc_user_id=FNWs2YUxjcBKn4suZ8p58a7aMp9pR&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ
+[16:03:38] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/trade/top?aid=w1247803025&oid=75842176-3292560117-8273071
+[16:03:38] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[16:03:38] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[16:03:38] [INFO] 卖家留言提取: 订单 723675 (个人) 无留言
+[16:03:52] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723675&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=w1247803025&oid=75842176-3292560117-8273071']
+[16:03:52] [INFO] 等待新版取引ナビ异步渲染「購入手続きをする」...
+[16:03:52] [INFO] 发现个人卖家「購入手続きをする」。正在进入支付页...
+[16:03:52] [INFO] 进入购买手续页: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=w1247803025&oid=75842176-3292560117-8273071
+[16:03:54] [INFO] 购买手续页当前 URL: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=w1247803025&oid=75842176-3292560117-8273071
+[16:03:56] [INFO] 已进入结算/地址页。等待表单... https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=w1247803025&oid=75842176-3292560117-8273071
+[16:03:56] [INFO] 地址检查: お届け先已包含正确后缀 '23675室'，跳过修改。
+[16:03:56] [INFO] 检测到 '置き配' (投放配置) 选项。正在关闭 (选择 '利用しない')...
+[16:03:57] [INFO] 已成功切换为信用卡。
+[16:03:57] [INFO] 支付方式非信用卡 (检测到: お支払い方法...)。尝试切换...
+[16:03:57] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[16:03:57] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[16:03:57] [INFO] 卖家留言提取: 订单 723675 (个人) 无留言
+[16:03:57] [INFO] 发现支付按钮 (#confirm a:has-text('確認する'))
+[16:03:57] [INFO] 正在点击 (REAL BUY)...
+[16:03:58] [INFO] 发现店铺二次确认弹窗「購入を確定しますか？」
+[16:03:58] [WARNING] 购买未确认：未检测到「購入が完了しました」成功页面。可能未完成支付，需人工确认。
+[16:03:58] [ERROR] 【雅虎页面改版】约定元素没找到，需要人工对照
+检查点: purchase_success_page
+页面: 购买完成页
+路径: 点最终确认之后 → thank-you / 「購入完了」/「購入が完了しました」
+找不到: 购买成功页特征（URL thank-you 或文案 購入完了）
+旧选择器:
+  - text=購入完了
+  - text=購入が完了
+  - text=ご購入ありがとうございます
+当前URL: https://contact.auctions.yahoo.co.jp/buyer/payment/confirm?aid=w1247803025&oid=75842176-3292560117-8273071
+订单: 723675 / 商品: w1247803025
+说明: 正式模式已点确认，但 URL/标题/正文都没有 thank-you、購入完了。
+结算区可见按钮/标题: 確認 ガイド、ガイド、商品の引渡時期、キャンセル等について、商品代金等の支払い時期について、商品代金支払いにおける手数料などについて、Yahoo!オークションガイドライン、Yahoo!かんたん決済利用規約、上記に同意のうえ 購入を確定する、購入内容の修正
+事故目录: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792569838_723675_purchase_success_page
+截图: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792569838_723675_purchase_success_page\screenshot.png
+活DOM: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792569838_723675_purchase_success_page\dom.outer.html
+对照表: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792569838_723675_purchase_success_page\meta.json
+请在本仓库对 Cursor 说：修最新失败
+（不要在群里回复 class，由 Cursor 读 DOM 修改选择器）
+[16:03:59] [INFO] Stage 4: Backfilling Data to Backend...
+[16:03:59] [INFO] 本单自动购买是否成功: 未确认（已点确认但未见成功页，请人工核对是否扣款）
+[16:03:59] [WARNING] 人工核查窗口。订单 723675 已跑完。核查完毕后输入 y 开始下一单，n 跳过下一单队首，stop 结束本批。
+[16:26:08] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-21 16:03:05
+结束时间: 2026-10-21 16:26:08
+运行时长: 0:23:03
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [723675] Failed (PURCHASE_UNCONFIRMED)
+
+[16:26:09] [INFO] 自动化已停止。
+[16:26:52] [INFO] 正在启动 ad / ym 两套 Chrome...
+[16:26:52] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[16:27:05] [WARNING] [ad] 雅虎首页未快速就绪: Page.goto: Timeout 12000ms exceeded.
+Call log:
+  - navigating to "https://auctions.yahoo.co.jp/", waiting until "commit"
+
+[16:27:19] [INFO] 已启动 Chrome [ad] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data 账号=adxez09955@yahoo.co.jp / dxez09955@yahoo.co.jp
+[16:27:21] [INFO] 已启动 Chrome [ym] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data_ym 账号=ymzjw19369@yahoo.co.jp / ymzwj19369@yahoo.co.jp
+[16:27:21] [INFO] 请分别登录：
+1. Chrome [ad] 雅虎 adxez09955@yahoo.co.jp
+2. Chrome [ym] 雅虎 ymzjw19369@yahoo.co.jp
+3. QBT 后台固定在 [ad] (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[16:28:23] [INFO] Browser already open.
+[16:28:23] [INFO] 自动化任务已启动。
+[16:28:27] [INFO] 去掉后台彩色行 46 笔: ['723702', '723701', '723699', '723698', '723697', '723694', '723693', '723692', '723690', '723689', '723688', '723687', '723685', '723684', '723683', '723681', '723680', '723679', '723678', '723677', '723408', '723377', '723350', '723349', '723146', '723073', '722254', '722252', '722244', '722243', '722242', '722231', '722230', '722228', '722227', '722226', '722225', '722224', '722223', '722222', '722221', '722219', '722218', '722217', '722216', '722214']
+[16:28:27] [INFO] 跳过未购买待确认 16 笔: ['723532', '723505', '723432', '723426', '723421', '723410', '723366', '723355', '723268', '723260', '723067', '722443', '721504', '720841', '720788', '720379']
+[16:28:27] [INFO] 代购买合计 74 笔，可以单条购买 7 笔（723732, 723730, 723597, 723468, 723465, 723353, 722504）
+[16:28:27] [INFO] 运行成功。代购买合计 74 笔，可以单条购买 7 笔。
+以下订单可以处理:
+  1. 723732 / t1246706102 / 卖家 GiM7M392fSjd98GqRv7s2PBb6ra4k / 账号 ad / 用户 NLHRU
+  2. 723730 / q1243524950 / 卖家 FKDEnhQfdh3K6VU9jsTWAwWbaZ2fE / 账号 ym / 用户 FMFTP
+  3. 723597 / e1231271420 / 卖家 GVS63iKEgJUbPjWj5d2B8Ds2WyVf8 / 账号 ad / 用户 RHGXM
+  4. 723468 / s1248697757 / 卖家 6zbcrLCtv6hmRsvcZm6YsVAjJ73Gh / 账号 ad / 用户 AYONT
+  5. 723465 / g1248823725 / 卖家 BaC83PWdYmMyGgMXEBHgLpFg5NK6f / 账号 ad / 用户 KBMYV
+  6. 723353 / c1248443445 / 卖家 3TV8xUDuA11Bhz6Zqp4XRTC9cUSs8 / 账号 ym / 用户 junzhaoli
+  7. 722504 / b1248443445 / 卖家 iMhqCrSihF6DgA4Z54huESaDphDU / 账号 ad / 用户 KFTRO
+[16:28:27] [WARNING] 请回复 y 确认，将真实购买队列中的第 1 单 723732（账号 ad）。输入 n 跳过，stop 结束本批。【会真实扣款】
+[16:28:44] [INFO] 开始处理订单 723732 (卖家: GiM7M392fSjd98GqRv7s2PBb6ra4k, 账号: ad, 用户: NLHRU)
+[16:28:46] [INFO] 已进入后台详情页
+[16:28:46] [INFO] 备注符合白名单规则，已忽略并继续: adxez09955@yahoo.co.jp一口价购买失败，无可用账号 确认订单失败: 認証に失敗しました。 (code: user_authentication_skip_error)
+[16:28:46] [INFO] 入库码: NLHRU
+[16:28:46] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[16:28:46] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[16:28:46] [INFO] 切换雅虎浏览器 [ad] 打开: https://auctions.yahoo.co.jp/jp/auction/t1246706102
+[16:28:47] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/t1246706102
+[16:28:55] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723732&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=1'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723732&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=1 >> a:has-text('购买') >> nth=0">, 'seller_id': 'GiM7M392fSjd98GqRv7s2PBb6ra4k', 'order_id': '723732', 'product_id': 't1246706102', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': 'NLHRU', 'bid_email': 'adxez09955@yahoo.co.jp', 'account_key': 'ad', 'user_name': 'NLHRU', 'has_color': False, 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[16:28:55] [INFO] 正在检测同捆发货弹窗...
+[16:28:56] [INFO] 检测到店铺结算入口 (購入手続きへ)。正在点击...
+[16:29:06] [INFO] 購入手続きへ后当前页: https://buy.auctions.yahoo.co.jp/order/review?auctionId=t1246706102
+[16:29:09] [INFO] 已进入结算/地址页。等待表单... https://buy.auctions.yahoo.co.jp/order/review?auctionId=t1246706102
+[16:29:11] [INFO] 店铺：取消勾选新闻订阅 (Force/JS)...
+[16:29:11] [INFO] 店铺：已取消勾选新闻订阅。
+[16:29:16] [INFO] 店铺：发现お届け先「変更」。正在点击...
+[16:29:17] [INFO] 已填写ビル名/室号: 23732室
+[16:29:19] [INFO] 店铺地址已修改并验证: 23732室
+[16:29:19] [INFO] 店铺配送为卖家指定展示项（无 radio）: 配送方法 変更
+[16:29:19] [INFO] 结算页展示合计: 1600円
+[16:29:19] [INFO] 支付方式非信用卡 (检测到: お支払い方法
+変更...)。尝试切换...
+[16:29:19] [INFO] 卖家留言提取: 订单 723732 (店铺) 无留言
+[16:29:22] [INFO] 发现支付按钮 (#confirm a:has-text('確認する'))
+[16:29:22] [INFO] 正在点击 (REAL BUY)...
+[16:29:45] [INFO] 发现个人确认页「上記に同意のうえ 購入を確定する」。
+[16:29:51] [INFO] 快速检测到成功状态 (URL/Title): Yahoo!オークション - 購入完了 https://buy.auctions.yahoo.co.jp/order/thank-you?auctionId=t1246706102
+[16:29:51] [WARNING] 室号核对: 未能在展示区读到 '23732室'（不因此判失败，请人工看一眼）。
+[16:29:51] [INFO] Stage 4: Backfilling Data to Backend...
+[16:29:51] [INFO] 金额已验证: 0 == 1600
+[16:29:51] [INFO] 回填：设置 COD 为 NO
+[16:29:51] [INFO] 回填：找到 '确定' 按钮。尝试点击...
+[16:29:51] [INFO] 回填：已触发 JS Click。
+[16:29:51] [INFO] 回填：已填写运费 0, 订单已确认。
+[16:29:51] [INFO] 本单自动购买是否成功: 是（雅虎購入完了）
+[16:29:51] [WARNING] 人工核查窗口。订单 723732 已跑完。核查完毕后输入 y 开始下一单，n 跳过下一单队首，stop 结束本批。
+[16:54:10] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-21 16:28:23
+结束时间: 2026-10-21 16:54:10
+运行时长: 0:25:47
+----------------------------------------
+处理总数: 1
+成功订单: 1
+失败订单: 0
+跳过订单: 0
+详细记录:
+ - [723732] Success (PURCHASED)
+
+[16:54:11] [INFO] 自动化已停止。
+[16:54:26] [INFO] 正在启动 ad / ym 两套 Chrome...
+[16:54:26] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[16:54:36] [INFO] 已启动 Chrome [ad] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data 账号=adxez09955@yahoo.co.jp / dxez09955@yahoo.co.jp
+[16:54:39] [INFO] 已启动 Chrome [ym] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data_ym 账号=ymzjw19369@yahoo.co.jp / ymzwj19369@yahoo.co.jp
+[16:54:39] [INFO] 请分别登录：
+1. Chrome [ad] 雅虎 adxez09955@yahoo.co.jp
+2. Chrome [ym] 雅虎 ymzjw19369@yahoo.co.jp
+3. QBT 后台固定在 [ad] (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[16:54:56] [INFO] Browser already open.
+[16:54:56] [INFO] 自动化任务已启动。
+[16:55:01] [INFO] 去掉后台彩色行 53 笔: ['723702', '723701', '723699', '723698', '723697', '723694', '723693', '723692', '723690', '723689', '723688', '723687', '723685', '723684', '723683', '723681', '723680', '723679', '723678', '723677', '723518', '723516', '723513', '723512', '723481', '723450', '723446', '723408', '723377', '723350', '723349', '723146', '723073', '722254', '722252', '722244', '722243', '722242', '722231', '722230', '722228', '722227', '722226', '722225', '722224', '722223', '722222', '722221', '722219', '722218', '722217', '722216', '722214']
+[16:55:01] [INFO] 跳过未购买待确认 16 笔: ['723532', '723505', '723432', '723426', '723421', '723410', '723366', '723355', '723268', '723260', '723067', '722443', '721504', '720841', '720788', '720379']
+[16:55:01] [INFO] 代购买合计 81 笔，可以单条购买 7 笔（723734, 723730, 723597, 723468, 723465, 723353, 722504）
+[16:55:01] [INFO] 运行成功。代购买合计 81 笔，可以单条购买 7 笔。
+以下订单可以处理:
+  1. 723734 / g1056917713 / 卖家 4nuMNcpHqVFK2XbKPPuhDsLBYq916 / 账号 ad / 用户 NLHRU
+  2. 723730 / q1243524950 / 卖家 FKDEnhQfdh3K6VU9jsTWAwWbaZ2fE / 账号 ym / 用户 FMFTP
+  3. 723597 / e1231271420 / 卖家 GVS63iKEgJUbPjWj5d2B8Ds2WyVf8 / 账号 ad / 用户 RHGXM
+  4. 723468 / s1248697757 / 卖家 6zbcrLCtv6hmRsvcZm6YsVAjJ73Gh / 账号 ad / 用户 AYONT
+  5. 723465 / g1248823725 / 卖家 BaC83PWdYmMyGgMXEBHgLpFg5NK6f / 账号 ad / 用户 KBMYV
+  6. 723353 / c1248443445 / 卖家 3TV8xUDuA11Bhz6Zqp4XRTC9cUSs8 / 账号 ym / 用户 junzhaoli
+  7. 722504 / b1248443445 / 卖家 iMhqCrSihF6DgA4Z54huESaDphDU / 账号 ad / 用户 KFTRO
+[16:55:01] [WARNING] 请回复 y 确认，将真实购买队列中的第 1 单 723734（账号 ad）。输入 n 跳过，stop 结束本批。【会真实扣款】
+[16:55:11] [INFO] 开始处理订单 723734 (卖家: 4nuMNcpHqVFK2XbKPPuhDsLBYq916, 账号: ad, 用户: NLHRU)
+[16:55:13] [INFO] 已进入后台详情页
+[16:55:13] [INFO] 入库码: NLHRU
+[16:55:13] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[16:55:13] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[16:55:13] [INFO] 切换雅虎浏览器 [ad] 打开: https://auctions.yahoo.co.jp/jp/auction/g1056917713
+[16:55:14] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/g1056917713
+[16:55:22] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723734&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=1'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723734&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=1 >> a:has-text('购买') >> nth=0">, 'seller_id': '4nuMNcpHqVFK2XbKPPuhDsLBYq916', 'order_id': '723734', 'product_id': 'g1056917713', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': 'NLHRU', 'bid_email': 'adxez09955@yahoo.co.jp', 'account_key': 'ad', 'user_name': 'NLHRU', 'has_color': False, 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[16:55:22] [INFO] 正在检测同捆发货弹窗...
+[16:55:23] [INFO] 拍品页取引ナビ指向个人 contact.auctions，不走店铺 /order/status。
+[16:55:23] [INFO] 已结束拍品页 #closedNotice「取引ナビ」。
+[16:55:23] [INFO] 打开取引ナビ: https://contact.auctions.yahoo.co.jp/top?aid=g1056917713&seller_auc_user_id=4nuMNcpHqVFK2XbKPPuhDsLBYq916&buyer_auc_user_id=28ohkTaUXF6i3qJoEEjr4hoTWkNBJ
+[16:55:41] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/trade/top?aid=g1056917713&oid=77546525-4092571317-2331346
+[16:55:41] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[16:55:41] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[16:55:41] [INFO] 卖家留言提取: 订单 723734 (个人) 无留言
+[16:55:55] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723734&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0=', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=g1056917713&oid=77546525-4092571317-2331346']
+[16:55:55] [INFO] 等待新版取引ナビ异步渲染「購入手続きをする」...
+[16:55:55] [INFO] 发现个人卖家「購入手続きをする」。正在进入支付页...
+[16:55:55] [INFO] 进入购买手续页: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=g1056917713&oid=77546525-4092571317-2331346
+[16:56:00] [INFO] 购买手续页当前 URL: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=g1056917713&oid=77546525-4092571317-2331346
+[16:56:03] [INFO] 已进入结算/地址页。等待表单... https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=g1056917713&oid=77546525-4092571317-2331346
+[16:56:03] [INFO] 点击「編集する」展开地址表单...
+[16:56:07] [INFO] 已进入 Yahoo 账号地址页。
+[16:56:07] [INFO] 账号地址页已填写建物名: 23734室
+[16:56:07] [INFO] 从账号地址页返回结算页。
+[16:57:07] [ERROR] 个人地址修改失败或异常: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("a:has-text('ご利用中のサービスに戻る')").first
+
+[16:57:07] [INFO] Stage 4: Backfilling Data to Backend...
+[16:57:07] [INFO] 本单自动购买是否成功: 否（ADDRESS_FAIL）
+[16:57:08] [WARNING] 人工核查窗口。订单 723734 已跑完。核查完毕后输入 y 开始下一单，n 跳过下一单队首，stop 结束本批。
+[17:12:34] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-21 16:54:56
+结束时间: 2026-10-21 17:12:34
+运行时长: 0:17:38
+----------------------------------------
+处理总数: 1
+成功订单: 0
+失败订单: 1
+跳过订单: 0
+详细记录:
+ - [723734] Failed (ADDRESS_FAIL)
+
+[17:12:35] [INFO] 自动化已停止。
+[17:12:53] [INFO] 正在启动 ad / ym 两套 Chrome...
+[17:12:53] [INFO] 使用本机 Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+[17:12:59] [INFO] 已启动 Chrome [ad] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data 账号=adxez09955@yahoo.co.jp / dxez09955@yahoo.co.jp
+[17:13:04] [INFO] 已启动 Chrome [ym] 目录=C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\user_data_ym 账号=ymzjw19369@yahoo.co.jp / ymzwj19369@yahoo.co.jp
+[17:13:04] [INFO] 请分别登录：
+1. Chrome [ad] 雅虎 adxez09955@yahoo.co.jp
+2. Chrome [ym] 雅虎 ymzjw19369@yahoo.co.jp
+3. QBT 后台固定在 [ad] (https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list)
+[17:13:16] [INFO] Browser already open.
+[17:13:16] [INFO] 自动化任务已启动。
+[17:13:19] [INFO] 去掉后台彩色行 8 笔: ['723702', '723408', '723377', '723350', '723349', '723146', '723073', '722254']
+[17:13:19] [INFO] 跳过未购买待确认 16 笔: ['723532', '723505', '723432', '723426', '723421', '723410', '723366', '723355', '723268', '723260', '723067', '722443', '721504', '720841', '720788', '720379']
+[17:13:19] [INFO] 代购买合计 70 笔，可以单条购买 3 笔（723747, 723730, 723353）
+[17:13:19] [INFO] 运行成功。代购买合计 70 笔，可以单条购买 3 笔。
+以下订单可以处理:
+  1. 723747 / u1244672763 / 卖家 5nUtCfXirpUPPWnC9fDQUJAmWMPt1 / 账号 ym / 用户 JZRSB
+  2. 723730 / q1243524950 / 卖家 FKDEnhQfdh3K6VU9jsTWAwWbaZ2fE / 账号 ym / 用户 FMFTP
+  3. 723353 / c1248443445 / 卖家 3TV8xUDuA11Bhz6Zqp4XRTC9cUSs8 / 账号 ym / 用户 junzhaoli
+[17:13:19] [WARNING] 请回复 y 确认，将真实购买队列中的第 1 单 723747（账号 ym）。输入 n 跳过，stop 结束本批。【会真实扣款】
+[17:13:28] [INFO] 开始处理订单 723747 (卖家: 5nUtCfXirpUPPWnC9fDQUJAmWMPt1, 账号: ym, 用户: JZRSB)
+[17:13:31] [INFO] 已进入后台详情页
+[17:13:31] [INFO] 入库码: JZRSB
+[17:13:31] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[17:13:31] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[17:13:31] [INFO] 切换雅虎浏览器 [ym] 打开: https://auctions.yahoo.co.jp/jp/auction/u1244672763
+[17:13:35] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/u1244672763
+[17:13:43] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723747&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=1'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=723747&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=1 >> a:has-text('购买') >> nth=0">, 'seller_id': '5nUtCfXirpUPPWnC9fDQUJAmWMPt1', 'order_id': '723747', 'product_id': 'u1244672763', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': 'JZRSB', 'bid_email': 'ymzwj19369@yahoo.co.jp', 'account_key': 'ym', 'user_name': 'JZRSB', 'has_color': False, 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[17:13:43] [INFO] 正在检测同捆发货弹窗...
+[17:13:45] [INFO] 拍品页取引ナビ指向个人 contact.auctions，不走店铺 /order/status。
+[17:13:45] [INFO] 已结束拍品页 #closedNotice「取引ナビ」。
+[17:13:45] [INFO] 打开取引ナビ: https://contact.auctions.yahoo.co.jp/top?aid=u1244672763&seller_auc_user_id=5nUtCfXirpUPPWnC9fDQUJAmWMPt1&buyer_auc_user_id=7z817W1WHHcnEfzJU5E6VVssuzreo
+[17:14:16] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/trade/top?aid=u1244672763&oid=73089501-7292573617-8999129
+[17:14:16] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[17:14:16] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[17:14:16] [INFO] 卖家留言提取: 订单 723747 (个人) 无留言
+[17:19:26] [WARNING] 未找到目标页/按钮。已打开标签: ['https://auctions.yahoo.co.jp/', 'https://contact.auctions.yahoo.co.jp/trade/top?aid=u1244672763&oid=73089501-7292573617-8999129']
+[17:19:26] [INFO] 等待新版取引ナビ异步渲染「購入手続きをする」（最长 5 分钟）...
+[17:19:26] [INFO] 发现个人卖家「購入手続きをする」。正在进入支付页...
+[17:19:27] [INFO] 进入购买手续页: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=u1244672763&oid=73089501-7292573617-8999129
+[17:19:30] [INFO] 等待进入购买手续页（最长 5 分钟）...
+[17:19:40] [INFO] 购买手续页当前 URL: https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=u1244672763&oid=73089501-7292573617-8999129
+[17:19:42] [INFO] 已进入结算/地址页。等待表单... https://contact.auctions.yahoo.co.jp/buyer/payment/input?aid=u1244672763&oid=73089501-7292573617-8999129
+[17:19:42] [INFO] 点击「編集する」展开地址表单...
+[17:19:47] [INFO] 已进入 Yahoo 账号地址页。
+[17:19:47] [INFO] 账号地址页已填写建物名: 23747室
+[17:19:47] [INFO] 账号地址已点「登録する」，等待跳回结算（最长 5 分钟）...
+[17:19:47] [INFO] 从账号地址页返回结算页（最长 5 分钟）...
+[17:19:57] [INFO] 已回到结算页: https://login.yahoo.co.jp/config/login?.src=wallet&.done=https%3A%2F%2Fedit.wallet.yahoo.co.jp%2Fconfig%2Fwallet_sub_add%3F.src%3Dwallet%26.done%3Dhttps%253A%252F%252Fcontact.auctions.yahoo.co.jp%252Fbuyer%252Fpayment%252Finput%253Faid%253Du1244672763%2526oid%253D73089501-7292573617-8999129&auth_lv=1&no_cancel_incomplete=1&require_auth=1&.keep=1
+[17:19:57] [WARNING] 已从账号地址页返回结算，お届け先展示待核对 '23747室'。
+[17:20:27] [INFO] 支付方式为 Yahoo!かんたん決済（个人取引ナビ），继续。
+[17:20:27] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[17:20:27] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[17:20:27] [INFO] 卖家留言提取: 订单 723747 (个人) 无留言
+[17:20:27] [ERROR] 【雅虎页面改版】约定元素没找到，需要人工对照
+检查点: pay_confirm_button
+页面: 最终确认
+路径: 结算页填完地址/配送/支付 → 点確認する/確認し購入を進める → 店铺弹 #fconfirm「購入を確定する」；旧版个人待运费是 #mBoxConfBt 再弹 #confSubmitBtn
+找不到: 最终确认/决定按钮
+旧选择器:
+  - #mBoxConfBt
+  - #confSubmitBtn
+  - #confirm a:has-text('確認する')
+  - a:has-text('確認し購入を進める')
+  - input[value='確認する']
+  - button:has-text('確認する')
+  - input[value='決定する']
+  - button:has-text('決定する')
+  - #fconfirm a:has-text('購入を確定する')
+  - a:has-text('購入を確定する')
+  - button:has-text('購入を確定する')
+  - a:has-text('上記に同意のうえ')
+  - button:has-text('上記に同意のうえ')
+当前URL: https://login.yahoo.co.jp/config/login?.src=wallet&.done=https%3A%2F%2Fedit.wallet.yahoo.co.jp%2Fconfig%2Fwallet_sub_add%3F.src%3Dwallet%26.done%3Dhttps%253A%252F%252Fcontact.auctions.yahoo.co.jp%252Fbuyer%252Fpayment%252Finput%253Faid%253Du1244672763%2526oid%253D73089501-7292573617-8999129&auth_lv=1&no_cancel_incomplete=1&require_auth=1&.keep=1
+订单: 723747 / 商品: u1244672763
+说明: 结算页找不到 #mBoxConfBt / 確認する / 決定する / 購入を確定する。
+结算区可见按钮/标题: ヘルプ、IDを不正利用から防ぐセキュリティ機能、パスワードのみでのログインを終了します、ログイン、次へ、ログインできない場合、新規取得、テーマ、プライバシーポリシー、プライバシーセンター、利用規約、ヘルプ・お問い合わせ
+事故目录: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792574427_723747_pay_confirm_button
+截图: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792574427_723747_pay_confirm_button\screenshot.png
+活DOM: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792574427_723747_pay_confirm_button\dom.outer.html
+对照表: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1792574427_723747_pay_confirm_button\meta.json
+请在本仓库对 Cursor 说：修最新失败
+（不要在群里回复 class，由 Cursor 读 DOM 修改选择器）
+[17:20:28] [INFO] 等待购买完成页（最长 5 分钟）...
+[17:21:39] [INFO] 快速检测到成功状态 (URL/Title): Loading https://contact.auctions.yahoo.co.jp/buyer/payment/complete?aid=u1244672763&oid=73089501-7292573617-8999129 https://contact.auctions.yahoo.co.jp/buyer/payment/confirm?aid=u1244672763&oid=73089501-7292573617-8999129
+[17:21:39] [WARNING] 室号核对: 未能在展示区读到 '23747室'（不因此判失败，请人工看一眼）。
+[17:21:39] [INFO] Stage 4: Backfilling Data to Backend...
+[17:21:39] [INFO] 回填金额: 后台商品=0 运费=0 雅虎合计=-
+[17:21:39] [INFO] 回填：设置 COD 为 NO
+[17:21:39] [INFO] 回填：找到 '确定' 按钮。尝试点击...
+[17:21:39] [INFO] 回填：已触发 JS Click。
+[17:21:39] [INFO] 回填：已填写运费 0, 订单已确认。
+[17:21:39] [INFO] 本单自动购买是否成功: 是（雅虎購入完了）
+[17:21:40] [WARNING] 人工核查窗口。订单 723747 已跑完。核查完毕后输入 y 开始下一单，n 跳过下一单队首，stop 结束本批。
+[17:51:40] [WARNING] 等待确认超时（30分钟）。结束本批。
+[17:51:40] [INFO] 
+========================================
+   自动化运行报告 (Execution Summary)
+========================================
+开始时间: 2026-10-21 17:13:16
+结束时间: 2026-10-21 17:51:40
+运行时长: 0:38:24
+----------------------------------------
+处理总数: 1
+成功订单: 1
+失败订单: 0
+跳过订单: 0
+详细记录:
+ - [723747] Success (PURCHASED)
+
+[17:51:41] [INFO] 自动化已停止。
