@@ -4,7 +4,6 @@ from urllib.parse import parse_qs, unquote, urlparse
 from playwright.async_api import Page
 
 from .constants import (
-    QBT_AUCTION_BUY_URL,
     QBT_BROWSER_ACCOUNT,
     RISK_STATUS_SEARCH_URL,
     WAIT_CLICK_MS,
@@ -75,8 +74,22 @@ def decode_cf_email(cfemail):
 class QbtMixin:
     """阶段1 扫未购买列表 + 阶段4 回填 qbt 后台。"""
 
+    def _qbt_url_has_order_id(self, url, oid):
+        """购买后台 URL 的 id= 必须等于本单，不能只看字符串里有没有这个数字。"""
+        oid = str(oid or "").strip()
+        if not oid:
+            return False
+        got = qbt_order_id_from_url(url)
+        if got == oid:
+            return True
+        u = unquote(url or "")
+        return bool(
+            re.search(rf"(?:[?&])id={re.escape(oid)}(?:&|$)", u)
+            or re.search(rf"auction-buy&id={re.escape(oid)}(?:&|$)", u)
+        )
+
     async def ensure_qbt_detail_is_this_order(self, ctx):
-        """买哪单就打开哪单的 QBT 详情。同捆第一项、串页点到别的 auction-buy 都不能拿来改室号/点确定。"""
+        """打开购买后台后核验 URL 里的订单 ID。对不上就跳过并飞书，不改室号、不点确定。"""
         want = str((ctx.order or {}).get("order_id") or "").strip()
         page = ctx.detail_page
         if not want or page is None:
@@ -86,29 +99,25 @@ class QbtMixin:
                 return {"status": "DETAIL_PAGE_ERROR"}
         except Exception:
             return {"status": "DETAIL_PAGE_ERROR"}
-        got = qbt_order_id_from_url(page.url)
-        if got == want:
-            return None
-        target = QBT_AUCTION_BUY_URL.format(order_id=want)
-        await self.log(
-            f"QBT 详情不是本单（当前 id={got or '无'}），改打开订单 {want}。",
-            "WARNING",
-        )
         try:
-            await page.goto(target, wait_until="domcontentloaded", timeout=WAIT_CLICK_MS * 4)
-            await page.wait_for_selector(".active_form", timeout=15000)
-        except Exception as e:
-            await self.log(f"打开本单 QBT 详情失败: {e}", "ERROR")
-            return {"status": "DETAIL_PAGE_ERROR"}
-        got = qbt_order_id_from_url(page.url)
-        if got != want:
-            await self.log(
-                f"打开后仍不是本单 QBT 详情（当前 id={got or '无'}，本单 {want}）。",
-                "ERROR",
+            await page.wait_for_url(
+                lambda u: "auction-buy" in unquote(u or ""),
+                timeout=8000,
             )
-            return {"status": "DETAIL_PAGE_ERROR"}
-        await self.log(f"已固定 QBT 详情到本单 {want}。")
-        return None
+        except Exception:
+            pass
+        url = page.url or ""
+        got = qbt_order_id_from_url(url)
+        if self._qbt_url_has_order_id(url, want):
+            await self.log(f"后台购买页 URL 核验通过: id={got or want}")
+            return None
+        msg = (
+            f"后台购买页订单号不符，已跳过。"
+            f"本单 {want}，当前 URL id={got or '无'}\n{url}"
+        )
+        await self.log(msg, "ERROR")
+        self.notify_feishu(msg)
+        return {"status": "SKIPPED_QBT_ID_MISMATCH"}
 
     def _is_qbt_not_buy_list_url(self, url):
         u = unquote(url or "")
@@ -472,6 +481,41 @@ class QbtMixin:
                 f"跳过未购买待确认 {len(dropped_pending)} 笔: {dropped_pending}",
                 "INFO",
             )
+
+        def _bundle_key(item):
+            return (
+                str(item.get("storage_code") or "").strip()
+                or str(item.get("user_name") or "").strip()
+                or str(item.get("seller_id") or "").strip()
+            )
+
+        bundle_counts = {}
+        for item in scanned_items:
+            key = _bundle_key(item)
+            if not key:
+                continue
+            bundle_counts[key] = bundle_counts.get(key, 0) + 1
+        huge_keys = {key for key, n in bundle_counts.items() if n > 20}
+        dropped_huge = []
+        if huge_keys:
+            kept = []
+            for item in remaining:
+                key = _bundle_key(item)
+                if key and key in huge_keys:
+                    dropped_huge.append(item.get("order_id"))
+                    continue
+                kept.append(item)
+            remaining = kept
+            for key in sorted(huge_keys):
+                await self.log(
+                    f"超20件同捆留给人工: {key} 共 {bundle_counts[key]} 笔",
+                    "WARNING",
+                )
+            if dropped_huge:
+                await self.log(
+                    f"跳过超20件同捆 {len(dropped_huge)} 笔: {dropped_huge}",
+                    "INFO",
+                )
 
         by_seller = {}
         for item in remaining:

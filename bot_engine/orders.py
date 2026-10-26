@@ -74,7 +74,7 @@ class OrderMixin:
                 if pinned:
                     ctx.backfill_blocked = True
                     await self.log(
-                        "回填前无法打开本单 QBT 详情，不点确定，避免更新错单。",
+                        "回填前购买页 URL 不是本单，不点确定，避免更新错单。",
                         "ERROR",
                     )
                 else:
