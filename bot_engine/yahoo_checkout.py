@@ -5,6 +5,7 @@ import re
 from playwright.async_api import Page
 
 from .constants import WAIT_CLICK_MS, WAIT_HANG_MS
+from .qbt import qbt_order_id_from_url
 from .waits import yahoo_done_url_from
 
 
@@ -968,6 +969,133 @@ class YahooCheckoutMixin:
             if total_m:
                 ctx.yahoo_total = int(total_m.group(1).replace(",", ""))
                 await self.log(f"结算页展示合计: {ctx.yahoo_total}円")
+
+    async def _qbt_backend_text(self, ctx):
+        """全量抓取本单 QBT 购买页正文，用来对照「雅虎鉴定」+ 金额。"""
+        cached = str((ctx.order or {}).get("qbt_page_text") or "")
+        pages = []
+        if ctx.detail_page is not None:
+            pages.append(ctx.detail_page)
+        oid = str(ctx.order_id or "").strip()
+        if getattr(self, "browser_context", None):
+            for page in list(self.browser_context.pages):
+                try:
+                    if page.is_closed():
+                        continue
+                except Exception:
+                    continue
+                if oid and qbt_order_id_from_url(page.url) == oid:
+                    pages.append(page)
+        for page in pages:
+            try:
+                text = await page.locator("body").inner_text()
+                if text and text.strip():
+                    return text
+            except Exception:
+                continue
+        return cached
+
+    def _yahoo_appraisal_fee(self, text):
+        m = re.search(r"鑑定する[（(]\s*([\d,]+)\s*円", text or "")
+        if not m:
+            return None
+        try:
+            return int(m.group(1).replace(",", ""))
+        except ValueError:
+            return None
+
+    def _qbt_wants_yahoo_appraisal(self, qbt_text, fee):
+        """必须同时有「雅虎鉴定」和与雅虎相同的日元数字，才选鑑定する。"""
+        if not qbt_text or not fee:
+            return False
+        compact = re.sub(r"\s+", "", str(qbt_text))
+        if "雅虎鉴定" not in compact:
+            return False
+        fee_s = str(int(fee))
+        for match in re.finditer("雅虎鉴定", compact):
+            window = compact[match.end() : match.end() + 80].replace(",", "").replace("，", "")
+            if re.search(rf"{re.escape(fee_s)}(?:円|日元)", window):
+                return True
+            if re.search(rf"{re.escape(fee_s)}(?!\d)", window):
+                return True
+        return False
+
+    async def _select_appraisal_radio(self, page, want_set):
+        value = "set" if want_set else "unset"
+        label = "鑑定する" if want_set else "鑑定しない"
+        section = page.locator("#appraisal, section:has(h2:has-text('鑑定'))").first
+        loc = section.locator(f"label:has-text('{label}')")
+        try:
+            if await loc.count():
+                try:
+                    await loc.first.click(timeout=WAIT_CLICK_MS)
+                except Exception:
+                    await loc.first.click(force=True, timeout=WAIT_CLICK_MS)
+        except Exception:
+            pass
+        try:
+            await page.evaluate(
+                """(value) => {
+                  const root = document.querySelector('#appraisal') || document;
+                  const input = root.querySelector(`input[type=radio][value="${value}"]`);
+                  if (!input) return false;
+                  input.checked = true;
+                  input.dispatchEvent(new Event('input', { bubbles: true }));
+                  input.dispatchEvent(new Event('change', { bubbles: true }));
+                  input.click();
+                  return true;
+                }""",
+                value,
+            )
+        except Exception:
+            pass
+        radio = section.locator(f"input[type='radio'][value='{value}']")
+        try:
+            return await radio.first.is_checked()
+        except Exception:
+            return False
+
+    async def step_appraisal(self, ctx):
+        """与地址同页。QBT 有「雅虎鉴定」+ 同额日元才选鑑定する，否则鑑定しない。"""
+        page = ctx.yahoo_page
+        if page is None:
+            return None
+        section = page.locator("#appraisal, section:has(h2:has-text('鑑定'))")
+        try:
+            if await section.count() == 0:
+                return None
+        except Exception:
+            return None
+        try:
+            visible = await section.first.is_visible()
+        except Exception:
+            visible = True
+        if not visible:
+            return None
+        section_text = ""
+        try:
+            section_text = (await section.first.inner_text()) or ""
+        except Exception:
+            pass
+        fee = self._yahoo_appraisal_fee(section_text)
+        qbt_text = await self._qbt_backend_text(ctx)
+        want_set = self._qbt_wants_yahoo_appraisal(qbt_text, fee)
+        if want_set:
+            await self.log(
+                f"QBT 后台有「雅虎鉴定」且金额 {fee}円 一致，选择鑑定する。"
+            )
+        else:
+            await self.log(
+                "QBT 后台未同时出现「雅虎鉴定」和对应日元金额，选择鑑定しない。"
+                + (f"（雅虎鉴定费 {fee}円）" if fee else "")
+            )
+        ok = await self._select_appraisal_radio(page, want_set)
+        if not ok:
+            await self.log("鉴定选项未能选中，本单跳过以免结算页卡在「選択してください」。", "ERROR")
+            return {"status": "APPRAISAL_FAIL"}
+        chosen = "鑑定する" if want_set else "鑑定しない"
+        await self.log(f"已选择鉴定: {chosen}")
+        return None
 
     async def step_okihai(self, ctx):
         try:

@@ -170,6 +170,19 @@ YAHOO_CHECKPOINTS = {
             "a:has-text('オークションに戻る')",
         ],
     },
+    "appraisal_radios": {
+        "page_name": "雅虎鉴定",
+        "path": "结算页（与地址同页）若出现 #appraisal「鑑定」，按 QBT 是否同时有「雅虎鉴定」+ 同额日元选择鑑定する / 鑑定しない",
+        "looking_for": "鑑定区块 #appraisal 及鑑定する / 鑑定しない radio",
+        "selectors": [
+            "#appraisal",
+            "section:has(h2:has-text('鑑定'))",
+            "#appraisal input[value='set']",
+            "#appraisal input[value='unset']",
+            "label:has-text('鑑定する')",
+            "label:has-text('鑑定しない')",
+        ],
+    },
     "shipping_radios": {
         "page_name": "配送方式",
         "path": "现网店铺 /order/review 多为 #dlvry「配送方法」展示 +「変更」，没有 radio；有 radio 时才选 input[name='shipMethodName']",
