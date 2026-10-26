@@ -239,6 +239,7 @@ class YahooAutoBot(
                 "DETAIL_PAGE_ERROR",
                 "YAHOO_ID_MISMATCH",
                 "SKIPPED_QBT_ID_MISMATCH",
+                "APPRAISAL_FAIL",
             ):
                 self.notify_feishu(f"订单 {order_id_str} 需要人工: {status}")
 

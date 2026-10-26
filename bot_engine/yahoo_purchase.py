@@ -188,12 +188,15 @@ def _parse_yen(value):
 
 
 class YahooPurchaseMixin:
-    async def execute_yahoo_purchase(self, yahoo_page: Page, order_info, test_mode=True):
+    async def execute_yahoo_purchase(
+        self, yahoo_page: Page, order_info, test_mode=True, detail_page=None
+    ):
         try:
             ctx = OrderContext(
                 order=dict(order_info),
                 test_mode=test_mode,
                 yahoo_page=yahoo_page,
+                detail_page=detail_page,
                 bound_items=list(order_info.get("bound_items") or []),
                 backend_total=int(order_info.get("backend_total") or 0),
             )
@@ -239,6 +242,7 @@ class YahooPurchaseMixin:
                 wrap(self.step_capture_body_and_payment_gate),
                 wrap(self.step_uncheck_newsletter),
                 wrap(self.step_address),
+                wrap(self.step_appraisal),
                 wrap(self.step_shipping),
                 wrap(self.step_okihai),
                 wrap(self.step_credit_card),

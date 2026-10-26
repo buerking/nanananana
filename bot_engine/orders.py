@@ -63,7 +63,9 @@ class OrderMixin:
                 return result
 
             ctx.sync_order_info()
-            result = await self.execute_yahoo_purchase(ctx.yahoo_page, ctx.order_info, test_mode)
+            result = await self.execute_yahoo_purchase(
+                ctx.yahoo_page, ctx.order_info, test_mode, detail_page=ctx.detail_page
+            )
             try:
                 if result and (result.get("status") in SUCCESS_STATUSES):
                     await self._log_suffix_check(ctx)
@@ -242,6 +244,10 @@ class OrderMixin:
             await self.log(f"后台详情解析: 共 {len(bound_items)} 个商品, 总金额 {backend_total}")
             if option_info:
                 await self.log(f"从详情页更新选项信息: {option_info}")
+            try:
+                order["qbt_page_text"] = await detail_page.locator("body").inner_text()
+            except Exception:
+                pass
         except Exception as e:
             await self.log(f"提取首项 ID 失败: {e}", "DEBUG")
         ctx.bound_items = bound_items
