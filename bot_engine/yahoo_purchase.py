@@ -102,6 +102,11 @@ CHECKOUT_FORM_SEL = (
     "#mBoxConfBt, h2:has-text('落札者情報')"
 )
 
+KANTAN_PAY_SEL = (
+    "a:has-text('Yahoo!かんたん決済で支払う'), "
+    "button:has-text('Yahoo!かんたん決済で支払う')"
+)
+
 PAY_BTN_SELECTORS = [
     "input[value='確認する']",
     "button:has-text('確認する')",
@@ -754,17 +759,43 @@ class YahooPurchaseMixin:
         if "送料連絡" in text and "連絡待ち" in text:
             return True
         try:
-            pay = page.locator(
-                "a:has-text('Yahoo!かんたん決済で支払う'), "
-                "button:has-text('Yahoo!かんたん決済で支払う')"
-            )
+            pay = page.locator(KANTAN_PAY_SEL)
             if await pay.count():
                 cls = ((await pay.first.get_attribute("class")) or "").lower()
-                if "disabled" in cls:
+                disabled_attr = await pay.first.get_attribute("disabled")
+                if "disabled" in cls or disabled_attr is not None:
                     return True
         except Exception:
             pass
         return False
+
+    async def _kantan_pay_button_ready(self, page):
+        """取引ナビ上可点的「Yahoo!かんたん決済で支払う」（未禁用）。"""
+        if page is None:
+            return False
+        loc = page.locator(KANTAN_PAY_SEL)
+        try:
+            if await loc.count() == 0:
+                return False
+            btn = loc.first
+            if not await btn.is_visible():
+                return False
+            cls = ((await btn.get_attribute("class")) or "").lower()
+            disabled_attr = await btn.get_attribute("disabled")
+            aria = ((await btn.get_attribute("aria-disabled")) or "").lower()
+            if "disabled" in cls or disabled_attr is not None or aria in ("true", "1"):
+                return False
+            return True
+        except Exception:
+            return False
+
+    async def _click_kantan_pay_if_ready(self, ctx):
+        page = ctx.yahoo_page
+        if not await self._kantan_pay_button_ready(page):
+            return False
+        await self.log("发现可点的「Yahoo!かんたん決済で支払う」，进入支付。")
+        await self._follow_click(ctx, page.locator(KANTAN_PAY_SEL).first)
+        return True
 
     def _purchase_result_payload(self, ctx, status):
         return {
@@ -1241,20 +1272,13 @@ class YahooPurchaseMixin:
             return await self._mark_wait_shipping_form(
                 ctx, "购买手续页是待运费地址页：先提交取引情報，卖家再报运费。"
             )
-        kantan_btn = yahoo_page.locator(
-            "a:has-text('Yahoo!かんたん決済で支払う'), button:has-text('Yahoo!かんたん決済で支払う')"
-        )
-        if await self.has_visible(kantan_btn):
-            cls = ""
-            try:
-                cls = (await kantan_btn.first.get_attribute("class")) or ""
-            except Exception:
-                cls = ""
-            if "disabled" in cls.lower():
-                return await self._finish_wait_shipping_submitted(ctx)
-            await self.log("发现 'Yahoo!かんたん決済' 按钮。正在点击...")
-            await self._follow_click(ctx, kantan_btn.first)
+        if await self._kantan_pay_button_ready(yahoo_page):
+            await self._click_kantan_pay_if_ready(ctx)
             yahoo_page = ctx.yahoo_page
+        else:
+            kantan_btn = yahoo_page.locator(KANTAN_PAY_SEL)
+            if await self.has_visible(kantan_btn):
+                return await self._finish_wait_shipping_submitted(ctx)
         try:
             body_text = await yahoo_page.locator("body").inner_text()
         except Exception:
@@ -2407,13 +2431,26 @@ class YahooPurchaseMixin:
                 await self._wait_shipping_submit_settled(yahoo_page, ctx)
                 return None
             await self.log("已提交取引情報，等待进入确认/支付页...")
-            await self.wait_until(
-                lambda: "/buyer/preview" in (yahoo_page.url or "")
-                or "/buyer/payment" in (yahoo_page.url or "")
-                or self._is_purchase_complete_url(yahoo_page.url),
-                timeout_ms=WAIT_HANG_MS,
-            )
+
+            async def pay_page_ready():
+                url = yahoo_page.url or ""
+                if "/buyer/preview" in url or "/buyer/payment" in url:
+                    return True
+                if self._is_purchase_complete_url(url):
+                    return True
+                return await self._kantan_pay_button_ready(yahoo_page)
+
+            await self.wait_until(pay_page_ready, timeout_ms=WAIT_CLICK_MS * 4)
             if self._is_purchase_complete_url(yahoo_page.url):
+                return None
+            if await self._click_kantan_pay_if_ready(ctx):
+                yahoo_page = ctx.yahoo_page
+                if not test_mode:
+                    await self._wait_purchase_complete(yahoo_page, ctx=ctx)
+                    skipped = await self.gate_need_3ds_timeout(ctx)
+                    if skipped:
+                        return skipped
+                    self._remember_yahoo_trade_ids(ctx)
                 return None
         for sel in PAY_BTN_SELECTORS:
             btn = yahoo_page.locator(sel).first
@@ -2461,6 +2498,15 @@ class YahooPurchaseMixin:
             except Exception:
                 continue
         else:
+            if await self._click_kantan_pay_if_ready(ctx):
+                yahoo_page = ctx.yahoo_page
+                if not test_mode:
+                    await self._wait_purchase_complete(yahoo_page, ctx=ctx)
+                    skipped = await self.gate_need_3ds_timeout(ctx)
+                    if skipped:
+                        return skipped
+                    self._remember_yahoo_trade_ids(ctx)
+                return None
             if self._is_yahoo_login_or_reauth_url(yahoo_page.url):
                 await self.log("当前是登录页，不按改版报确认按钮缺失。", "WARNING")
             elif not (await classic_confirm.count() and await classic_confirm.first.is_visible()):
@@ -2527,6 +2573,8 @@ class YahooPurchaseMixin:
             if skipped:
                 return skipped
         elif not ctx.test_mode:
+            if await self._click_kantan_pay_if_ready(ctx):
+                yahoo_page = ctx.yahoo_page
             wait_ms = WAIT_CLICK_MS * 2 if (
                 ctx.is_wait_for_shipping and getattr(ctx, "trade_info_submitted", False)
             ) else WAIT_HANG_MS

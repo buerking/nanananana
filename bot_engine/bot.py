@@ -215,6 +215,9 @@ class YahooAutoBot(
         return f"本单自动购买是否成功: 否（{status}）"
 
     async def _record_order_result(self, run_stats, order_id_str, status, test_mode, gated=False):
+        # 列表刷新后暂时找不到「购买」：下一轮再试，不算失败、不飞书要人。
+        if status == "DETAIL_PAGE_ERROR":
+            return
         if status in SUCCESS_STATUSES:
             run_stats["success"] += 1
             run_stats["details"].append(f"[{order_id_str}] Success ({status})")
@@ -236,7 +239,6 @@ class YahooAutoBot(
                 "STORE_PICKUP_ONLY_ERROR",
                 "PAYMENT_UNSUPPORTED",
                 "NO_YAHOO_BROWSER",
-                "DETAIL_PAGE_ERROR",
                 "YAHOO_ID_MISMATCH",
                 "SKIPPED_QBT_ID_MISMATCH",
                 "APPRAISAL_FAIL",

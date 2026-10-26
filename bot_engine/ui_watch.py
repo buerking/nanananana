@@ -219,8 +219,8 @@ YAHOO_CHECKPOINTS = {
     },
     "pay_confirm_button": {
         "page_name": "最终确认",
-        "path": "结算页填完地址/配送/支付 → 点確認する。店铺 /order/review 点完后若出现 #fconfirm「購入を確定しますか？」，再点「購入を確定する」。若跳到 login.yahoo.co.jp 且页上有「ログイン/新規取得/携帯電話番号」或「でログイン中です」，先取 .done= 回跳结算，不要当未登录停机。edit.wallet.../wallet_sub_add 同样取 .done= 回跳；其它 wallet 二次验证仍等人登完。不要把登录页当改版。",
-        "looking_for": "最终确认/决定按钮，以及店铺二次确认「購入を確定する」",
+        "path": "结算页填完地址/配送/支付 → 点確認する。店铺 /order/review 点完后若出现 #fconfirm「購入を確定しますか？」，再点「購入を確定する」。旧版 /buyer/edit 点決定する后常回到 /trade/top「代金をお支払いください」，此时点「Yahoo!かんたん決済で支払う」，不要再等確認する。若跳到 login.yahoo.co.jp 且页上有「ログイン/新規取得/携帯電話番号」或「でログイン中です」，先取 .done= 回跳结算，不要当未登录停机。edit.wallet.../wallet_sub_add 同样取 .done= 回跳；其它 wallet 二次验证仍等人登完。不要把登录页当改版。",
+        "looking_for": "最终确认/决定按钮，或取引ナビ「Yahoo!かんたん決済で支払う」",
         "selectors": [
             "#mBoxConfBt",
             "#confSubmitBtn",
@@ -235,6 +235,8 @@ YAHOO_CHECKPOINTS = {
             "button:has-text('購入を確定する')",
             "a:has-text('上記に同意のうえ')",
             "button:has-text('上記に同意のうえ')",
+            "a:has-text('Yahoo!かんたん決済で支払う')",
+            "button:has-text('Yahoo!かんたん決済で支払う')",
         ],
     },
     "purchase_success_page": {
@@ -485,6 +487,16 @@ class YahooUiWatchMixin:
                 if await self._page_shows_wait_shipping_submitted(page):
                     await self.log(
                         f"当前是送料連絡待ち，不报改版检查点 {checkpoint_id}。",
+                        "WARNING",
+                    )
+                    return None
+            except Exception:
+                pass
+        if checkpoint_id == "pay_confirm_button" and hasattr(self, "_kantan_pay_button_ready"):
+            try:
+                if await self._kantan_pay_button_ready(page):
+                    await self.log(
+                        "当前是かんたん決済支付页，不报确认按钮缺失。",
                         "WARNING",
                     )
                     return None

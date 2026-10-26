@@ -5,6 +5,8 @@ FORCE_SHIPPING_WARNING_SELLERS = ["82meTj3FgR5hnjCcmaDn6vbxatPWC"]
 REMARK_WHITELIST_PATTERNS = [
     r"出价\d+日元失败：竞拍结束。",
     "下单使用优惠券减免金额",
+    # QBT 系统回写：锁定优惠券没用上、已释放。不是「不要买」。
+    "本次支付未使用已锁定优惠券",
     "adxez09955@yahoo.co.jp",
     "dxez09955@yahoo.co.jp",
     "ymzjw19369@yahoo.co.jp",

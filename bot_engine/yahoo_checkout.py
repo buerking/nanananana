@@ -1102,14 +1102,27 @@ class YahooCheckoutMixin:
             okihai_select = ctx.yahoo_page.locator(
                 "select[name='okihaiTypeYamato'], select[name='okihaiTypeSelect'], #ymtokhi select"
             )
-            if await okihai_select.count():
-                await self.log("检测到 '置き配' (投放配置) 选项。正在关闭 (选择 '利用しない')...")
-                try:
-                    await okihai_select.first.select_option(
-                        label=re.compile("しない|希望しない|置き配を設定しない")
-                    )
-                except Exception:
-                    await okihai_select.first.select_option(index=1)
+            if await okihai_select.count() == 0:
+                return None
+            first = okihai_select.first
+            try:
+                visible = await first.is_visible()
+            except Exception:
+                visible = False
+            try:
+                disabled = await first.is_disabled()
+            except Exception:
+                disabled = True
+            if not visible or disabled:
+                await self.log("置き配选项不可用（隐藏或禁用），跳过。")
+                return None
+            await self.log("检测到 '置き配' (投放配置) 选项。正在关闭 (选择 '利用しない')...")
+            try:
+                await first.select_option(
+                    label=re.compile("しない|希望しない|置き配を設定しない")
+                )
+            except Exception:
+                await first.select_option(index=1)
         except Exception as e:
             await self.log(f"Okihai setting error (Non-critical): {e}", "DEBUG")
         return None

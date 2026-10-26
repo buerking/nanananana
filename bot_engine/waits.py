@@ -3,6 +3,7 @@
 上限 5 分钟，目标已到达立刻返回。只点看得到的节点，避免 DOM 里有、实际点不到时空等 30 秒判失败。
 """
 import asyncio
+import inspect
 import re
 from urllib.parse import parse_qs, unquote, urlparse
 
@@ -258,15 +259,22 @@ class WaitMixin:
     async def wait_until(self, predicate, timeout_ms=WAIT_HANG_MS, interval=0.4):
         loop = asyncio.get_running_loop()
         deadline = loop.time() + timeout_ms / 1000.0
+
+        async def _ok():
+            result = predicate()
+            if inspect.isawaitable(result):
+                result = await result
+            return bool(result)
+
         while loop.time() < deadline:
             try:
-                if await predicate():
+                if await _ok():
                     return True
             except Exception:
                 pass
             await asyncio.sleep(interval)
         try:
-            return bool(await predicate())
+            return bool(await _ok())
         except Exception:
             return False
 
