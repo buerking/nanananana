@@ -170,6 +170,77 @@ class StorageMixin:
         dates.sort(reverse=True)
         return dates
 
+    def load_wait_shipping_queue(self):
+        """本机点过「等待商家确认运费」的订单，闲时再查卖家是否已报运费。"""
+        try:
+            if os.path.exists(self.WAIT_SHIPPING_QUEUE_FILE):
+                with open(self.WAIT_SHIPPING_QUEUE_FILE, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, list):
+                        return data
+        except Exception as e:
+            print(f"Error loading wait-shipping queue: {e}")
+        return []
+
+    def save_wait_shipping_queue(self):
+        try:
+            with open(self.WAIT_SHIPPING_QUEUE_FILE, "w", encoding="utf-8") as f:
+                json.dump(self.wait_shipping_queue, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"Error saving wait-shipping queue: {e}")
+
+    def enqueue_wait_shipping(self, order, yahoo_result=None):
+        """地址已提交、已点 QBT「等待商家确认运费」后入队。不扫「未购买待确认」整表。"""
+        info = dict(order or {})
+        extra = dict(yahoo_result or {})
+        oid = str(info.get("order_id") or extra.get("order_id") or "").strip()
+        if not oid:
+            return False
+        for item in self.wait_shipping_queue:
+            if str(item.get("order_id") or "") == oid:
+                return False
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.wait_shipping_queue.append(
+            {
+                "order_id": oid,
+                "product_id": str(info.get("product_id") or extra.get("product_id") or ""),
+                "account_key": str(info.get("account_key") or extra.get("account_key") or ""),
+                "bid_email": str(info.get("bid_email") or extra.get("bid_email") or ""),
+                "seller_id": str(info.get("seller_id") or extra.get("seller_id") or ""),
+                "user_name": str(info.get("user_name") or extra.get("user_name") or ""),
+                "storage_code": str(info.get("storage_code") or extra.get("storage_code") or ""),
+                "added_at": now,
+                "last_checked": "",
+                "status": "waiting",
+            }
+        )
+        self.save_wait_shipping_queue()
+        return True
+
+    def touch_wait_shipping(self, order_id):
+        oid = str(order_id or "").strip()
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        changed = False
+        for item in self.wait_shipping_queue:
+            if str(item.get("order_id") or "") == oid:
+                item["last_checked"] = now
+                changed = True
+                break
+        if changed:
+            self.save_wait_shipping_queue()
+        return changed
+
+    def remove_wait_shipping(self, order_id):
+        oid = str(order_id or "").strip()
+        before = len(self.wait_shipping_queue)
+        self.wait_shipping_queue = [
+            x for x in self.wait_shipping_queue if str(x.get("order_id") or "") != oid
+        ]
+        if len(self.wait_shipping_queue) < before:
+            self.save_wait_shipping_queue()
+            return True
+        return False
+
     def _walk_trade_message_root(self, obj):
         """在 Next.js 状态树里找到 top.message（含 messages 列表）。"""
         if not isinstance(obj, dict):

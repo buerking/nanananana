@@ -5,12 +5,14 @@ import re
 from playwright.async_api import Page
 
 from .constants import (
+    QBT_AUCTION_BUY_URL,
     QBT_BROWSER_ACCOUNT,
     SUCCESS_STATUSES,
     WAIT_CLICK_MS,
     YAHOO_AUCTION_URL,
     YAHOO_HOME_URL,
 )
+from .exceptions import BotStopped
 from .flow import OrderContext, run_chain
 from .qbt import parse_storage_code
 
@@ -80,6 +82,7 @@ class OrderMixin:
                         "ERROR",
                     )
                 else:
+                    result = self._attach_order_ids(result, ctx.order)
                     await self.backfill_order(
                         ctx.detail_page, result, ctx.backend_total, test_mode
                     )
@@ -92,6 +95,146 @@ class OrderMixin:
                 await self.mw_cleanup_after_order(ctx, result)
             except Exception:
                 pass
+
+    def _attach_order_ids(self, result, order):
+        payload = dict(result or {})
+        src = dict(order or {})
+        for key in (
+            "order_id",
+            "product_id",
+            "account_key",
+            "bid_email",
+            "seller_id",
+            "user_name",
+            "storage_code",
+        ):
+            if not payload.get(key):
+                payload[key] = src.get(key) or ""
+        return payload
+
+    async def process_wait_freight_queue(self, backend_page, test_mode=True, run_stats=None):
+        """没有可买的一对一时：只处理本机 JSON 里「等待商家确认运费」的单，不扫待确认整表。"""
+        pending = [
+            x
+            for x in (self.wait_shipping_queue or [])
+            if str(x.get("status") or "waiting") == "waiting" and x.get("order_id")
+        ]
+        if not pending:
+            return backend_page
+        pending.sort(key=lambda x: x.get("last_checked") or "")
+        item = pending[0]
+        oid = str(item.get("order_id") or "")
+        pid = str(item.get("product_id") or "")
+        await self.log(
+            f"待运费队列 {len(pending)} 笔，本轮检查 {oid} / {pid or '(无商品ID)'}"
+        )
+        try:
+            result, backend_page = await self.process_wait_freight_order(
+                item, backend_page, test_mode
+            )
+        except BotStopped:
+            raise
+        except Exception as e:
+            await self.log(f"待运费队列检查失败 {oid}: {e}", "ERROR")
+            self.touch_wait_shipping(oid)
+            return backend_page
+        status = (result or {}).get("status") or ""
+        if status in ("PURCHASED", "TEST_SUCCESS"):
+            if run_stats is not None:
+                run_stats["total_processed"] = run_stats.get("total_processed", 0) + 1
+                await self._record_order_result(
+                    run_stats, oid, status, test_mode, gated=False
+                )
+        elif status in ("WAIT_SHIPPING", "WAIT_SHIPPING_CONTACT"):
+            pass
+        elif status:
+            await self.log(f"待运费队列 {oid} 本轮结论: {status}", "WARNING")
+        return backend_page
+
+    async def process_wait_freight_order(self, item, backend_page, test_mode=True):
+        """查雅虎是否已报运费；有则填 jpWaybillFee 并点确定。不再点「等待商家确认运费」。"""
+        order = {
+            "order_id": str(item.get("order_id") or ""),
+            "product_id": str(item.get("product_id") or ""),
+            "account_key": str(item.get("account_key") or ""),
+            "bid_email": str(item.get("bid_email") or ""),
+            "seller_id": str(item.get("seller_id") or ""),
+            "user_name": str(item.get("user_name") or ""),
+            "storage_code": str(item.get("storage_code") or ""),
+            "status": "未购买待确认",
+            "option_info": "普通快递（有快递单号可追踪）",
+        }
+        ctx = OrderContext(order=order, backend_page=backend_page, test_mode=test_mode)
+        result = None
+        oid = order["order_id"]
+        try:
+            if not oid:
+                return {"status": "DETAIL_PAGE_ERROR"}, backend_page
+            if not order.get("product_id"):
+                await self.log(f"待运费队列 {oid} 没有商品ID，跳过。", "WARNING")
+                self.touch_wait_shipping(oid)
+                return {"status": "PRODUCT_LINK_NOT_FOUND"}, backend_page
+            buy_url = QBT_AUCTION_BUY_URL.format(order_id=oid)
+            await backend_page.goto(buy_url, wait_until="domcontentloaded", timeout=30000)
+            ctx.detail_page = backend_page
+            ctx.is_new_tab = False
+            pinned = await self.ensure_qbt_detail_is_this_order(ctx)
+            if pinned:
+                self.touch_wait_shipping(oid)
+                return pinned, backend_page
+            await self.step_parse_bound_items(ctx)
+            opened = await self.step_open_yahoo(ctx)
+            if opened:
+                self.touch_wait_shipping(oid)
+                return opened, backend_page
+            denied = await run_chain(
+                [self.gate_yahoo_login, self.gate_risk_keywords], ctx
+            )
+            if denied:
+                self.touch_wait_shipping(oid)
+                return denied, backend_page
+            ctx.sync_order_info()
+            result = await self.execute_yahoo_purchase(
+                ctx.yahoo_page, ctx.order_info, test_mode, detail_page=ctx.detail_page
+            )
+            result = self._attach_order_ids(result, ctx.order)
+            status = (result or {}).get("status") or ""
+            if status in ("WAIT_SHIPPING", "WAIT_SHIPPING_CONTACT"):
+                await self.log(f"待运费队列: {oid} 卖家尚未回传运费，本轮跳过。")
+                self.touch_wait_shipping(oid)
+                return result, backend_page
+            if status in ("PURCHASED", "TEST_SUCCESS"):
+                pinned = await self.ensure_qbt_detail_is_this_order(ctx)
+                if pinned:
+                    ctx.backfill_blocked = True
+                    await self.log(
+                        "待运费回填前购买页 URL 不是本单，不点确定。",
+                        "ERROR",
+                    )
+                    return pinned, backend_page
+                await self.backfill_order(
+                    ctx.detail_page, result, ctx.backend_total, test_mode
+                )
+                self.remove_wait_shipping(oid)
+                await self.log(
+                    f"待运费队列: {oid} 已回填运费 {result.get('shipping')} 并点确定。"
+                )
+                return result, backend_page
+            self.touch_wait_shipping(oid)
+            return result, backend_page
+        except BotStopped:
+            raise
+        finally:
+            try:
+                await self.mw_cleanup_after_order(ctx, result)
+            except Exception:
+                pass
+            try:
+                if ctx.backend_page and not ctx.backend_page.is_closed():
+                    backend_page = ctx.backend_page
+            except Exception:
+                pass
+        return result, backend_page
 
     async def _log_suffix_check(self, ctx):
         suffix = ctx.suffix

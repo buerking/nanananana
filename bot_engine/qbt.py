@@ -544,11 +544,13 @@ class QbtMixin:
             item = items[0]
             if not item.get("account_key"):
                 skipped_account.append(item.get("order_id"))
-                await self.log(
-                    f"未识别出价账号，跳过订单 {item.get('order_id')} "
-                    f"email={item.get('bid_email') or '(空)'}",
-                    "WARNING",
-                )
+                oid = str(item.get("order_id") or "")
+                if oid and oid not in self.warned_account_orders:
+                    await self.log(
+                        f"未识别出价账号，跳过订单 {oid} "
+                        f"email={item.get('bid_email') or '(空)'}",
+                        "WARNING",
+                    )
                 continue
             process_queue.append(item)
 
@@ -558,9 +560,17 @@ class QbtMixin:
                 "INFO",
             )
         if skipped_account:
-            self.notify_feishu(
-                "有订单出价账号无法对应 ad/ym，已跳过: " + ", ".join(str(x) for x in skipped_account)
-            )
+            new_ids = [
+                str(x)
+                for x in skipped_account
+                if str(x) and str(x) not in self.warned_account_orders
+            ]
+            for oid in new_ids:
+                self.warned_account_orders.add(oid)
+            if new_ids:
+                self.notify_feishu(
+                    "有订单出价账号无法对应 ad/ym，已跳过: " + ", ".join(new_ids)
+                )
         stats = getattr(self, "scan_stats", None) or {}
         stats["buyable"] = len(process_queue)
         stats["dropped_color"] = len(dropped_color)
@@ -605,6 +615,11 @@ class QbtMixin:
                     await self.log("回填：正在点击 '等待商家确认运费'...")
                     await btn.first.evaluate("element => element.click()")
                     await self.log("回填：已点击 '等待商家确认运费'。")
+                    if self.enqueue_wait_shipping(yahoo_result, yahoo_result):
+                        await self.log(
+                            f"已写入待运费队列: {yahoo_result.get('order_id')} "
+                            f"/ {yahoo_result.get('product_id') or ''}"
+                        )
                 else:
                     await self.log("回填警告：未找到 '等待商家确认运费' 按钮。", "WARNING")
                 return

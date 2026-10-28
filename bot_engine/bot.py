@@ -96,6 +96,9 @@ class YahooAutoBot(
             print(f"Failed to create seller_messages dir: {e}")
         self.BLACKLIST_FILE = os.path.join(self.BASE_DIR, "seller_blacklist.json")
         self.seller_blacklist = self.load_seller_blacklist()
+        self.WAIT_SHIPPING_QUEUE_FILE = os.path.join(self.BASE_DIR, "wait_shipping_queue.json")
+        self.wait_shipping_queue = self.load_wait_shipping_queue()
+        self.warned_account_orders = set()
         self.load_seller_messages_today()
         self.run_mode = "normal"
         self.waiting_confirm = False
@@ -259,6 +262,7 @@ class YahooAutoBot(
         self.gated_queue = []
         self.attempted_orders.clear()
         self.warned_bundles.clear()
+        self.warned_account_orders.clear()
         self.ui_miss_reported = set()
         run_stats = {"total_processed": 0, "success": 0, "failed": 0, "skipped": 0, "details": []}
         start_time = datetime.datetime.now()
@@ -290,6 +294,9 @@ class YahooAutoBot(
                     if target_order_id and not gated:
                         await self.log(f"单单测试: 未找到目标订单 {target_order_id}。继续扫描...")
                     else:
+                        backend_page = await self.process_wait_freight_queue(
+                            backend_page, test_mode=test_mode, run_stats=run_stats
+                        )
                         await self.log("未发现可购买的一对一订单。休眠10秒...")
                     await asyncio.sleep(10)
                     continue
@@ -301,6 +308,9 @@ class YahooAutoBot(
                     and str(o.get("order_id")) not in blocked_ids
                 ]
                 if not valid_orders:
+                    backend_page = await self.process_wait_freight_queue(
+                        backend_page, test_mode=test_mode, run_stats=run_stats
+                    )
                     await self.log(
                         f"All {len(orders)} pending orders have been attempted/skipped. Sleeping 10s..."
                     )

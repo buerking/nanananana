@@ -10,3 +10,4 @@ _restore/
 venv/
 *.log
 risk_history.json
+wait_shipping_queue.json

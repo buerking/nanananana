@@ -769,6 +769,16 @@ class YahooPurchaseMixin:
             pass
         return False
 
+    async def _wait_shipping_still_pending(self, page):
+        """已提交取引情報，且还不能付款（卖家没报运费）。"""
+        if not await self._page_shows_wait_shipping_submitted(page):
+            return False
+        if await self._kantan_pay_button_ready(page):
+            return False
+        if await self._page_has_known_postage_on_edit(page):
+            return False
+        return True
+
     async def _kantan_pay_button_ready(self, page):
         """取引ナビ上可点的「Yahoo!かんたん決済で支払う」（未禁用）。"""
         if page is None:
@@ -798,14 +808,20 @@ class YahooPurchaseMixin:
         return True
 
     def _purchase_result_payload(self, ctx, status):
+        order = ctx.order_info or ctx.order or {}
         return {
             "status": status,
             "shipping": int(getattr(ctx, "shipping_cost", 0) or 0),
             "total": int(getattr(ctx, "yahoo_total", 0) or 0),
             "is_cod": bool(getattr(ctx, "early_cod", False)),
             "shipping_warning": bool(getattr(ctx, "early_cod", False)),
-            "order_id": ctx.order_info.get("order_id") or ctx.order.get("order_id") or "",
-            "seller_id": ctx.order.get("seller_id") or "",
+            "order_id": order.get("order_id") or "",
+            "product_id": order.get("product_id") or "",
+            "account_key": order.get("account_key") or "",
+            "bid_email": order.get("bid_email") or "",
+            "seller_id": order.get("seller_id") or "",
+            "user_name": order.get("user_name") or "",
+            "storage_code": order.get("storage_code") or "",
         }
 
     async def _finish_already_purchased(self, ctx):
@@ -840,7 +856,7 @@ class YahooPurchaseMixin:
             return None
         if await self._page_shows_already_purchased(page):
             return await self._finish_already_purchased(ctx)
-        if await self._page_shows_wait_shipping_submitted(page):
+        if await self._wait_shipping_still_pending(page):
             return await self._finish_wait_shipping_submitted(ctx)
         return None
 
@@ -1242,7 +1258,7 @@ class YahooPurchaseMixin:
             return "no_purchase_data"
         if await self._page_shows_already_purchased(page):
             return "already_purchased"
-        if await self._page_shows_wait_shipping_submitted(page):
+        if await self._wait_shipping_still_pending(page):
             return "wait_shipping_submitted"
         if await self._page_is_wait_shipping_address_form(page):
             return "wait_shipping_form"
