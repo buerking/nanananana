@@ -37,7 +37,7 @@ class LoggingMixin:
         try:
             if hasattr(self, "capture_live_incident"):
                 await self.capture_live_incident(
-                    page, tag, extra="save_error_snapshot", notify=True
+                    page, tag, extra="save_error_snapshot", notify=False
                 )
                 return
             timestamp = int(time.time())

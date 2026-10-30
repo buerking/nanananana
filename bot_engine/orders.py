@@ -532,10 +532,52 @@ class OrderMixin:
 
         if ok:
             try:
-                if ctx.backend_page and not ctx.backend_page.is_closed():
+                recycle = ctx.backend_page
+                reuse_buy = False
+                try:
+                    origin = None
+                    if ctx.detail_page and not ctx.detail_page.is_closed():
+                        origin = ctx.detail_page.context
+                    elif ctx.backend_page and not ctx.backend_page.is_closed():
+                        origin = ctx.backend_page.context
+                    list_page = None
+                    buy_pages = []
+                    if origin:
+                        for p in list(origin.pages):
+                            try:
+                                if p.is_closed():
+                                    continue
+                                if self._is_qbt_not_buy_list_url(p.url):
+                                    list_page = p
+                                elif self._is_qbt_auction_buy_url(p.url):
+                                    buy_pages.append(p)
+                            except Exception:
+                                continue
+                    if list_page:
+                        recycle = list_page
+                        for p in buy_pages:
+                            try:
+                                await p.close()
+                            except Exception:
+                                continue
+                        if buy_pages:
+                            await self.log(f"本单成功，已关闭 {len(buy_pages)} 个 QBT 购买页。")
+                    elif buy_pages:
+                        recycle = buy_pages[0]
+                        reuse_buy = True
+                        for p in buy_pages[1:]:
+                            try:
+                                await p.close()
+                            except Exception:
+                                continue
+                except Exception:
+                    pass
+                if ctx.backend_page or recycle:
                     await self.log("回到未购买列表...")
                     ctx.backend_page = await self.ensure_backend_not_buy_list(
-                        ctx.backend_page, force=True
+                        recycle or ctx.backend_page,
+                        force=True,
+                        reuse_buy_page=reuse_buy,
                     )
             except Exception as e:
                 await self.log(f"回到未购买列表未完成（下一轮扫描会再打开）: {e}", "WARNING")

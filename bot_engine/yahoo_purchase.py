@@ -57,7 +57,9 @@ STORE_STATUS_READY_SEL = (
 PERSONAL_PROCEDURE_SEL = (
     "a[href*='buyer/payment/input'], "
     "a:has-text('購入手続きをする'), "
-    "button:has-text('購入手続きをする')"
+    "button:has-text('購入手続きをする'), "
+    "a:has-text('購入手続きする'), "
+    "button:has-text('購入手続きする')"
 )
 PERSONAL_BUNDLE_SEL = (
     "main button:has-text('単品で取引する'), "
@@ -512,6 +514,59 @@ class YahooPurchaseMixin:
                 "/order/change",
             )
         )
+
+    def _is_auction_listing_url(self, url):
+        u = (url or "").lower()
+        if "/jp/auction/" not in u:
+            return False
+        if "contact.auctions.yahoo.co.jp" in u or "buy.auctions.yahoo.co.jp" in u:
+            return False
+        return True
+
+    async def _soku_price_from_bid_group(self, page):
+        """只从 #bidButtonGroup 读即決价，避免相关推荐「現在 x円」。"""
+        text = ""
+        try:
+            loc = page.locator("#bidButtonGroup")
+            if await loc.count():
+                text = await loc.first.inner_text()
+        except Exception:
+            text = ""
+        if not text:
+            return None
+        compact = re.sub(r"\s+", "", text)
+        m = re.search(r"即決[^\d]{0,20}([\d,]+)円", compact)
+        if m:
+            return int(m.group(1).replace(",", ""))
+        m = re.search(r"即決[^\d]{0,24}([\d,]+)\s*円", text)
+        if m:
+            return int(m.group(1).replace(",", ""))
+        return None
+
+    async def _wait_personal_nav_ready(self, page, timeout_ms=15000):
+        """/top 是 Next 壳，等取引ナビ正文或已购/待运费，避免把页头广告当改版。"""
+        if page is None:
+            return
+
+        async def ready():
+            try:
+                if page.is_closed():
+                    return True
+            except Exception:
+                return True
+            if await self._page_shows_wait_shipping_submitted(page):
+                return True
+            if await self._page_shows_already_purchased(page):
+                return True
+            if await self._page_has_no_purchase_data(page):
+                return True
+            if await self._visible_action(page, PERSONAL_PROCEDURE_SEL):
+                return True
+            if await self.has_visible(page.locator("h1:has-text('取引ナビ')")):
+                return True
+            return False
+
+        await self.wait_until(ready, timeout_ms=timeout_ms)
 
     def _text_says_wait_shipping(self, text):
         t = text or ""
@@ -1314,9 +1369,30 @@ class YahooPurchaseMixin:
 
     async def _open_personal_procedure(self, ctx):
         page = ctx.yahoo_page
+        await self._wait_personal_nav_ready(page)
         done = await self._finish_if_already_done(ctx)
         if done:
             return done
+        url = page.url or ""
+        if (
+            "contact.auctions.yahoo.co.jp/top" in url
+            and "/trade/top" not in url
+            and not await self._visible_action(page, PERSONAL_PROCEDURE_SEL)
+            and not await self._page_shows_wait_shipping_submitted(page)
+            and not await self._page_has_no_purchase_data(page)
+        ):
+            product_id = (self._product_id(ctx) or "").strip()
+            if product_id:
+                trade_url = YAHOO_TRADE_TOP_URL.format(product_id=product_id)
+                await self.log(f"/top 未出水合正文，改开 /trade/top: {trade_url}")
+                try:
+                    await page.goto(trade_url, wait_until="commit", timeout=WAIT_HANG_MS)
+                    await self._wait_personal_nav_ready(page)
+                except Exception as e:
+                    await self.log(f"打开 /trade/top 失败: {e}", "WARNING")
+                done = await self._finish_if_already_done(ctx)
+                if done:
+                    return done
         link = await self._visible_action(page, PERSONAL_PROCEDURE_SEL)
         if link is None:
             btn = page.locator(PERSONAL_PROCEDURE_SEL)
@@ -1418,6 +1494,12 @@ class YahooPurchaseMixin:
         if kind == "personal_nav":
             return await self._open_personal_procedure(ctx)
 
+        if self._is_auction_listing_url(yahoo_page.url):
+            await self.log(
+                f"仍停在拍品页，不报個人取引ナビ改版。URL={yahoo_page.url}",
+                "WARNING",
+            )
+            return None
         await self.log(f"取引后续无法判定页面，不空等。URL={yahoo_page.url}", "WARNING")
         await self.report_missing_yahoo_ui(
             yahoo_page, "personal_purchase_procedure", ctx,
@@ -1492,15 +1574,14 @@ class YahooPurchaseMixin:
         order_info = ctx.order_info
         test_mode = ctx.test_mode
         await self._capture_auction_page_postage(ctx)
-        # 新版拍品页稳定容器是 #bidButtonGroup；按钮 class 带哈希，只用按钮文字。
+        # 只认 #bidButtonGroup，避免相关推荐「今すぐ落札」把已结束拍品卡在列表页。
         buy_now_btn = yahoo_page.locator(
             "#bidButtonGroup button:has-text('購入手続きへ'), "
-            "#bidButtonGroup a:has-text('購入手続きへ'), "
-            "button:has-text('購入手続きへ'), a:has-text('購入手続きへ')"
+            "#bidButtonGroup a:has-text('購入手続きへ')"
         )
         buy_now_auction_btn = yahoo_page.locator(
             "#bidButtonGroup button:has-text('今すぐ落札'), "
-            "button:has-text('今すぐ落札'), a:has-text('今すぐ落札')"
+            "#bidButtonGroup a:has-text('今すぐ落札')"
         )
         if await buy_now_btn.count() > 0:
             await self.log("检测到店铺结算入口 (購入手続きへ)。正在点击...")
@@ -1521,14 +1602,17 @@ class YahooPurchaseMixin:
                 + ("，同时有入札入口" if has_bid else "，仅即決")
                 + "。"
             )
-            page_text = await yahoo_page.locator("body").inner_text()
-            match = re.search(r"即決.*?([\d,]+)円", page_text)
-            if match:
-                price_int = int(match.group(1).replace(",", ""))
+            price_int = await self._soku_price_from_bid_group(yahoo_page)
+            if not price_int:
+                page_text = await yahoo_page.locator("#bidButtonGroup").first.inner_text()
+                match = re.search(r"即決.*?([\d,]+)円", page_text or "")
+                if match:
+                    price_int = int(match.group(1).replace(",", ""))
+            if price_int:
                 backend_price = int(order_info.get("backend_total") or 0)
                 await self.log(f"价格核对: 雅虎即决={price_int}, 后台金额={backend_price}")
                 if backend_price and price_int != backend_price:
-                    await self.log("价格不一致，放弃立即购买。转为普通处理（可能导致跳过或竞拍）。")
+                    await self.log("价格不一致，放弃立即购买。转为取引ナビ。")
                 else:
                     await self.log("价格一致！执行立即购买。")
                     await buy_now_auction_btn.first.click()
@@ -1557,8 +1641,9 @@ class YahooPurchaseMixin:
                             extra=f"点「今すぐ落札」后未出现「入札内容の確認」或后续失败: {e}",
                         )
             else:
-                await self.log("未提取到即决价格，无法核对。跳过立即购买。")
-        else:
+                await self.log("未提取到即决价格，无法核对。跳过立即购买，继续取引ナビ。")
+        yahoo_page = ctx.yahoo_page
+        if self._is_auction_listing_url((yahoo_page.url if yahoo_page else "") or ""):
             product_id = (order_info.get("product_id") or "").strip()
             store_ok = await self._try_store_won_checkout(ctx)
             if store_ok is True:
@@ -1719,6 +1804,9 @@ class YahooPurchaseMixin:
             and not self._checkout_like_url(yahoo_page.url)
         ):
             await self.log("仍在取引ナビ，不是结算表单页，不空等お届け先。")
+            return None
+        if self._is_auction_listing_url(yahoo_page.url):
+            await self.log("仍在拍品页，不等お届け先、不报结算表单改版。", "WARNING")
             return None
         try:
             await form.first.wait_for(state="visible", timeout=WAIT_HANG_MS)

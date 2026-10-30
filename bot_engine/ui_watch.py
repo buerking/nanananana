@@ -502,6 +502,29 @@ class YahooUiWatchMixin:
                     return None
             except Exception:
                 pass
+        if checkpoint_id in (
+            "personal_purchase_procedure",
+            "checkout_address_form",
+            "address_edit",
+        ) and "/jp/auction/" in (url or ""):
+            await self.log(
+                f"仍在拍品页 {url}，不报改版检查点 {checkpoint_id}。",
+                "WARNING",
+            )
+            return None
+        if checkpoint_id == "purchase_exception":
+            await self.log("下单异常快照不当页面改版告警。", "WARNING")
+            return await self.capture_live_incident(
+                page, checkpoint_id, ctx=ctx, extra=extra, order=order, notify=False
+            )
+        if not url and checkpoint_id:
+            await self.log(
+                f"当前页 URL 为空，不报改版检查点 {checkpoint_id}。",
+                "WARNING",
+            )
+            return await self.capture_live_incident(
+                page, checkpoint_id, ctx=ctx, extra=extra, order=order, notify=False
+            )
         path_key = urlparse(url).path if url else ""
         dedupe = f"{checkpoint_id}:{path_key}"
         reported = getattr(self, "ui_miss_reported", None)

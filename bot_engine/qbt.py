@@ -150,8 +150,8 @@ class QbtMixin:
                 any_qbt = page
         return any_qbt
 
-    async def ensure_backend_not_buy_list(self, page=None, force=False):
-        """打开 get-auction-not-buy-list。停在 auction-buy 的详情留给人工看，不要覆盖。"""
+    async def ensure_backend_not_buy_list(self, page=None, force=False, reuse_buy_page=False):
+        """打开 get-auction-not-buy-list。失败单的 auction-buy 详情留给人工看，不要覆盖。"""
         list_page = None
         if self.browser_context:
             for p in list(self.browser_context.pages):
@@ -170,7 +170,11 @@ class QbtMixin:
                     reuse = None
             except Exception:
                 reuse = None
-            if reuse is not None and self._is_qbt_auction_buy_url(reuse.url):
+            if (
+                reuse is not None
+                and self._is_qbt_auction_buy_url(reuse.url)
+                and not reuse_buy_page
+            ):
                 reuse = None
             if reuse is None:
                 found = await self.find_backend_tab()

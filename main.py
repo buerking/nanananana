@@ -370,4 +370,16 @@ if __name__ == "__main__":
             sys.exit(1)
         sys.exit(0)
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = 8000
+    try:
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    except OSError as e:
+        occupied = "10048" in str(e) or getattr(e, "winerror", None) == 10048 or getattr(e, "errno", None) == 10048
+        if not occupied:
+            raise
+        print(f"端口 {port} 已被占用，多半是上次 main.py / 机器人没关。")
+        print("在本机 PowerShell 执行：")
+        print(f"  netstat -ano | findstr :{port}")
+        print("  taskkill /PID <上一步最后一列的 PID> /F")
+        print("然后再启动。不要同时开两个 main.py。")
+        sys.exit(3)

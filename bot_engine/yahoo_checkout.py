@@ -20,7 +20,7 @@ class YahooCheckoutMixin:
             try:
                 note = page.locator("aside").filter(has_text="再ログイン認証")
                 if await note.count() == 0:
-                    return
+                    break
                 closer = note.locator("a:has-text('閉じる'), button:has-text('閉じる')")
                 if await closer.count() == 0:
                     closer = page.locator("main aside a:has-text('閉じる'), aside a:has-text('閉じる')")
@@ -46,6 +46,28 @@ class YahooCheckoutMixin:
             except Exception as e:
                 await self.log(f"关闭再登录提示失败: {e}", "DEBUG")
                 return
+        try:
+            asides = page.locator(
+                "aside:has(a:has-text('閉じる')), aside:has(button:has-text('閉じる'))"
+            )
+            n = await asides.count()
+            for i in range(min(n, 4)):
+                aside = asides.nth(i)
+                text = (await aside.inner_text()) or ""
+                if "購入を確定" in text or "確認する" in text:
+                    continue
+                closer = aside.locator("a:has-text('閉じる'), button:has-text('閉じる')")
+                if await closer.count() == 0:
+                    continue
+                loc = closer.first
+                if not await loc.is_visible():
+                    continue
+                await loc.click(timeout=2000, force=True)
+                await self.log("已关闭结算页挡层「閉じる」。")
+                await asyncio.sleep(0.2)
+                return
+        except Exception:
+            return
 
     def _store_address_change_btn(self, page: Page):
         """店铺 /order/review お届け先旁的「変更」。不要点支付/配送的「変更」。"""
