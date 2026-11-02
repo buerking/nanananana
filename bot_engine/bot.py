@@ -205,6 +205,8 @@ class YahooAutoBot(
             return "本单自动购买是否成功: 未确认（已点确认但未见成功页，请人工核对是否扣款）"
         if status == "SKIPPED_NEED_USER_OPTION":
             return "本单自动购买是否成功: 跳过（需建工单联系用户选择款式）"
+        if status == "SKIPPED_STORE_CONFIRM":
+            return "本单自动购买是否成功: 跳过（店铺确认事项有未识别必填，需人工勾选）"
         if status == "SKIPPED_NEED_CVV":
             return "本单自动购买是否成功: 跳过（需人工填写信用卡安全码）"
         if status == "SKIPPED_NEED_3DS":
@@ -245,6 +247,7 @@ class YahooAutoBot(
                 "YAHOO_ID_MISMATCH",
                 "SKIPPED_QBT_ID_MISMATCH",
                 "APPRAISAL_FAIL",
+                "SKIPPED_STORE_CONFIRM",
             ):
                 self.notify_feishu(f"订单 {order_id_str} 需要人工: {status}")
 

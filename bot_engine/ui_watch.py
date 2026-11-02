@@ -170,6 +170,22 @@ YAHOO_CHECKPOINTS = {
             "a:has-text('オークションに戻る')",
         ],
     },
+    "store_confirm_options": {
+        "page_name": "店铺确认事项",
+        "path": "店铺 /order/review #cartopt「ストアからの確認事項」→「変更」→ /order/change/store-options。仅当文案是缺货说明或购物协议时勾选「同意の上で注文します」，再点 #confirm「変更する」回 review。其他必須不自动勾，飞书转人工。不要点「変更せずに戻る」，不要勾領収書",
+        "looking_for": "ストアからの確認事項「変更」/ 同意の上で注文します / 変更する",
+        "selectors": [
+            "#cartopt",
+            "h2:has-text('ストアからの確認事項')",
+            "#cartopt a:has-text('変更')",
+            "a[data-cl-params*='_cl_link:cartopt']",
+            "h1:has-text('ストアからの確認事項')",
+            "input[type='checkbox'][value='同意の上で注文します']",
+            "text=同意の上で注文します",
+            "#confirm a[data-cl-params*='_cl_link:update']",
+            "#confirm a:has-text('変更する')",
+        ],
+    },
     "appraisal_radios": {
         "page_name": "雅虎鉴定",
         "path": "结算页（与地址同页）若出现 #appraisal「鑑定」，按 QBT 是否同时有「雅虎鉴定」+ 同额日元选择鑑定する / 鑑定しない",

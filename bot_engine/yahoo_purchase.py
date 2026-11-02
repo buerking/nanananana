@@ -256,6 +256,7 @@ class YahooPurchaseMixin:
                 wrap(self.gate_need_cvv),
                 wrap(self.step_mark_cod),
                 wrap(self.step_extract_messages),
+                wrap(self.step_store_confirm_options),
                 wrap(self.step_click_pay),
                 wrap(self.gate_paypay_card_redirect),
                 wrap(self.step_finish),
@@ -2470,6 +2471,11 @@ class YahooPurchaseMixin:
         if blocked:
             return blocked
         yahoo_page = ctx.yahoo_page
+        if hasattr(self, "step_store_confirm_options"):
+            filled = await self.step_store_confirm_options(ctx)
+            if filled:
+                return filled
+            yahoo_page = ctx.yahoo_page
         if await self._click_personal_final_confirm(yahoo_page, test_mode, ctx):
             if not test_mode:
                 ctx.trade_info_submitted = True

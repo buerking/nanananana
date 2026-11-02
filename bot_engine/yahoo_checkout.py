@@ -96,7 +96,208 @@ class YahooCheckoutMixin:
             )
             return True
         except Exception:
-            return "/order/change" in (page.url or "")
+            u = page.url or ""
+            return "/order/change" in u and "store-options" not in u
+
+    def _is_store_options_url(self, url):
+        return "/order/change/store-options" in (url or "")
+
+    def _classify_store_confirm_text(self, text):
+        """只自动勾选缺货说明、购物协议。領収書和其他必填不碰。"""
+        t = (text or "").replace("\n", "")
+        if any(h in t for h in ("共有在庫", "売り切れの場合", "在庫ありと表記")):
+            return "stock"
+        if "お買い物ガイド" in t or ("ご利用規約" in t and "ご同意" in t):
+            return "terms"
+        if "領収書" in t:
+            return "receipt"
+        return "other"
+
+    def _store_confirm_change_btn(self, page: Page):
+        return page.locator(
+            "#cartopt a[data-cl-params*='_cl_link:cartopt'], "
+            "#cartopt a:has-text('変更'), "
+            "header:has(h2:has-text('ストアからの確認事項')) a:has-text('変更')"
+        )
+
+    async def _store_confirm_needs_selection(self, page: Page):
+        if page is None:
+            return False
+        if self._is_store_options_url(page.url):
+            return True
+        block = page.locator(
+            "div:has(> #cartopt), "
+            "div:has(h2:has-text('ストアからの確認事項'))"
+        )
+        if await block.count() == 0:
+            return False
+        try:
+            return await block.locator("text=選択してください。").count() > 0
+        except Exception:
+            return False
+
+    async def _open_store_confirm_edit(self, page: Page):
+        btn = self._store_confirm_change_btn(page)
+        if await btn.count() == 0:
+            return False
+        loc = btn.first
+        await self.log("店铺：发现「ストアからの確認事項」変更。正在点击...")
+        try:
+            await loc.click(timeout=3000)
+        except Exception:
+            await loc.click(force=True, timeout=3000)
+        try:
+            await page.wait_for_selector(
+                "h1:has-text('ストアからの確認事項'), "
+                "input[type='checkbox'][value='同意の上で注文します']",
+                timeout=WAIT_HANG_MS,
+            )
+            return True
+        except Exception:
+            return self._is_store_options_url(page.url or "")
+
+    async def _fill_store_confirm_options(self, page: Page, ctx=None):
+        """子页只勾「可能缺货」「同意协议」。其他必須报警停。"""
+        fieldsets = page.locator("fieldset")
+        n = await fieldsets.count()
+        if n == 0:
+            await self.log("店铺确认事项页没有 fieldset。", "WARNING")
+            if hasattr(self, "report_missing_yahoo_ui"):
+                await self.report_missing_yahoo_ui(
+                    page, "store_confirm_options", ctx,
+                    extra="已进入 /order/change/store-options，但没有确认事项选项。",
+                )
+            return {"status": "SKIPPED_STORE_CONFIRM"}
+        checked = 0
+        unknown = []
+        for i in range(n):
+            fs = fieldsets.nth(i)
+            try:
+                text = (await fs.inner_text()) or ""
+            except Exception:
+                text = ""
+            kind = self._classify_store_confirm_text(text)
+            required = "必須" in text
+            box = fs.locator(
+                "input[type='checkbox'][value='同意の上で注文します'], "
+                "label:has-text('同意の上で注文します') input[type='checkbox']"
+            )
+            if kind in ("stock", "terms"):
+                if await box.count() == 0:
+                    unknown.append(text.strip()[:80] or kind)
+                    continue
+                loc = box.first
+                try:
+                    already = await loc.is_checked()
+                except Exception:
+                    already = False
+                if not already:
+                    try:
+                        await loc.check(timeout=3000, force=True)
+                    except Exception:
+                        await loc.click(timeout=3000, force=True)
+                    label = "可能缺货" if kind == "stock" else "同意协议"
+                    await self.log(f"店铺确认事项：已勾选「同意の上で注文します」（{label}）。")
+                checked += 1
+                continue
+            if kind == "receipt":
+                await self.log("店铺确认事项：領収書保持不勾选。")
+                continue
+            if required:
+                unknown.append(text.strip().split("\n")[0][:80] or "未知必填")
+        if unknown:
+            preview = " / ".join(unknown[:3])
+            await self.log(
+                f"店铺确认事项有未识别必填，不自动勾选: {preview}",
+                "WARNING",
+            )
+            oid = ""
+            if ctx is not None:
+                order = getattr(ctx, "order_info", None) or getattr(ctx, "order", None) or {}
+                oid = order.get("order_id") or ""
+            if oid and hasattr(self, "add_risk_history_entry"):
+                self.add_risk_history_entry(oid, f"人工处理: 店铺确认事项未识别必填 {preview}")
+            if hasattr(self, "report_missing_yahoo_ui"):
+                await self.report_missing_yahoo_ui(
+                    page, "store_confirm_options", ctx,
+                    extra=f"仅自动勾选缺货说明/购物协议。未识别必填: {preview}",
+                )
+            return {"status": "SKIPPED_STORE_CONFIRM"}
+        if checked == 0:
+            await self.log("店铺确认事项页没有可自动勾选的缺货/协议项。", "WARNING")
+            if hasattr(self, "report_missing_yahoo_ui"):
+                await self.report_missing_yahoo_ui(
+                    page, "store_confirm_options", ctx,
+                    extra="store-options 页没有「同意の上で注文します」且不是缺货/协议文案。",
+                )
+            return {"status": "SKIPPED_STORE_CONFIRM"}
+        save = page.locator(
+            "#confirm a[data-cl-params*='_cl_link:update'], "
+            "#confirm a:has-text('変更する')"
+        )
+        if await save.count() == 0:
+            await self.log("店铺确认事项页找不到「変更する」。", "ERROR")
+            if hasattr(self, "report_missing_yahoo_ui"):
+                await self.report_missing_yahoo_ui(
+                    page, "store_confirm_options", ctx,
+                    extra="store-options 勾选后找不到 #confirm「変更する」。",
+                )
+            return {"status": "SKIPPED_STORE_CONFIRM"}
+        await self.log("店铺确认事项：点击「変更する」回结算页。")
+        try:
+            await save.first.click(timeout=3000)
+        except Exception:
+            await save.first.click(force=True, timeout=3000)
+        try:
+            await self.wait_url(page, r".*/order/review.*", timeout_ms=WAIT_HANG_MS)
+        except Exception:
+            pass
+        if self._is_store_options_url(page.url or ""):
+            await self.log("点「変更する」后仍停在确认事项页。", "ERROR")
+            if hasattr(self, "report_missing_yahoo_ui"):
+                await self.report_missing_yahoo_ui(
+                    page, "store_confirm_options", ctx,
+                    extra="点変更する后未回到 /order/review。",
+                )
+            return {"status": "SKIPPED_STORE_CONFIRM"}
+        return None
+
+    async def step_store_confirm_options(self, ctx):
+        """结算页 #cartopt 有未选项时，进 store-options 勾选缺货说明和协议。"""
+        page = ctx.yahoo_page
+        if page is None:
+            return None
+        try:
+            if page.is_closed():
+                return None
+        except Exception:
+            return None
+        url = page.url or ""
+        if "buy.auctions.yahoo.co.jp" not in url:
+            return None
+        if hasattr(self, "_deny_wrong_yahoo_product"):
+            denied = await self._deny_wrong_yahoo_product(ctx, "店铺确认事项")
+            if denied:
+                return denied
+            page = ctx.yahoo_page
+        on_edit = self._is_store_options_url(page.url or "")
+        needs = on_edit or await self._store_confirm_needs_selection(page)
+        if not needs:
+            return None
+        if not on_edit:
+            opened = await self._open_store_confirm_edit(page)
+            if not opened:
+                await self.log(
+                    "结算页「ストアからの確認事項」仍显示選択してください，但没点到変更。",
+                    "WARNING",
+                )
+                if hasattr(self, "report_missing_yahoo_ui"):
+                    await self.report_missing_yahoo_ui(
+                        page, "store_confirm_options", ctx,
+                        extra="review 上 #cartopt 有未选项，但找不到「変更」。",
+                    )
+                return {"status": "SKIPPED_STORE_CONFIRM"}
+        return await self._fill_store_confirm_options(ctx.yahoo_page, ctx)
 
     def _is_yahoo_account_address_url(self, url):
         u = url or ""
