@@ -130,25 +130,29 @@ class QbtMixin:
         return "qbt.jp" in u and "auction-buy" in u
 
     async def find_backend_tab(self):
-        """优先找未购买列表页；订单卡在详情时不要把 auction-buy 当拉单页。"""
+        """优先找未购买列表页；订单卡在详情时不要把 auction-buy 当拉单页。
+
+        只看 URL，不调 page.title()。卡住的标签上 title() 会无限等，主循环像死了一样。
+        """
         if not self.browser_context:
             return None
         any_qbt = None
-        for page in self.browser_context.pages:
-            url = unquote(page.url or "")
-            title = ""
+        try:
+            pages = list(self.browser_context.pages)
+        except Exception:
+            return None
+        for page in pages:
             try:
-                title = await page.title()
+                if page.is_closed():
+                    continue
+                url = unquote(page.url or "")
             except Exception:
-                title = ""
+                continue
             if "qbt.jp" not in url:
                 continue
             if "get-auction-not-buy-list" in url:
                 return page
-            if any_qbt is None and (
-                "shopAdmin/order" in url
-                or any(k in title for k in ("未购买", "订单列表", "雅虎拍卖"))
-            ):
+            if any_qbt is None and "shopAdmin/order" in url:
                 any_qbt = page
         return any_qbt
 

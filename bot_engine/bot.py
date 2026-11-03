@@ -287,6 +287,7 @@ class YahooAutoBot(
             skip_next_head = False
             while self.is_running:
                 self.ensure_running()
+                await self.log("开始本轮扫描未购买列表...")
                 backend_page = await self.find_backend_tab()
                 if not backend_page:
                     await self.log("未找到后台标签页。尝试打开...", "WARNING")
