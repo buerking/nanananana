@@ -60,3 +60,5 @@ SUCCESS_STATUSES = ("PURCHASED", "TEST_SUCCESS", "WAIT_SHIPPING", "WAIT_SHIPPING
 WAIT_HANG_MS = 5 * 60 * 1000
 # 单次可见点击；隐藏节点不要用 Playwright 默认 30 秒空等。
 WAIT_CLICK_MS = 8000
+# 同一用户+同一卖家暂时只有一单时，等第二单进未购买；从首次出现在未购买起算。
+BUNDLE_HOLD_SECONDS = 30 * 60

@@ -24,6 +24,7 @@ from .flow import OrderContext, deny, run_chain
 # 旧版「購入手続きする」与新版「購入手続きをする」并存。
 # 店铺落札后取引ナビ是 #pap「購入手続きする」→ /order/review（没有「を」）。
 # 可同捆时变成「まとめて購入手続きする」/「単品で購入手続きする」：跳过转人工，两按钮都不点。
+# 个人页「まとめて取引をはじめる」/「単品で取引する」同样跳过，两按钮都不点。
 PURCHASE_PROCEDURE_SELECTORS = (
     "a[href*='buyer/payment/input']",
     "a[href*='/order/review']",
@@ -1208,78 +1209,46 @@ class YahooPurchaseMixin:
             await self.log(f"结算页拍品不是本单 {want}，不领养该标签。", "WARNING")
         return None
 
-    async def _dismiss_bundle_choice_page(self, ctx):
-        """新版取引ナビ会先问まとめて还是单品。
-
-        QBT「拆分」包裹入队后仍走这里：只买当前拍品，点「単品で取引する」，
-        绝不点「まとめて取引をはじめる」。后台同捆 ≠ 雅虎同捆购买。
-        """
-        yahoo_page = ctx.yahoo_page
-        if self._checkout_like_url(yahoo_page.url):
-            return None
-        page_btn = yahoo_page.locator("main button:has-text('単品で取引する'), main a:has-text('単品で取引する')")
-        if await page_btn.count() == 0:
-            page_btn = yahoo_page.locator("button:has-text('単品で取引する'), a:has-text('単品で取引する')")
-        bundle_start = yahoo_page.locator(
-            "a:has-text('まとめて取引をはじめる'), button:has-text('まとめて取引をはじめる')"
-        )
-        bundle_hint = yahoo_page.locator("text=この商品はまとめて取引が可能です")
-        modal_title = yahoo_page.locator("h2:has-text('本当に単品で取引しますか')")
+    async def _personal_bundle_choice_visible(self, page):
+        if page is None:
+            return False
         try:
-            has_single = await page_btn.count() > 0
-            has_bundle_ui = (await bundle_hint.count() > 0) or (await bundle_start.count() > 0)
-            modal_visible = await modal_title.is_visible()
+            if await self.has_visible(page.locator(PERSONAL_BUNDLE_SEL)):
+                return True
+            if await page.locator("text=この商品はまとめて取引が可能です").count() > 0:
+                return True
+            if await page.locator("h2:has-text('本当に単品で取引しますか')").count() > 0:
+                return True
         except Exception:
+            return False
+        return False
+
+    async def _skip_if_personal_bundle_choice(self, ctx):
+        """个人同捆二选一：不点まとめて、也不点単品，转人工。"""
+        page = ctx.yahoo_page
+        if page is None:
             return None
-        if not has_single and not has_bundle_ui and not modal_visible:
+        if not await self._personal_bundle_choice_visible(page):
             return None
-        if not has_single and not modal_visible:
-            await self.log("检测到新版まとめて取引页，但没有「単品で取引する」。转人工。", "ERROR")
-            return {"status": "SKIPPED_COMBINED_SHIPPING"}
-        if not modal_visible:
-            await self.log("检测到新版同捆选择页。点击「単品で取引する」（不申请まとめて取引）。")
-            await page_btn.first.click(force=True)
-            try:
-                await modal_title.wait_for(state="visible", timeout=8000)
-            except Exception:
-                pass
-        if await modal_title.is_visible():
-            await self.log("确认弹窗：本当に単品で取引しますか？ 点击确定。")
-            pages_before = list(yahoo_page.context.pages)
-            clicked_ok = False
-            confirm_btn = yahoo_page.locator("dialog[open]").get_by_role(
-                "button", name="単品で取引する"
+        oid = ctx.order_info.get("order_id") or ctx.order.get("order_id") or ""
+        pid = ctx.order_info.get("product_id") or ctx.order.get("product_id") or ""
+        await self.log(
+            "个人取引ナビ出现「まとめて取引 / 単品で取引する」（可同捆）。"
+            "本单不自动点まとめて或単品，转人工。",
+            "WARNING",
+        )
+        self.add_risk_history_entry(oid, "人工处理: 发现同捆提示")
+        try:
+            self.notify_feishu(
+                f"订单 {oid} / 商品 {pid} 个人取引ナビ出现同捆选择，已跳过转人工。"
             )
-            try:
-                await confirm_btn.click(force=True, timeout=5000)
-                clicked_ok = True
-            except Exception:
-                clicked_ok = await yahoo_page.evaluate(
-                    """() => {
-                        const h2 = [...document.querySelectorAll('h2')]
-                            .find(h => (h.textContent || '').includes('本当に単品で取引しますか'));
-                        const scope = (h2 && (h2.closest('dialog') || h2.closest('section'))) || document;
-                        const ok = [...scope.querySelectorAll('button')]
-                            .find(b => (b.textContent || '').trim() === '単品で取引する');
-                        if (!ok) return false;
-                        ok.click();
-                        return true;
-                    }"""
-                )
-            if not clicked_ok:
-                await self.log("确认弹窗确定按钮未点到。", "ERROR")
-                return {"status": "ERROR", "error": "single_item_modal_click_failed"}
-            await asyncio.sleep(1)
-            new_pages = [p for p in yahoo_page.context.pages if p not in pages_before and not p.is_closed()]
-            if new_pages:
-                ctx.yahoo_page = new_pages[-1]
-                await ctx.yahoo_page.bring_to_front()
-            await self._adopt_checkout_tab(ctx, timeout=WAIT_HANG_MS)
-            denied = await self._deny_wrong_yahoo_product(ctx, "单品确认后")
-            if denied:
-                return denied
-            await self.log(f"单品确认后当前页: {ctx.yahoo_page.url}")
-        return None
+        except Exception:
+            pass
+        return deny("SKIPPED_COMBINED_SHIPPING")
+
+    async def _dismiss_bundle_choice_page(self, ctx):
+        """结算途中若仍停在个人同捆选择页：跳过，不再点「単品で取引する」。"""
+        return await self._skip_if_personal_bundle_choice(ctx)
 
     async def _visible_action(self, page, selector):
         """当前页已经看得见的按钮，不空等。跳过まとめて/単品で購入。"""
@@ -1294,7 +1263,7 @@ class YahooPurchaseMixin:
                 if not await item.is_visible():
                     continue
                 text = " ".join(((await item.inner_text()) or "").split())
-                if "まとめて" in text or "単品で購入" in text:
+                if "まとめて" in text or "単品で購入" in text or "単品で取引" in text:
                     continue
                 return item
             except Exception:
@@ -1484,13 +1453,8 @@ class YahooPurchaseMixin:
             return None
 
         if kind == "personal_bundle":
-            choice = await self._dismiss_bundle_choice_page(ctx)
-            if choice:
-                self.add_risk_history_entry(
-                    ctx.order_info.get("order_id"), "人工处理: 发现同捆提示"
-                )
-                return choice
-            return await self._after_purchase_entry(ctx)
+            skipped = await self._skip_if_personal_bundle_choice(ctx)
+            return skipped or deny("SKIPPED_COMBINED_SHIPPING")
 
         if kind == "personal_nav":
             return await self._open_personal_procedure(ctx)

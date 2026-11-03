@@ -1,9 +1,11 @@
+import datetime
 import re
 from urllib.parse import parse_qs, unquote, urlparse
 
 from playwright.async_api import Page
 
 from .constants import (
+    BUNDLE_HOLD_SECONDS,
     QBT_BROWSER_ACCOUNT,
     RISK_STATUS_SEARCH_URL,
     WAIT_CLICK_MS,
@@ -461,7 +463,19 @@ class QbtMixin:
         - 1 商品 / 1 卖家 / 1 用户
         - N 商品 / 1 用户 / N 卖家，且每个卖家在剩余列表里只出现一次
         同一卖家出现 ≥2 行（2商品1卖家，或 2用户1卖家）一律不买。
+        超20件：同一入库码/用户 且 同一卖家。
+        冷静期：一对一也要等首次出现在未购买满 30 分钟；期内只跳过本轮。
         """
+        unpaid = [
+            it for it in (scanned_items or [])
+            if "待确认" not in str(it.get("status") or "")
+        ]
+        if unpaid and hasattr(self, "note_first_seen_unbought"):
+            self.note_first_seen_unbought(unpaid)
+            self.prune_first_seen_unbought(
+                {str(it.get("order_id") or "") for it in unpaid}
+            )
+
         dropped_color = []
         dropped_pending = []
         remaining = []
@@ -486,16 +500,22 @@ class QbtMixin:
                 "INFO",
             )
 
-        def _bundle_key(item):
+        def _user_key(item):
             return (
                 str(item.get("storage_code") or "").strip()
                 or str(item.get("user_name") or "").strip()
-                or str(item.get("seller_id") or "").strip()
             )
+
+        def _seller_bundle_key(item):
+            user = _user_key(item)
+            seller = str(item.get("seller_id") or "").strip()
+            if not user or not seller:
+                return ""
+            return f"{user}|{seller}"
 
         bundle_counts = {}
         for item in scanned_items:
-            key = _bundle_key(item)
+            key = _seller_bundle_key(item)
             if not key:
                 continue
             bundle_counts[key] = bundle_counts.get(key, 0) + 1
@@ -504,7 +524,7 @@ class QbtMixin:
         if huge_keys:
             kept = []
             for item in remaining:
-                key = _bundle_key(item)
+                key = _seller_bundle_key(item)
                 if key and key in huge_keys:
                     dropped_huge.append(item.get("order_id"))
                     continue
@@ -575,6 +595,34 @@ class QbtMixin:
                 self.notify_feishu(
                     "有订单出价账号无法对应 ad/ym，已跳过: " + ", ".join(new_ids)
                 )
+
+        held = []
+        ready = []
+        now = datetime.datetime.now()
+        hold_sec = BUNDLE_HOLD_SECONDS
+        for item in process_queue:
+            oid = str(item.get("order_id") or "")
+            seen = (
+                self.first_seen_unbought_time(oid)
+                if hasattr(self, "first_seen_unbought_time")
+                else None
+            )
+            if seen is None and hasattr(self, "note_first_seen_unbought"):
+                self.note_first_seen_unbought([item])
+                seen = now
+            elapsed = (now - seen).total_seconds() if seen else 0
+            if elapsed < hold_sec:
+                left = max(1, int(hold_sec - elapsed))
+                held.append(f"{oid}(剩{left}秒)")
+            else:
+                ready.append(item)
+        if held:
+            await self.log(
+                f"同捆冷静期未满，本轮跳过 {len(held)} 笔: {held}",
+                "INFO",
+            )
+        process_queue = ready
+
         stats = getattr(self, "scan_stats", None) or {}
         stats["buyable"] = len(process_queue)
         stats["dropped_color"] = len(dropped_color)

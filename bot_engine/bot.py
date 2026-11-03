@@ -98,6 +98,8 @@ class YahooAutoBot(
         self.seller_blacklist = self.load_seller_blacklist()
         self.WAIT_SHIPPING_QUEUE_FILE = os.path.join(self.BASE_DIR, "wait_shipping_queue.json")
         self.wait_shipping_queue = self.load_wait_shipping_queue()
+        self.FIRST_SEEN_UNBOUGHT_FILE = os.path.join(self.BASE_DIR, "first_seen_unbought.json")
+        self.first_seen_unbought = self.load_first_seen_unbought()
         self.warned_account_orders = set()
         self.load_seller_messages_today()
         self.run_mode = "normal"
@@ -206,13 +208,15 @@ class YahooAutoBot(
         if status == "SKIPPED_NEED_USER_OPTION":
             return "本单自动购买是否成功: 跳过（需建工单联系用户选择款式）"
         if status == "SKIPPED_STORE_CONFIRM":
-            return "本单自动购买是否成功: 跳过（店铺确认事项有未识别必填，需人工勾选）"
+            return "本单自动购买是否成功: 跳过（店铺确认事项有尺码/颜色等必填，已报警并继续下一单）"
         if status == "SKIPPED_NEED_CVV":
             return "本单自动购买是否成功: 跳过（需人工填写信用卡安全码）"
         if status == "SKIPPED_NEED_3DS":
             return "本单自动购买是否成功: 跳过（需人工完成信用卡3DS验证；现网改为一直等待不再跳过）"
         if status == "SKIPPED_NO_PURCHASE_DATA":
             return "本单自动购买是否成功: 跳过（雅虎无购买数据，可能未中标或卖家取消）"
+        if status == "SKIPPED_COMBINED_SHIPPING":
+            return "本单自动购买是否成功: 跳过（雅虎出现多件同捆选择，已转人工）"
         if str(status).startswith("SKIPPED"):
             return f"本单自动购买是否成功: 跳过（{status}）"
         if status == "TEST_SUCCESS":
@@ -247,7 +251,6 @@ class YahooAutoBot(
                 "YAHOO_ID_MISMATCH",
                 "SKIPPED_QBT_ID_MISMATCH",
                 "APPRAISAL_FAIL",
-                "SKIPPED_STORE_CONFIRM",
             ):
                 self.notify_feishu(f"订单 {order_id_str} 需要人工: {status}")
 

@@ -79,7 +79,7 @@ YAHOO_CHECKPOINTS = {
     },
     "personal_purchase_procedure": {
         "page_name": "个人取引ナビ /top 或 /trade/top",
-        "path": "已结束拍品页 #closedNotice「取引ナビ」→ https://contact.auctions.yahoo.co.jp/top?aid={商品ID}（旧版 /trade/top）→ 点「購入手続きをする」→ buyer/payment/input。若 /trade/top 已是「商品の発送連絡をお待ちください」/ stepper お支払い完成・発送連絡待ち / Next progressStatus=buyerPayDoneYahoo，视为已付款，只读运费回填，不报缺「購入手続きをする」",
+        "path": "已结束拍品页 #closedNotice「取引ナビ」→ https://contact.auctions.yahoo.co.jp/top?aid={商品ID}（旧版 /trade/top）→ 点「購入手続きをする」→ buyer/payment/input。若出现「まとめて取引をはじめる」/「単品で取引する」，跳过转人工，两按钮都不点。若 /trade/top 已是「商品の発送連絡をお待ちください」/ stepper お支払い完成・発送連絡待ち / Next progressStatus=buyerPayDoneYahoo，视为已付款，只读运费回填，不报缺「購入手続きをする」",
         "looking_for": "个人卖家「購入手続きをする」（或旧版リンク buyer/payment/input）",
         "selectors": [
             "a[href*='buyer/payment/input']",
@@ -172,7 +172,7 @@ YAHOO_CHECKPOINTS = {
     },
     "store_confirm_options": {
         "page_name": "店铺确认事项",
-        "path": "店铺 /order/review #cartopt「ストアからの確認事項」→「変更」→ /order/change/store-options。仅当文案是缺货说明或购物协议时勾选「同意の上で注文します」，再点 #confirm「変更する」回 review。其他必須不自动勾，飞书转人工。不要点「変更せずに戻る」，不要勾領収書",
+        "path": "店铺 /order/review #cartopt「ストアからの確認事項」→「変更」→ /order/change/store-options。仅当文案是缺货说明或购物协议时勾选「同意の上で注文します」，再点 #confirm「変更する」回 review。尺码/颜色等其他必須飞书报警后立刻跳过本单，不等待人工。不要点「変更せずに戻る」，不要勾領収書",
         "looking_for": "ストアからの確認事項「変更」/ 同意の上で注文します / 変更する",
         "selectors": [
             "#cartopt",

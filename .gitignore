@@ -11,3 +11,4 @@ venv/
 *.log
 risk_history.json
 wait_shipping_queue.json
+first_seen_unbought.json

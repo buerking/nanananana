@@ -241,6 +241,70 @@ class StorageMixin:
             return True
         return False
 
+    def load_first_seen_unbought(self):
+        """未购买列表首次见到某单的时间，用于同捆冷静期。重启后仍有效。"""
+        try:
+            if os.path.exists(self.FIRST_SEEN_UNBOUGHT_FILE):
+                with open(self.FIRST_SEEN_UNBOUGHT_FILE, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, dict):
+                        return data
+        except Exception as e:
+            print(f"Error loading first-seen unbought: {e}")
+        return {}
+
+    def save_first_seen_unbought(self):
+        try:
+            with open(self.FIRST_SEEN_UNBOUGHT_FILE, "w", encoding="utf-8") as f:
+                json.dump(self.first_seen_unbought, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"Error saving first-seen unbought: {e}")
+
+    def note_first_seen_unbought(self, items):
+        """只记第一次出现在未购买（不含待确认）。已有记录不覆盖。"""
+        if not getattr(self, "first_seen_unbought", None):
+            self.first_seen_unbought = {}
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        changed = False
+        for item in items or []:
+            if "待确认" in str(item.get("status") or ""):
+                continue
+            oid = str(item.get("order_id") or "").strip()
+            if not oid or oid in self.first_seen_unbought:
+                continue
+            self.first_seen_unbought[oid] = {
+                "first_seen": now,
+                "seller_id": str(item.get("seller_id") or ""),
+                "storage_code": str(item.get("storage_code") or ""),
+                "user_name": str(item.get("user_name") or ""),
+                "product_id": str(item.get("product_id") or ""),
+            }
+            changed = True
+        if changed:
+            self.save_first_seen_unbought()
+
+    def prune_first_seen_unbought(self, live_ids):
+        live = {str(x or "").strip() for x in (live_ids or []) if str(x or "").strip()}
+        if not live or not getattr(self, "first_seen_unbought", None):
+            return
+        before = len(self.first_seen_unbought)
+        self.first_seen_unbought = {
+            oid: row for oid, row in self.first_seen_unbought.items() if oid in live
+        }
+        if len(self.first_seen_unbought) != before:
+            self.save_first_seen_unbought()
+
+    def first_seen_unbought_time(self, order_id):
+        oid = str(order_id or "").strip()
+        row = (getattr(self, "first_seen_unbought", None) or {}).get(oid) or {}
+        raw = str(row.get("first_seen") or "").strip()
+        if not raw:
+            return None
+        try:
+            return datetime.datetime.strptime(raw, "%Y-%m-%d %H:%M:%S")
+        except Exception:
+            return None
+
     def _walk_trade_message_root(self, obj):
         """在 Next.js 状态树里找到 top.message（含 messages 列表）。"""
         if not isinstance(obj, dict):
