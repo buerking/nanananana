@@ -217,6 +217,8 @@ class YahooAutoBot(
             return "本单自动购买是否成功: 跳过（雅虎无购买数据，可能未中标或卖家取消）"
         if status == "SKIPPED_COMBINED_SHIPPING":
             return "本单自动购买是否成功: 跳过（雅虎出现多件同捆选择，已转人工）"
+        if status == "SKIPPED_QBT_RETRY":
+            return "本单自动购买是否成功: 跳过（QBT 正在换号重试，等出现无可用账号后再买）"
         if str(status).startswith("SKIPPED"):
             return f"本单自动购买是否成功: 跳过（{status}）"
         if status == "TEST_SUCCESS":
@@ -224,8 +226,8 @@ class YahooAutoBot(
         return f"本单自动购买是否成功: 否（{status}）"
 
     async def _record_order_result(self, run_stats, order_id_str, status, test_mode, gated=False):
-        # 列表刷新后暂时找不到「购买」：下一轮再试，不算失败、不飞书要人。
-        if status == "DETAIL_PAGE_ERROR":
+        # 列表刷新后暂时找不到「购买」，或 QBT 仍在换号重试：下一轮再试，不算失败、不飞书要人。
+        if status in ("DETAIL_PAGE_ERROR", "SKIPPED_QBT_RETRY"):
             return
         if status in SUCCESS_STATUSES:
             run_stats["success"] += 1
@@ -362,6 +364,11 @@ class YahooAutoBot(
                             await self.log(
                                 f"订单 {order_id_str} 未点到「购买」，不记已尝试，下一轮再试。"
                             )
+                        elif status == "SKIPPED_QBT_RETRY":
+                            self.attempted_orders.discard(order_id_str)
+                            await self.log(
+                                f"订单 {order_id_str} QBT 仍在换号重试，不记已尝试，下一轮再看备注。"
+                            )
                         await self.log(self._verdict_line(status), "INFO")
                         await self._record_order_result(
                             run_stats, order_id_str, status, test_mode=False, gated=True
@@ -403,6 +410,11 @@ class YahooAutoBot(
                             await self.log(
                                 f"订单 {order_id_str} 未点到「购买」，不记已尝试，下一轮再试。"
                             )
+                        elif status == "SKIPPED_QBT_RETRY":
+                            self.attempted_orders.discard(order_id_str)
+                            await self.log(
+                                f"订单 {order_id_str} QBT 仍在换号重试，不记已尝试，下一轮再看备注。"
+                            )
                         await self._record_order_result(
                             run_stats, order_id_str, status, test_mode, gated=False
                         )
@@ -413,7 +425,8 @@ class YahooAutoBot(
                         run_stats["details"].append(f"[{order_id_str}] Failed ({e})")
                         await self.log(f"Loop error: {e}", "ERROR")
                     backend_page = await self.ensure_backend_not_buy_list(
-                        backend_page, force=(status == "DETAIL_PAGE_ERROR")
+                        backend_page,
+                        force=(status in ("DETAIL_PAGE_ERROR", "SKIPPED_QBT_RETRY")),
                     )
                     if target_order_id:
                         await self.log(f"单单测试结束: {order_id_str}。自动停止。", "INFO")

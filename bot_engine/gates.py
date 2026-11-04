@@ -21,28 +21,52 @@ class GatesMixin:
         )
         return deny("SKIPPED_BLACKLIST")
 
+    async def _collect_backend_remarks(self, page):
+        """详情页所有「备注」列，不只第一行。换号重试和无可用账号常分两行。"""
+        remarks = []
+        remark_tables = await page.locator("table.public_table").all()
+        for r_table in remark_tables:
+            header_cols = await r_table.locator("th").all_text_contents()
+            remark_idx = None
+            for hi, h_text in enumerate(header_cols):
+                if "备注" in h_text:
+                    remark_idx = hi
+                    break
+            if remark_idx is None:
+                continue
+            r_rows = await r_table.locator("tr").all()
+            for r_row in r_rows[1:]:
+                data_cols = r_row.locator("td")
+                if await data_cols.count() > remark_idx:
+                    text = (await data_cols.nth(remark_idx).inner_text()).strip()
+                    if text:
+                        remarks.append(text)
+        return remarks
+
     async def gate_backend_remark(self, ctx):
-        """详情页备注：非白名单则跳过。异常视为非关键，放行。"""
+        """详情页备注：非白名单则跳过。异常视为非关键，放行。
+
+        QBT「换号重试」且还没有「无可用账号」：定时任务还会改出价账号，本程序不买。
+        两句都有：QBT 已穷尽，才由本程序处理一口价。
+        """
         page = ctx.detail_page
         try:
-            remark_tables = await page.locator("table.public_table").all()
-            remark_content = ""
-            for r_table in remark_tables:
-                header_cols = await r_table.locator("th").all_text_contents()
-                remark_idx = None
-                for hi, h_text in enumerate(header_cols):
-                    if "备注" in h_text:
-                        remark_idx = hi
-                        break
-                if remark_idx is None:
-                    continue
-                r_rows = await r_table.locator("tr").all()
-                for r_row in r_rows[1:2]:
-                    data_cols = r_row.locator("td")
-                    if await data_cols.count() > remark_idx:
-                        remark_content = (await data_cols.nth(remark_idx).inner_text()).strip()
+            remarks = await self._collect_backend_remarks(page)
+            remark_content = "\n".join(remarks)
             if not remark_content:
                 return None
+            if "换号重试" in remark_content and "无可用账号" not in remark_content:
+                await self.log(
+                    "QBT 备注有「换号重试」且尚未「无可用账号」，"
+                    "留给系统定时换号，本单不买。",
+                    "WARNING",
+                )
+                return deny("SKIPPED_QBT_RETRY")
+            if "换号重试" in remark_content and "无可用账号" in remark_content:
+                await self.log(
+                    "QBT 备注已同时有「换号重试」和「无可用账号」，"
+                    "系统无法再处理，由本程序买一口价。"
+                )
             is_whitelisted = any(
                 (p in remark_content) or re.search(p, remark_content)
                 for p in self.REMARK_WHITELIST_PATTERNS
