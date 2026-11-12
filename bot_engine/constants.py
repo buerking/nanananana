@@ -20,6 +20,8 @@ DEFAULT_RISK_KEYWORDS = [
     "個人宅配達不可",
     "個人様名義",
     "西濃",
+    # 西濃運輸的品牌名；拍品/结算常只写这个，不含「西濃」二字。
+    "カンガルー便",
 ]
 # 出价账号 → Chrome 目录。ad 用原来的 user_data，ym 用 user_data_ym。QBT 固定开在 ad。
 ACCOUNT_EMAILS = {

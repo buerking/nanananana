@@ -219,6 +219,8 @@ class YahooAutoBot(
             return "本单自动购买是否成功: 跳过（雅虎出现多件同捆选择，已转人工）"
         if status == "SKIPPED_QBT_RETRY":
             return "本单自动购买是否成功: 跳过（QBT 正在换号重试，等出现无可用账号后再买）"
+        if status == "SKIPPED_RISK":
+            return "本单自动购买是否成功: 跳过（命中西濃/カンガルー便等敏感词，已报警）"
         if str(status).startswith("SKIPPED"):
             return f"本单自动购买是否成功: 跳过（{status}）"
         if status == "TEST_SUCCESS":

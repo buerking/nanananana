@@ -54,6 +54,11 @@ class OrderMixin:
 
             await self.step_parse_bound_items(ctx)
 
+            denied = await self.gate_risk_keywords(ctx)
+            if denied:
+                result = denied
+                return result
+
             opened = await self.step_open_yahoo(ctx)
             if opened:
                 result = opened

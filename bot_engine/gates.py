@@ -4,6 +4,7 @@
 """
 import re
 
+from .constants import WAIT_CLICK_MS
 from .flow import deny
 from .qbt import parse_storage_code
 from .ticket import create_work_order
@@ -100,25 +101,59 @@ class GatesMixin:
         )
         return deny("YAHOO_NOT_LOGGED_IN")
 
+    def _find_risk_keyword(self, text):
+        if not text:
+            return ""
+        for keyword in self.RISK_KEYWORDS:
+            if keyword and keyword in text:
+                return keyword
+        return ""
+
+    async def _deny_risk_keyword(self, ctx, matched_keyword, where=""):
+        oid = (
+            (ctx.order or {}).get("order_id")
+            or (getattr(ctx, "order_info", None) or {}).get("order_id")
+            or "Unknown"
+        )
+        pid = (
+            (ctx.order or {}).get("product_id")
+            or (getattr(ctx, "order_info", None) or {}).get("product_id")
+            or ""
+        )
+        where_txt = f"（{where}）" if where else ""
+        await self.log(
+            f"风险检测：发现敏感词 '{matched_keyword}'{where_txt}。跳过订单。",
+            "WARNING",
+        )
+        self.add_risk_history_entry(oid, matched_keyword)
+        self.notify_feishu(
+            f"订单 {oid} / 商品 {pid} 命中风险敏感词「{matched_keyword}」{where_txt}，已跳过不买。"
+        )
+        return deny("SKIPPED_RISK")
+
     async def gate_risk_keywords(self, ctx):
-        page = ctx.yahoo_page
+        """QBT 详情或雅虎页出现西濃/カンガルー便等敏感词：飞书报警并跳过本单。"""
         try:
-            risk_loc = page.locator("dl.Price__delivery, div.Price")
-            try:
-                await risk_loc.first.wait_for(state="visible", timeout=8000)
-            except Exception:
-                pass
-            risk_text = await page.locator("body").inner_text()
-            matched_keyword = ""
-            for keyword in self.RISK_KEYWORDS:
-                if keyword and keyword in risk_text:
-                    matched_keyword = keyword
-                    break
+            yahoo_page = getattr(ctx, "yahoo_page", None)
+            if yahoo_page:
+                risk_loc = yahoo_page.locator("dl.Price__delivery, div.Price")
+                try:
+                    await risk_loc.first.wait_for(state="visible", timeout=8000)
+                except Exception:
+                    pass
+            chunks = []
+            for page in (getattr(ctx, "detail_page", None), yahoo_page):
+                if not page:
+                    continue
+                try:
+                    chunks.append(await page.locator("body").inner_text())
+                except Exception:
+                    continue
+            matched_keyword = self._find_risk_keyword("\n".join(chunks))
             if not matched_keyword:
                 return None
-            await self.log(f"风险检测：发现敏感词 '{matched_keyword}'。跳过订单。", "WARNING")
-            self.add_risk_history_entry(ctx.order.get("order_id", "Unknown"), matched_keyword)
-            return deny("SKIPPED_RISK")
+            where = "雅虎页" if yahoo_page else "QBT 详情"
+            return await self._deny_risk_keyword(ctx, matched_keyword, where)
         except Exception as e:
             await self.log(f"Risk Check Extraction Error: {e}", "DEBUG")
             return None
@@ -136,42 +171,70 @@ class GatesMixin:
             pass
         return False
 
-    async def gate_item_option(self, ctx):
-        """店铺 /order/select-option：规格/颜色必须用户确认，不能自动选。"""
-        page = ctx.yahoo_page
-        url = page.url or ""
-        if "select-option" not in url:
+    async def _item_option_groups(self, page):
+        """规格页每个 fieldset 一组：count=该组 SKU/radio 数量。"""
+        groups = []
+        fieldsets = page.locator("main fieldset")
+        n = await fieldsets.count()
+        if n == 0:
+            fieldsets = page.locator("fieldset")
+            n = await fieldsets.count()
+        for i in range(n):
+            fs = fieldsets.nth(i)
+            legend = ""
             try:
-                await page.wait_for_url(
-                    re.compile(r".*/order/select-option.*"),
-                    timeout=2500,
-                )
-                url = page.url or ""
+                if await fs.locator("legend").count():
+                    legend = " ".join(((await fs.locator("legend").first.inner_text()) or "").split())
             except Exception:
-                pass
-        hinted = "select-option" in (url or "")
-        body = ""
-        if not hinted:
+                legend = ""
+            radios = fs.locator("input[type='radio']")
+            rc = await radios.count()
+            values = []
+            for j in range(rc):
+                val = (await radios.nth(j).get_attribute("value")) or ""
+                if not val:
+                    try:
+                        val = " ".join(((await fs.locator("label").nth(j).inner_text()) or "").split())
+                    except Exception:
+                        val = ""
+                values.append(val)
+            select_n = 0
             try:
-                body = await page.locator("body").inner_text()
+                sel = fs.locator("select")
+                if await sel.count():
+                    select_n = await sel.first.locator("option").count()
             except Exception:
-                body = ""
-            hinted = "商品オプションを選択してください" in body
-        if not hinted:
-            return None
+                select_n = 0
+            groups.append(
+                {
+                    "index": i,
+                    "legend": legend,
+                    "count": max(rc, select_n),
+                    "values": values,
+                }
+            )
+        return groups
+
+    async def _click_select_option_next(self, page):
+        nxt = page.locator(
+            "a[data-cl-params*='_cl_link:next']:has-text('次へ'), "
+            "main a:has-text('次へ'), "
+            "a:has-text('次へ'), "
+            "button:has-text('次へ')"
+        )
+        if hasattr(self, "click_visible") and await self.click_visible(nxt):
+            return True
+        try:
+            if await nxt.count():
+                await nxt.first.click(timeout=WAIT_CLICK_MS, force=True)
+                return True
+        except Exception:
+            pass
+        return False
+
+    async def _deny_need_user_option(self, ctx, choice_txt):
         oid = ctx.order_info.get("order_id") or ctx.order.get("order_id") or ""
         pid = ctx.order_info.get("product_id") or ctx.order.get("product_id") or ""
-        choices = []
-        try:
-            labels = page.locator("main fieldset label, main legend")
-            n = min(await labels.count(), 12)
-            for i in range(n):
-                t = " ".join(((await labels.nth(i).inner_text()) or "").split())
-                if t:
-                    choices.append(t)
-        except Exception:
-            choices = []
-        choice_txt = "、".join(choices[:8]) if choices else "（页上有规格选项）"
         await self.log(
             f"店铺商品需要选择规格/款式，已停止自动购买。请建工单联系用户确认。选项: {choice_txt}",
             "ERROR",
@@ -200,6 +263,71 @@ class GatesMixin:
             f"选项: {choice_txt}"
         )
         return deny("SKIPPED_NEED_USER_OPTION")
+
+    async def gate_item_option(self, ctx):
+        """店铺 /order/select-option：每组只有 1 个 SKU 则点次へ继续；任一组有多个才建工单。"""
+        page = ctx.yahoo_page
+        url = page.url or ""
+        if "select-option" not in url:
+            try:
+                await page.wait_for_url(
+                    re.compile(r".*/order/select-option.*"),
+                    timeout=2500,
+                )
+                url = page.url or ""
+            except Exception:
+                pass
+        hinted = "select-option" in (url or "")
+        body = ""
+        if not hinted:
+            try:
+                body = await page.locator("body").inner_text()
+            except Exception:
+                body = ""
+            hinted = "商品オプションを選択してください" in body
+        if not hinted:
+            return None
+        groups = []
+        try:
+            groups = await self._item_option_groups(page)
+        except Exception as e:
+            await self.log(f"规格页解析异常: {e}", "DEBUG")
+            groups = []
+        summary = "、".join(
+            f"{g.get('legend') or '规格'}={'/'.join(v for v in g.get('values') or [] if v) or g.get('count')}"
+            for g in groups
+        ) or "（页上有规格选项）"
+        all_single = bool(groups) and all(int(g.get("count") or 0) == 1 for g in groups)
+        if all_single:
+            try:
+                fieldsets = page.locator("main fieldset")
+                if await fieldsets.count() == 0:
+                    fieldsets = page.locator("fieldset")
+                for g in groups:
+                    radio = fieldsets.nth(g["index"]).locator("input[type='radio']").first
+                    try:
+                        if await radio.count() and not await radio.is_checked():
+                            await radio.check()
+                    except Exception:
+                        try:
+                            await radio.click(timeout=WAIT_CLICK_MS, force=True)
+                        except Exception:
+                            pass
+                await self.log(f"规格页每组均仅 1 个选项，自动点次へ: {summary}")
+                if await self._click_select_option_next(page):
+                    try:
+                        await page.wait_for_url(
+                            lambda u: "select-option" not in (u or ""),
+                            timeout=WAIT_CLICK_MS * 2,
+                        )
+                    except Exception:
+                        pass
+                    if "select-option" not in (page.url or ""):
+                        return None
+            except Exception as e:
+                await self.log(f"规格页自动次へ异常: {e}", "WARNING")
+            await self.log("规格页每组仅 1 项，但未能离开选项页，转人工。", "WARNING")
+        return await self._deny_need_user_option(ctx, summary)
 
     async def gate_combined_shipping(self, ctx):
         """雅虎同捆弹窗：发现则转人工。超时视为没有弹窗。"""

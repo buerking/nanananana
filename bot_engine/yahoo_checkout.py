@@ -1110,6 +1110,9 @@ class YahooCheckoutMixin:
                 if shown_text.strip():
                     compact = " ".join(shown_text.split())
                     await self.log(f"店铺配送为卖家指定展示项（无 radio）: {compact[:100]}")
+                    risky = self._find_risk_keyword(shown_text)
+                    if risky:
+                        return await self._deny_risk_keyword(ctx, risky, "结算页配送方法")
                     if any(k in shown_text for k in pickup_keywords) and not any(
                         k in shown_text
                         for k in ("ゆうパック", "ゆうパケット", "宅配", "宅急便", "ネコポス", "追跡")
@@ -1127,6 +1130,11 @@ class YahooCheckoutMixin:
                         extra="店铺结算页没有配送 radio，也没有「配送方法」展示块。",
                     )
             if candidates:
+                risky = self._find_risk_keyword(
+                    "\n".join(c.get("text") or "" for c in candidates)
+                )
+                if risky:
+                    return await self._deny_risk_keyword(ctx, risky, "结算页配送选项")
                 best = sorted(candidates, key=lambda c: (0 if c["trackable"] else 1, c["price"]))[0]
                 await best["element"].evaluate(
                     "el => { el.checked = true; el.click(); "
@@ -1138,8 +1146,9 @@ class YahooCheckoutMixin:
                     if new_fee:
                         ctx.shipping_known = True
                 await self.log(f"店铺：选择最佳配送: {best['text']} ({best['price']}円)")
-            if not getattr(ctx, "shipping_known", False):
-                await self._capture_displayed_amounts(ctx)
+            captured = await self._capture_displayed_amounts(ctx)
+            if captured:
+                return captured
         except Exception as e:
             await self.log(f"店铺配送选择异常: {e}", "DEBUG")
         return None
@@ -1165,6 +1174,9 @@ class YahooCheckoutMixin:
                 text = await page.locator("main").inner_text()
             except Exception:
                 text = ""
+        risky = self._find_risk_keyword(text)
+        if risky:
+            return await self._deny_risk_keyword(ctx, risky, "结算页配送展示")
         if not getattr(ctx, "shipping_known", False):
             ship_m = re.search(r"全国一律[^\d]{0,16}([\d,]+)\s*円", text)
             if not ship_m:
