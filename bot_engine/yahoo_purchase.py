@@ -1136,12 +1136,18 @@ class YahooPurchaseMixin:
 
         status_url = YAHOO_STORE_TRADE_STATUS_URL.format(product_id=product_id)
         await self.log(f"尝试店铺取引ナビ: {status_url}")
+        # 拍品页没有明确店铺入口时只是试探：不能空等 5 分钟，更不能让 goto 把整轮卡死。
+        probe_ms = WAIT_CLICK_MS * 2
         try:
-            await yahoo_page.goto(status_url, wait_until="commit", timeout=WAIT_HANG_MS)
+            await asyncio.wait_for(
+                yahoo_page.goto(status_url, wait_until="commit", timeout=probe_ms),
+                timeout=probe_ms / 1000.0 + 2,
+            )
         except Exception as e:
             await self.log(f"店铺取引ナビ打开超时: {e}", "WARNING")
             return False
-        outcome = await self._wait_store_status_outcome(yahoo_page)
+        await self.log(f"店铺取引ナビ已打开: {yahoo_page.url}")
+        outcome = await self._wait_store_status_outcome(yahoo_page, timeout_ms=probe_ms)
         if outcome == "no_purchase_data":
             return await self._skip_no_purchase_data(ctx)
         if outcome == "already_purchased":
