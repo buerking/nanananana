@@ -24388,3 +24388,96 @@ Call log:
 [16:25:09] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
 [16:25:09] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
 [16:25:09] [INFO] 切换雅虎浏览器 [ym] 打开: https://auctions.yahoo.co.jp/jp/auction/g1251664574
+[16:25:13] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/g1251664574
+[16:25:21] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=734744&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=21'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=734744&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=21 >> a:has-text('购买') >> nth=0">, 'seller_id': 'BUz3EU4tFwSWGoUDZJ9cQ6CKNDX12', 'order_id': '734744', 'product_id': 'g1251664574', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': 'OHAET', 'bid_email': 'ymzwj19369@yahoo.co.jp', 'account_key': 'ym', 'user_name': 'OHAET', 'has_color': False, 'qbt_page_text': 'nannan\n设置\n 代拍订单\n 雅虎店铺\n 雅虎拍卖订单\n 煤炉拍卖订单\n 代拍退款\n 代拍包裹\n 代拍包裹入库记录\n 代拍下单记录\n 代拍配置\n商城配置\n \n商户中心\n \n雅虎代拍\n \n商品管理\n \n订单管理\n \n用户管理\n \n其他\n \n简体中文\n繁体中文\n日语\n \n 退出\n雅虎拍卖未购买订单\n购买\nID\t用户信息/入库码\t出价账户\t选项信息\t商品名称\t商品ID\t商品分类\t出价金额\t日本消费税\t鉴定服务费用\t总金额\t鉴定服务\t问题单\t用户支付方式\n734744\tZY25031803472942/OHAET\n\tymzwj19369@yahoo.co.jp\t普通快递（有快递单号可追踪）；\t【C0517】Nintendo Switch Lite ポケットモンスター ディアルガ・パルキア 限定 HDH-001 本体\tg1251664574\t\n\t2655\t0\t0\t2655\t不支持\t否\t支付宝扫码付\n下单总金额：\n2655\n日元 （\n1\n件商品）\n日本国内运费：\n是否到付：\n是 \n不是\n选择信用卡:\n8655\n森0891\n便利店支付\nmas9816\n代拍8062\n银行汇款\nGMO1805\nGMO4290\n1004\nGMO2801\n日元\n设为默认卡\n添加操作日志：\n确定 等待商家确认运费 取消商家确认运费', 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[16:25:22] [INFO] 正在检测同捆发货弹窗...
+[16:25:23] [INFO] 拍品页运费 (全国一律): 950円  送料 全国一律950円（税込） 配送方法 ゆうメール
+[16:25:23] [INFO] 拍品页取引ナビ指向个人 contact.auctions，不走店铺 /order/status。
+[16:25:23] [INFO] 已结束拍品页 #closedNotice「取引ナビ」。
+[16:25:23] [INFO] 打开取引ナビ: https://contact.auctions.yahoo.co.jp/top?aid=g1251664574&seller_auc_user_id=BUz3EU4tFwSWGoUDZJ9cQ6CKNDX12&buyer_auc_user_id=7z817W1WHHcnEfzJU5E6VVssuzreo&oid=79139594-5294747817-5129668
+[16:25:38] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/trade/top?aid=g1251664574&oid=79139594-5294747817-5129668
+[16:25:38] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[16:25:38] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[16:25:38] [INFO] 卖家留言提取: 订单 734744 (个人) 无留言
+[16:25:42] [INFO] 取引后续：当前是个人取引ナビ https://contact.auctions.yahoo.co.jp/trade/top?aid=g1251664574&oid=79139594-5294747817-5129668
+[16:25:50] [WARNING] 个人取引ナビ没有「購入手続きをする」。URL=https://contact.auctions.yahoo.co.jp/trade/top?aid=g1251664574&oid=79139594-5294747817-5129668
+[16:25:50] [ERROR] 【雅虎页面改版】约定元素没找到，需要人工对照
+检查点: personal_purchase_procedure
+页面: 个人取引ナビ /top 或 /trade/top
+路径: 已结束拍品页 #closedNotice「取引ナビ」→ https://contact.auctions.yahoo.co.jp/top?aid={商品ID}（旧版 /trade/top）→ 点「購入手続きをする」→ buyer/payment/input。若出现「まとめて取引をはじめる」/「単品で取引する」，跳过转人工，两按钮都不点。若 /trade/top 已是「商品の発送連絡をお待ちください」/ stepper お支払い完成・発送連絡待ち / Next progressStatus=buyerPayDoneYahoo，视为已付款，只读运费回填，不报缺「購入手続きをする」
+找不到: 个人卖家「購入手続きをする」（或旧版リンク buyer/payment/input）
+旧选择器:
+  - a[href*='buyer/payment/input']
+  - a:has-text('購入手続きをする')
+  - button:has-text('購入手続きをする')
+  - a:has-text('購入手続きする')
+  - button:has-text('購入手続きする')
+当前URL: https://contact.auctions.yahoo.co.jp/trade/top?aid=g1251664574&oid=79139594-5294747817-5129668
+订单: 734744 / 商品: g1251664574
+说明: 已判定个人取引ナビ，页上没有「購入手続きをする」。
+结算区可见按钮/标题: 取引ナビ マイオク ガイド、マイオク、ガイド、取引、メッセージ、情報、取引の流れについて、商品情報 商品ページ、商品ページ、199、受け取り連絡をする、何かお困りですか？
+事故目录: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1794817550_734744_personal_purchase_procedure
+截图: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1794817550_734744_personal_purchase_procedure\screenshot.png
+活DOM: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1794817550_734744_personal_purchase_procedure\dom.outer.html
+对照表: C:\Users\admin\PycharmProjects\WelcomeScreen\nanananana\error_snapshots\incidents\1794817550_734744_personal_purchase_procedure\meta.json
+请在本仓库对 Cursor 说：修最新失败
+（不要在群里回复 class，由 Cursor 读 DOM 修改选择器）
+[16:25:54] [INFO] 取引后续：当前是个人取引ナビ https://contact.auctions.yahoo.co.jp/trade/top?aid=g1251664574&oid=79139594-5294747817-5129668
+[16:26:02] [WARNING] 个人取引ナビ没有「購入手続きをする」。URL=https://contact.auctions.yahoo.co.jp/trade/top?aid=g1251664574&oid=79139594-5294747817-5129668
+[16:26:02] [DEBUG] 雅虎改版对照已报过，跳过重复: personal_purchase_procedure:/trade/top
+[16:26:04] [INFO] 仍在取引ナビ，不是结算表单页，不空等お届け先。
+[16:26:08] [INFO] 本单 734744 填写室号 34744室
+[16:26:08] [WARNING] 当前不是结算地址页，跳过改室号，避免空等お届け先。
+[16:26:08] [INFO] 后台购买页 URL 核验通过: id=734744
+[16:26:08] [INFO] Stage 4: Backfilling Data to Backend...
+[16:26:08] [INFO] 本单有问题 (ADDRESS_FAIL)，保留标签供人工审查。
+[16:26:08] [INFO] 打开后台未购买列表: https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list
+[16:26:20] [INFO] 开始处理订单 734584 (卖家: 85BPvrDEK5ADb6uttSGMPXV3RUxxz, 账号: ym, 用户: FWNZM)
+[16:26:20] [INFO] 已触发后台购买: 734584 via gobuy key_a734584
+[16:26:29] [INFO] 已进入后台详情页
+[16:26:29] [INFO] 后台购买页 URL 核验通过: id=734584
+[16:26:29] [INFO] 入库码: FWNZM
+[16:26:29] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[16:26:29] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[16:26:29] [INFO] 切换雅虎浏览器 [ym] 打开: https://auctions.yahoo.co.jp/jp/auction/t1251840481
+[16:26:35] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/t1251840481
+[16:26:43] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=734744&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=34'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=734744&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=34 >> a:has-text('购买') >> nth=0">, 'seller_id': '85BPvrDEK5ADb6uttSGMPXV3RUxxz', 'order_id': '734584', 'product_id': 't1251840481', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': 'FWNZM', 'bid_email': 'ymzwj19369@yahoo.co.jp', 'account_key': 'ym', 'user_name': 'FWNZM', 'has_color': False, 'qbt_page_text': 'nannan\n设置\n 代拍订单\n 雅虎店铺\n 雅虎拍卖订单\n 煤炉拍卖订单\n 代拍退款\n 代拍包裹\n 代拍包裹入库记录\n 代拍下单记录\n 代拍配置\n商城配置\n \n商户中心\n \n雅虎代拍\n \n商品管理\n \n订单管理\n \n用户管理\n \n其他\n \n简体中文\n繁体中文\n日语\n \n 退出\n雅虎拍卖未购买订单\n购买\nID\t用户信息/入库码\t出价账户\t选项信息\t商品名称\t商品ID\t商品分类\t出价金额\t日本消费税\t鉴定服务费用\t总金额\t鉴定服务\t问题单\t用户支付方式\n734584\tZY26033110405481/FWNZM\n\tymzwj19369@yahoo.co.jp\t普通快递（有快递单号可追踪）；\t美品\u3000DURA-ACE デュラエース\u3000クイックリリース\u3000100mm 130mm 前後セット\tt1251840481\t\n\t4400\t0\t0\t4400\t不支持\t否\t微信\n下单总金额：\n4400\n日元 （\n1\n件商品）\n日本国内运费：\n是否到付：\n是 \n不是\n选择信用卡:\n8655\n森0891\n便利店支付\nmas9816\n代拍8062\n银行汇款\nGMO1805\nGMO4290\n1004\nGMO2801\n日元\n设为默认卡\n添加操作日志：\n确定 等待商家确认运费 取消商家确认运费', 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[16:26:43] [INFO] 正在检测同捆发货弹窗...
+[16:26:44] [INFO] 拍品页运费 (送料無料): 0円  送料 無料 配送方法 おてがる配送ネコポス 配送方法一覧
+[16:26:44] [INFO] 尝试店铺取引ナビ: https://buy.auctions.yahoo.co.jp/order/status?auctionId=t1251840481
+[16:31:47] [INFO] 店铺 /order/status 没有「購入手続きする」，改走个人取引ナビ。
+[16:31:47] [INFO] 直接打开取引ナビ: https://contact.auctions.yahoo.co.jp/top?aid=t1251840481
+[16:31:53] [INFO] 点击后当前页: https://contact.auctions.yahoo.co.jp/top?aid=t1251840481
+[16:31:53] [DEBUG] 个人留言: 找到 0 个 dl 消息块
+[16:31:53] [DEBUG] 个人留言: 未找到 #messagelist 区域
+[16:31:53] [INFO] 卖家留言提取: 订单 734584 (个人) 无留言
+[16:31:56] [INFO] 取引后续：当前是个人取引ナビ https://contact.auctions.yahoo.co.jp/top?aid=t1251840481
+[16:32:12] [INFO] /top 未出水合正文，改开 /trade/top: https://contact.auctions.yahoo.co.jp/trade/top?aid=t1251840481
+[16:32:22] [WARNING] 个人取引ナビ没有「購入手続きをする」。URL=https://contact.auctions.yahoo.co.jp/trade/top?aid=t1251840481
+[16:32:22] [DEBUG] 雅虎改版对照已报过，跳过重复: personal_purchase_procedure:/trade/top
+[16:32:25] [INFO] 取引后续：当前是个人取引ナビ https://contact.auctions.yahoo.co.jp/trade/top?aid=t1251840481
+[16:32:33] [WARNING] 个人取引ナビ没有「購入手続きをする」。URL=https://contact.auctions.yahoo.co.jp/trade/top?aid=t1251840481
+[16:32:33] [DEBUG] 雅虎改版对照已报过，跳过重复: personal_purchase_procedure:/trade/top
+[16:32:36] [INFO] 仍在取引ナビ，不是结算表单页，不空等お届け先。
+[16:32:39] [INFO] 本单 734584 填写室号 34584室
+[16:32:39] [WARNING] 当前不是结算地址页，跳过改室号，避免空等お届け先。
+[16:32:39] [INFO] 后台购买页 URL 核验通过: id=734584
+[16:32:39] [INFO] Stage 4: Backfilling Data to Backend...
+[16:32:39] [INFO] 本单有问题 (ADDRESS_FAIL)，保留标签供人工审查。
+[16:32:39] [INFO] 打开后台未购买列表: https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list
+[16:32:42] [INFO] 开始处理订单 734348 (卖家: FTQojGpqPKDauxBG1xXMAPTzxFxyC, 账号: ym, 用户: LPSEH)
+[16:32:42] [INFO] 已触发后台购买: 734348 via gobuy key_a734348
+[16:32:43] [INFO] 已进入后台详情页
+[16:32:43] [INFO] 后台购买页 URL 核验通过: id=734348
+[16:32:43] [INFO] QBT 备注已同时有「换号重试」和「无可用账号」，系统无法再处理，由本程序买一口价。
+[16:32:43] [INFO] 备注符合白名单规则，已忽略并继续: ymzwj19369@yahoo.co.jp一口价购买失败，无可用账号 确认订单失败: 認証に失敗しました。 (code: user_authentication_skip_error)
+adxez09955@yahoo.co.jp一口价购买失败，换号重试 确认订单失败: 認証に失敗しました。 (code: user_authentication_skip_error)
+[16:32:43] [INFO] 入库码: LPSEH
+[16:32:43] [INFO] 后台详情解析: 共 1 个商品, 总金额 0
+[16:32:43] [INFO] 从详情页更新选项信息: 普通快递（有快递单号可追踪）
+[16:32:43] [INFO] 切换雅虎浏览器 [ym] 打开: https://auctions.yahoo.co.jp/jp/auction/u1240187252
+[16:32:44] [INFO] 已打开雅虎页面: https://auctions.yahoo.co.jp/jp/auction/u1240187252
+[16:32:52] [INFO] 阶段3: 执行雅虎下单逻辑 (V6.0)... 订单信息: {'row': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=734744&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector='table.public_table tr >> nth=56'>, 'purchase_link': <Locator frame=<Frame name= url='https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id=734744&form=eyJpZCI6bnVsbCwidXNlcl9uYW1lIjpudWxsLCJnb29kc19pZCI6bnVsbCwiZ29vZHNfbmFtZSI6bnVsbCwicHVyY2hhc2Vfb3JkZXJfbm8iOm51bGwsImV4cHJlc3Nfbm8iOm51bGwsInNob3Bfb3JkZXJfbm8iOm51bGwsInN0YXR1cyI6LTEsImlzX2luX3N0b3JhZ2UiOi0xLCJpc19idXkiOi0xLCJpc19wYWlkIjoxLCJpc19kZWxldGUiOjAsInN0b3JhZ2VfY29kZSI6bnVsbCwiaXNfc3BlY2lhbCI6LTEsInlhaG9vX3N0b3JlX25hbWUiOiIiLCJhcHBvaW50bWVudF9vZmZlcl9zdGF0dXMiOjEsIm9fcHJvYmxlbV9vcmRlciI6MCwiYXV0b19uYW1lIjpudWxsLCJpc19zdXJlIjpudWxsLCJyc19wdXJjaGFzZV9vcmRlcl9ubyI6bnVsbCwic3RvcmVfaWQiOi0xLCJzb3J0X3R5cGUiOlswXX0='> selector="table.public_table tr >> nth=56 >> a:has-text('购买') >> nth=0">, 'seller_id': 'FTQojGpqPKDauxBG1xXMAPTzxFxyC', 'order_id': '734348', 'product_id': 'u1240187252', 'status': '未购买', 'has_split_btn': False, 'option_info': '普通快递（有快递单号可追踪）', 'storage_code': 'LPSEH', 'bid_email': 'ymzwj19369@yahoo.co.jp', 'account_key': 'ym', 'user_name': 'LPSEH', 'has_color': False, 'qbt_page_text': 'nannan\n设置\n 代拍订单\n 雅虎店铺\n 雅虎拍卖订单\n 煤炉拍卖订单\n 代拍退款\n 代拍包裹\n 代拍包裹入库记录\n 代拍下单记录\n 代拍配置\n商城配置\n \n商户中心\n \n雅虎代拍\n \n商品管理\n \n订单管理\n \n用户管理\n \n其他\n \n简体中文\n繁体中文\n日语\n \n 退出\n雅虎拍卖未购买订单\n购买\nID\t用户信息/入库码\t出价账户\t选项信息\t商品名称\t商品ID\t商品分类\t出价金额\t日本消费税\t鉴定服务费用\t总金额\t鉴定服务\t问题单\t用户支付方式\n734348\tZY23111912089727/LPSEH\n\tymzwj19369@yahoo.co.jp\t平信快递（无快递单号，出现丢件等问题需用户自行承担损失）；\tわらしのはなし/わだちず(著者)\tu1240187252\t\n\t330\t10\t0\t363\t不支持\t否\t支付宝扫码付\n下单总金额：\n363\n日元 （\n1\n件商品）\n日本国内运费：\n是否到付：\n是 \n不是\n选择信用卡:\n8655\n森0891\n便利店支付\nmas9816\n代拍8062\n银行汇款\nGMO1805\nGMO4290\n1004\nGMO2801\n日元\n设为默认卡\n添加操作日志：\n确定 等待商家确认运费 取消商家确认运费\nID\t商品ID\t备注\t添加时间\n734348\tu1240187252\tymzwj19369@yahoo.co.jp一口价购买失败，无可用账号 确认订单失败: 認証に失敗しました。 (code: user_authentication_skip_error)\t2026-11-15 11:54:50\n734348\tu1240187252\tadxez09955@yahoo.co.jp一口价购买失败，换号重试 确认订单失败: 認証に失敗しました。 (code: user_authentication_skip_error)\t2026-11-15 11:54:17', 'bound_items': [{'product_id': '', 'price': 0}], 'backend_total': 0}
+[16:32:52] [INFO] 正在检测同捆发货弹窗...
+[16:32:53] [WARNING] 拍品页 #itemPostage 未能解析金额: 送料 送料情報の取得に失敗しました
+[16:32:53] [INFO] 已结束店铺拍品，打开店铺取引ナビ: https://buy.auctions.yahoo.co.jp/order/status?auctionId=u1240187252
