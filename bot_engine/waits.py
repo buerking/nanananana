@@ -185,6 +185,12 @@ class WaitMixin:
         """系统错误页刷新即可跳过，不要当失败停住。"""
         if page is None:
             return False
+        if hasattr(self, "_page_has_trade_cancelled"):
+            try:
+                if await self._page_has_trade_cancelled(page):
+                    return False
+            except Exception:
+                pass
         if hasattr(self, "_page_has_no_purchase_data"):
             try:
                 if await self._page_has_no_purchase_data(page):

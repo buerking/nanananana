@@ -74,6 +74,7 @@ TRADE_KIND_LABEL = {
     "login": "登录页",
     "id_mismatch": "账号不符",
     "no_purchase_data": "无购买数据",
+    "trade_cancelled": "卖家取消中标",
     "already_purchased": "已购买完成",
     "wait_shipping_submitted": "待卖家报运费",
     "wait_shipping_form": "待运费地址页",
@@ -90,6 +91,13 @@ NO_PURCHASE_DATA_HINTS = (
     "購入データが確認できません",
     "システムに情報の反映が遅延している可能性があります",
 )
+# 个人取引ナビ：卖家删除落札者 / 交易中止。不要当缺「購入手続きをする」改版。
+TRADE_CANCELLED_HINTS = (
+    "落札者削除されたため、取引はできません",
+    "取引が中止されました",
+)
+TRADE_CANCELLED_NEXT_NOTICES = frozenset({"buyerDeleted"})
+TRADE_CANCELLED_NEXT_STEPS = frozenset({"cancelled"})
 
 # 购买手续跳转：人手点很快；goto 等 domcontentloaded 会整页卡死。
 # 卡住时最多等 5 分钟，刷新后再判断是否已到下一页，否则再点，最多 3 次。
@@ -228,6 +236,8 @@ class YahooPurchaseMixin:
                     if denied:
                         return denied
                     page = inner_ctx.yahoo_page
+                    if await self._page_has_trade_cancelled(page):
+                        return await self._skip_trade_cancelled(inner_ctx)
                     if await self._page_has_no_purchase_data(page):
                         return await self._skip_no_purchase_data(inner_ctx)
                     done = await self._finish_if_already_done(inner_ctx)
@@ -560,6 +570,8 @@ class YahooPurchaseMixin:
                 return True
             if await self._page_shows_already_purchased(page):
                 return True
+            if await self._page_has_trade_cancelled(page):
+                return True
             if await self._page_has_no_purchase_data(page):
                 return True
             if await self._visible_action(page, PERSONAL_PROCEDURE_SEL):
@@ -728,6 +740,90 @@ class YahooPurchaseMixin:
             "ページ：購入データが確認できません"
         )
         return deny("SKIPPED_NO_PURCHASE_DATA")
+
+    async def _page_has_trade_cancelled(self, page):
+        """取引ナビ红字「落札者削除されたため、取引はできません」或弹窗「取引が中止されました」。"""
+        if page is None:
+            return False
+        try:
+            if page.is_closed():
+                return False
+        except Exception:
+            return False
+        try:
+            loc = page.locator(
+                "text=落札者削除されたため、取引はできません, "
+                "text=取引が中止されました"
+            )
+            if await self.has_visible(loc):
+                return True
+        except Exception:
+            pass
+        try:
+            next_data = await self._read_next_data(page)
+        except Exception:
+            next_data = None
+        if next_data and self._next_data_says_trade_cancelled(next_data):
+            return True
+        try:
+            body = await page.locator("main, body").first.inner_text()
+        except Exception:
+            return False
+        return any(h in (body or "") for h in TRADE_CANCELLED_HINTS)
+
+    def _next_data_says_trade_cancelled(self, data):
+        if not isinstance(data, dict):
+            return False
+        stack = [data]
+        seen = 0
+        while stack and seen < 80:
+            cur = stack.pop()
+            seen += 1
+            if not isinstance(cur, dict):
+                continue
+            for item in cur.get("notice") or []:
+                if isinstance(item, dict) and str(item.get("type") or "") in TRADE_CANCELLED_NEXT_NOTICES:
+                    return True
+            ts = cur.get("tradeStep")
+            if isinstance(ts, dict) and str(ts.get("current") or "") in TRADE_CANCELLED_NEXT_STEPS:
+                return True
+            action = cur.get("action")
+            if isinstance(action, dict) and action.get("tradeCanceled"):
+                return True
+            for key in ("props", "pageProps", "initialState", "initialProps", "top"):
+                if isinstance(cur.get(key), dict):
+                    stack.append(cur[key])
+        return False
+
+    async def _skip_trade_cancelled(self, ctx):
+        page = ctx.yahoo_page if ctx else None
+        oid = ""
+        pid = ""
+        acc = ""
+        if ctx:
+            oid = str(ctx.order.get("order_id") or ctx.order_info.get("order_id") or "")
+            pid = str(ctx.order.get("product_id") or ctx.order_info.get("product_id") or "")
+            acc = str(ctx.order.get("account_key") or ctx.order_info.get("account_key") or "")
+        url = ""
+        try:
+            url = (page.url if page else "") or ""
+        except Exception:
+            url = ""
+        await self.log(
+            f"卖家已取消中标（落札者削除），无法交易。订单 {oid} 商品 {pid} URL={url}",
+            "WARNING",
+        )
+        is_new = True
+        if oid and hasattr(self, "add_risk_history_entry"):
+            is_new = self.add_risk_history_entry(oid, "跳过: 卖家取消中标（落札者削除）")
+        if is_new:
+            self.notify_feishu(
+                f"订单 {oid} 跳过：卖家已取消中标（落札者削除），无法交易\n"
+                f"商品 {pid} 账号 {acc}\n"
+                "ページ：落札者削除されたため、取引はできません\n"
+                "弹窗：取引が中止されました / お支払い代金は、全額返金されます"
+            )
+        return deny("SKIPPED_TRADE_CANCELLED")
 
     def _personal_trade_progress(self, data):
         status = ""
@@ -918,6 +1014,8 @@ class YahooPurchaseMixin:
         return None
 
     async def _store_status_page_outcome(self, page):
+        if await self._page_has_trade_cancelled(page):
+            return "trade_cancelled"
         if await self._page_has_no_purchase_data(page):
             return "no_purchase_data"
         if await self._page_shows_already_purchased(page):
@@ -934,6 +1032,9 @@ class YahooPurchaseMixin:
         found = {"v": ""}
 
         async def done():
+            if await self._page_has_trade_cancelled(page):
+                found["v"] = "trade_cancelled"
+                return True
             if await self._page_has_no_purchase_data(page):
                 found["v"] = "no_purchase_data"
                 return True
@@ -1070,6 +1171,8 @@ class YahooPurchaseMixin:
             ctx.is_store = True
             ctx.is_personal = False
             outcome = await self._wait_store_status_outcome(yahoo_page)
+            if outcome == "trade_cancelled":
+                return await self._skip_trade_cancelled(ctx)
             if outcome == "no_purchase_data":
                 return await self._skip_no_purchase_data(ctx)
             if outcome == "already_purchased":
@@ -1114,6 +1217,8 @@ class YahooPurchaseMixin:
             if "/order/review" in (yahoo_page.url or "") or "/order/change" in (yahoo_page.url or ""):
                 return True
             outcome = await self._wait_store_status_outcome(yahoo_page)
+            if outcome == "trade_cancelled":
+                return await self._skip_trade_cancelled(ctx)
             if outcome == "no_purchase_data":
                 return await self._skip_no_purchase_data(ctx)
             if outcome == "already_purchased":
@@ -1148,6 +1253,8 @@ class YahooPurchaseMixin:
             return False
         await self.log(f"店铺取引ナビ已打开: {yahoo_page.url}")
         outcome = await self._wait_store_status_outcome(yahoo_page, timeout_ms=probe_ms)
+        if outcome == "trade_cancelled":
+            return await self._skip_trade_cancelled(ctx)
         if outcome == "no_purchase_data":
             return await self._skip_no_purchase_data(ctx)
         if outcome == "already_purchased":
@@ -1285,6 +1392,8 @@ class YahooPurchaseMixin:
             return "login"
         if await self._page_has_yahoo_id_mismatch(page):
             return "id_mismatch"
+        if await self._page_has_trade_cancelled(page):
+            return "trade_cancelled"
         if await self._page_has_no_purchase_data(page):
             return "no_purchase_data"
         if await self._page_shows_already_purchased(page):
@@ -1346,6 +1455,8 @@ class YahooPurchaseMixin:
     async def _open_personal_procedure(self, ctx):
         page = ctx.yahoo_page
         await self._wait_personal_nav_ready(page)
+        if await self._page_has_trade_cancelled(page):
+            return await self._skip_trade_cancelled(ctx)
         done = await self._finish_if_already_done(ctx)
         if done:
             return done
@@ -1355,6 +1466,7 @@ class YahooPurchaseMixin:
             and "/trade/top" not in url
             and not await self._visible_action(page, PERSONAL_PROCEDURE_SEL)
             and not await self._page_shows_wait_shipping_submitted(page)
+            and not await self._page_has_trade_cancelled(page)
             and not await self._page_has_no_purchase_data(page)
         ):
             product_id = (self._product_id(ctx) or "").strip()
@@ -1369,6 +1481,8 @@ class YahooPurchaseMixin:
                 done = await self._finish_if_already_done(ctx)
                 if done:
                     return done
+                if await self._page_has_trade_cancelled(page):
+                    return await self._skip_trade_cancelled(ctx)
         link = await self._visible_action(page, PERSONAL_PROCEDURE_SEL)
         if link is None:
             btn = page.locator(PERSONAL_PROCEDURE_SEL)
@@ -1378,6 +1492,8 @@ class YahooPurchaseMixin:
             done = await self._finish_if_already_done(ctx)
             if done:
                 return done
+            if await self._page_has_trade_cancelled(page):
+                return await self._skip_trade_cancelled(ctx)
             if await self._page_has_no_purchase_data(page):
                 return await self._skip_no_purchase_data(ctx)
             await self.log(
@@ -1419,6 +1535,9 @@ class YahooPurchaseMixin:
 
         if kind == "no_purchase_data":
             return await self._skip_no_purchase_data(ctx)
+
+        if kind == "trade_cancelled":
+            return await self._skip_trade_cancelled(ctx)
 
         if kind == "already_purchased":
             return await self._finish_already_purchased(ctx)

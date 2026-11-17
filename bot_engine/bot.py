@@ -215,6 +215,8 @@ class YahooAutoBot(
             return "本单自动购买是否成功: 跳过（需人工完成信用卡3DS验证；现网改为一直等待不再跳过）"
         if status == "SKIPPED_NO_PURCHASE_DATA":
             return "本单自动购买是否成功: 跳过（雅虎无购买数据，可能未中标或卖家取消）"
+        if status == "SKIPPED_TRADE_CANCELLED":
+            return "本单自动购买是否成功: 跳过（卖家已取消中标/落札者削除，无法交易）"
         if status == "SKIPPED_COMBINED_SHIPPING":
             return "本单自动购买是否成功: 跳过（雅虎出现多件同捆选择，已转人工）"
         if status == "SKIPPED_QBT_RETRY":
@@ -375,7 +377,11 @@ class YahooAutoBot(
                         await self._record_order_result(
                             run_stats, order_id_str, status, test_mode=False, gated=True
                         )
-                        if status in ("SKIPPED_NEED_CVV", "SKIPPED_NO_PURCHASE_DATA"):
+                        if status in (
+                            "SKIPPED_NEED_CVV",
+                            "SKIPPED_NO_PURCHASE_DATA",
+                            "SKIPPED_TRADE_CANCELLED",
+                        ):
                             await self.log("本单已跳过，进入下一单确认。")
                             continue
                     except BotStopped:

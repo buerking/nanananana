@@ -79,7 +79,7 @@ YAHOO_CHECKPOINTS = {
     },
     "personal_purchase_procedure": {
         "page_name": "个人取引ナビ /top 或 /trade/top",
-        "path": "已结束拍品页 #closedNotice「取引ナビ」→ https://contact.auctions.yahoo.co.jp/top?aid={商品ID}（旧版 /trade/top）→ 点「購入手続きをする」→ buyer/payment/input。若出现「まとめて取引をはじめる」/「単品で取引する」，跳过转人工，两按钮都不点。若 /trade/top 已是「商品の発送連絡をお待ちください」/ stepper お支払い完成・発送連絡待ち / Next progressStatus=buyerPayDoneYahoo，视为已付款，只读运费回填，不报缺「購入手続きをする」",
+        "path": "已结束拍品页 #closedNotice「取引ナビ」→ https://contact.auctions.yahoo.co.jp/top?aid={商品ID}（旧版 /trade/top）→ 点「購入手続きをする」→ buyer/payment/input。若出现「まとめて取引をはじめる」/「単品で取引する」，跳过转人工，两按钮都不点。若 /trade/top 已是「商品の発送連絡をお待ちください」/ stepper お支払い完成・発送連絡待ち / Next progressStatus=buyerPayDoneYahoo，视为已付款，只读运费回填，不报缺「購入手続きをする」。若红字「落札者削除されたため、取引はできません」或弹窗「取引が中止されました」，按卖家取消中标飞书跳过，不报改版",
         "looking_for": "个人卖家「購入手続きをする」（或旧版リンク buyer/payment/input）",
         "selectors": [
             "a[href*='buyer/payment/input']",
@@ -121,6 +121,17 @@ YAHOO_CHECKPOINTS = {
             "text=購入データが確認できません",
             "text=システムに情報の反映が遅延している可能性があります",
             "a:has-text('商品詳細に戻る')",
+        ],
+    },
+    "trade_cancelled": {
+        "page_name": "卖家取消中标（落札者削除）",
+        "path": "个人 /trade/top 红字「落札者削除されたため、取引はできません」，或弹窗「取引が中止されました」。卖家已取消中标，飞书单独提醒后跳过，不要当改版缺「購入手続きをする」",
+        "looking_for": "落札者削除されたため、取引はできません / 取引が中止されました",
+        "selectors": [
+            "text=落札者削除されたため、取引はできません",
+            "text=取引が中止されました",
+            "text=お支払い代金は、全額返金されます",
+            "dialog button:has-text('閉じる')",
         ],
     },
     "checkout_address_form": {
