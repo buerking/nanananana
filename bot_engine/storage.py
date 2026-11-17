@@ -74,7 +74,7 @@ class StorageMixin:
     def add_risk_history_entry(self, order_id, reason):
         for entry in self.blocked_risk_orders:
             if entry.get("order_id") == str(order_id) and entry.get("reason") == reason:
-                return
+                return False
         entry = {
             "order_id": str(order_id),
             "reason": reason,
@@ -83,6 +83,7 @@ class StorageMixin:
         }
         self.blocked_risk_orders.insert(0, entry)
         self.save_risk_history()
+        return True
 
     def delete_risk_history_entry(self, order_id):
         """Deletes a risk history entry by Order ID"""

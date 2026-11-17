@@ -125,34 +125,69 @@ class GatesMixin:
             f"风险检测：发现敏感词 '{matched_keyword}'{where_txt}。跳过订单。",
             "WARNING",
         )
-        self.add_risk_history_entry(oid, matched_keyword)
-        self.notify_feishu(
-            f"订单 {oid} / 商品 {pid} 命中风险敏感词「{matched_keyword}」{where_txt}，已跳过不买。"
-        )
+        is_new = self.add_risk_history_entry(oid, matched_keyword)
+        if is_new:
+            self.notify_feishu(
+                f"订单 {oid} / 商品 {pid} 命中风险敏感词「{matched_keyword}」{where_txt}，已跳过不买。"
+            )
         return deny("SKIPPED_RISK")
 
-    async def gate_risk_keywords(self, ctx):
-        """QBT 详情或雅虎页出现西濃/カンガルー便等敏感词：飞书报警并跳过本单。"""
+    async def _locator_texts(self, page, selectors, per_sel=3):
+        chunks = []
+        for sel in selectors:
+            loc = page.locator(sel)
+            try:
+                n = min(await loc.count(), per_sel)
+            except Exception:
+                continue
+            for i in range(n):
+                try:
+                    text = " ".join(((await loc.nth(i).inner_text()) or "").split())
+                except Exception:
+                    continue
+                if text:
+                    chunks.append(text)
+        return chunks
+
+    async def _yahoo_listing_risk_text(self, page):
+        """只读本商品标题/送料/商品信息/说明，不含「見た目が似ている商品」等推荐。"""
         try:
+            await page.locator("#itemTitle, #itemPostage, #description").first.wait_for(
+                state="visible", timeout=8000
+            )
+        except Exception:
+            pass
+        return await self._locator_texts(
+            page,
+            (
+                "#itemTitle",
+                "#itemPostage",
+                "#itemInfo",
+                "#description",
+            ),
+        )
+
+    async def gate_risk_keywords(self, ctx):
+        """本商品标题/送料/说明或 QBT 本单表出现西濃/カンガルー便等：飞书报警并跳过。
+
+        不扫雅虎整页，避免「見た目が似ている商品」推荐标题误伤。
+        """
+        try:
+            chunks = []
             yahoo_page = getattr(ctx, "yahoo_page", None)
             if yahoo_page:
-                risk_loc = yahoo_page.locator("dl.Price__delivery, div.Price")
-                try:
-                    await risk_loc.first.wait_for(state="visible", timeout=8000)
-                except Exception:
-                    pass
-            chunks = []
-            for page in (getattr(ctx, "detail_page", None), yahoo_page):
-                if not page:
-                    continue
-                try:
-                    chunks.append(await page.locator("body").inner_text())
-                except Exception:
-                    continue
+                chunks.extend(await self._yahoo_listing_risk_text(yahoo_page))
+            detail_page = getattr(ctx, "detail_page", None)
+            if detail_page:
+                chunks.extend(
+                    await self._locator_texts(
+                        detail_page, ("table.public_table:has(th:has-text('商品名称'))",)
+                    )
+                )
             matched_keyword = self._find_risk_keyword("\n".join(chunks))
             if not matched_keyword:
                 return None
-            where = "雅虎页" if yahoo_page else "QBT 详情"
+            where = "雅虎本商品" if yahoo_page else "QBT 详情"
             return await self._deny_risk_keyword(ctx, matched_keyword, where)
         except Exception as e:
             await self.log(f"Risk Check Extraction Error: {e}", "DEBUG")
