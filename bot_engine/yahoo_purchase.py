@@ -2421,8 +2421,60 @@ class YahooPurchaseMixin:
             pass
         return page.locator("body").first
 
+    async def _open_receipt_info_page(self, ctx):
+        """增值服务截图：单独打开个人「情報」或店铺支付页，不依赖购买成功时停在哪一页。"""
+        page = ctx.yahoo_page if ctx else None
+        if page is None:
+            return False
+        try:
+            if page.is_closed():
+                return False
+        except Exception:
+            return False
+        self._remember_yahoo_trade_ids(ctx)
+        target = self._order_detail_url(ctx)
+        kind = self._order_detail_kind(ctx)
+        if not target:
+            await self.log("拼不出情報/支付页 URL，无法截打码图。", "WARNING")
+            return False
+        cur = page.url or ""
+        if not self._already_on_order_detail(cur, ctx):
+            await self.log(
+                f"增值服务截图：打开{'店铺支付' if kind == 'store' else '个人情報'}页 {target}"
+            )
+            try:
+                await page.goto(target, wait_until="commit", timeout=WAIT_HANG_MS)
+            except Exception as e:
+                await self.log(f"打开情報/支付页超时: {e}", "WARNING")
+            try:
+                await page.wait_for_load_state("domcontentloaded", timeout=WAIT_HANG_MS)
+            except Exception:
+                pass
+        await self._dismiss_trade_modals(page)
+        if kind == "store":
+            await self._expand_store_order_detail(page)
+            await self.wait_visible(
+                page.locator(
+                    "h3:has-text('ストアへのお支払い金額'), #dtlinfo, "
+                    "text=ストアへのお支払い金額"
+                ),
+                timeout_ms=WAIT_CLICK_MS * 2,
+            )
+        else:
+            await self.wait_visible(
+                page.locator("h1:has-text('取引ナビ'), button:has-text('情報')"),
+                timeout_ms=WAIT_CLICK_MS * 2,
+            )
+            await self._open_personal_info_tab(page)
+            await self.wait_visible(
+                page.locator("table:has-text('お支払い情報'), text=お支払い情報"),
+                timeout_ms=WAIT_CLICK_MS * 2,
+            )
+        await asyncio.sleep(0.5)
+        return True
+
     async def _capture_receipt_screenshot(self, ctx):
-        """情報页打码后截商品+支付，供 QBT 增值服务飞书核对。"""
+        """先打开情報/支付页，打码后截商品+支付。"""
         page = ctx.yahoo_page if ctx else None
         if page is None:
             return ""
@@ -2431,6 +2483,10 @@ class YahooPurchaseMixin:
                 return ""
         except Exception:
             return ""
+        opened = await self._open_receipt_info_page(ctx)
+        if not opened:
+            return ""
+        page = ctx.yahoo_page
         is_store = bool(getattr(ctx, "is_store", False)) or self._is_store_status_url(
             page.url or ""
         )
@@ -2459,7 +2515,7 @@ class YahooPurchaseMixin:
                 await target.scroll_into_view_if_needed()
             except Exception:
                 pass
-            await target.screenshot(path=path, type="png")
+            await target.screenshot(path=path)
             ctx.receipt_shot_path = path
             await self.log(f"已截取打码支付情报: {path}")
             return path
@@ -2654,10 +2710,6 @@ class YahooPurchaseMixin:
             else:
                 await self.log("订单详情页未读到送料，QBT 运费请人工核对。", "WARNING")
         await self._log_order_fee_banner(ctx, kind, page.url or target, amounts)
-        try:
-            await self._capture_receipt_screenshot(ctx)
-        except Exception as e:
-            await self.log(f"支付情报截图异常: {e}", "DEBUG")
 
     async def step_click_pay(self, ctx):
         yahoo_page = ctx.yahoo_page

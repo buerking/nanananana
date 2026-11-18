@@ -1,5 +1,6 @@
 """阶段2：打开后台详情 / 雅虎页。纯判断走 Gate，动作走这里。"""
 import asyncio
+import os
 import re
 
 from playwright.async_api import Page
@@ -88,6 +89,7 @@ class OrderMixin:
                     )
                 else:
                     result = self._attach_order_ids(result, ctx.order)
+                    result = await self._ensure_receipt_shot(ctx, result)
                     await self.backfill_order(
                         ctx.detail_page, result, ctx.backend_total, test_mode
                     )
@@ -117,6 +119,32 @@ class OrderMixin:
                 payload[key] = src.get(key) or ""
         if not payload.get("receipt_shot_path"):
             payload["receipt_shot_path"] = src.get("receipt_shot_path") or ""
+        return payload
+
+    async def _ensure_receipt_shot(self, ctx, result):
+        """仅当 QBT 有「上传订单截图」时，单独打开雅虎情報/支付页打码截图。"""
+        payload = dict(result or {})
+        qbt = getattr(ctx, "detail_page", None)
+        needs = False
+        try:
+            needs = await self._qbt_needs_value_added(qbt)
+        except Exception:
+            needs = False
+        if not needs:
+            return payload
+        await self.log("QBT 需要上传订单截图，单独打开雅虎情報/支付页截打码图。")
+        if not hasattr(self, "_capture_receipt_screenshot"):
+            return payload
+        try:
+            path = await self._capture_receipt_screenshot(ctx)
+        except Exception as e:
+            await self.log(f"增值服务打码截图失败: {e}", "WARNING")
+            path = ""
+        if path:
+            payload["receipt_shot_path"] = path
+            ctx.receipt_shot_path = path
+        else:
+            await self.log("增值服务未能截到打码图，飞书先发文字。", "WARNING")
         return payload
 
     async def process_wait_freight_queue(self, backend_page, test_mode=True, run_stats=None):
@@ -219,6 +247,7 @@ class OrderMixin:
                         "ERROR",
                     )
                     return pinned, backend_page
+                result = await self._ensure_receipt_shot(ctx, result)
                 filled = await self.backfill_order(
                     ctx.detail_page, result, ctx.backend_total, test_mode
                 )

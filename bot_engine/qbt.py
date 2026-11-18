@@ -10,6 +10,7 @@ from .constants import (
     RISK_STATUS_SEARCH_URL,
     WAIT_CLICK_MS,
 )
+from .feishu import last_detail
 
 _CF_EMAIL_RE = re.compile(r"[\w.+-]+@yahoo\.co\.jp", re.I)
 _STORAGE_FROM_ZY_RE = re.compile(r"ZY\d+\s*/\s*([A-Za-z0-9]{5,6})", re.I)
@@ -681,6 +682,10 @@ class QbtMixin:
             is_new = self.add_risk_history_entry(oid, "人工处理: 需完成增值服务（上传订单截图）")
         if is_new:
             shot = str(info.get("receipt_shot_path") or "")
+            if shot:
+                await self.log(f"增值服务飞书附图: {shot}")
+            else:
+                await self.log("增值服务没有打码截图，飞书先发文字。", "WARNING")
             self.notify_feishu(
                 f"订单 {oid} / 商品 {pid} 需要人工完成增值服务\n"
                 f"账号 {acc}\n"
@@ -689,6 +694,9 @@ class QbtMixin:
                 at_all=True,
                 image_path=shot,
             )
+            detail = last_detail()
+            if detail:
+                await self.log(f"飞书发图结果: {detail}")
         return "need_value_added"
 
     async def backfill_order(self, backend_page: Page, yahoo_result, backend_total=0, test_mode=True):

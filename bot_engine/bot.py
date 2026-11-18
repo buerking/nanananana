@@ -14,7 +14,7 @@ from .constants import (
     REMARK_WHITELIST_PATTERNS,
     SUCCESS_STATUSES,
 )
-from .feishu import send_feishu_alert, send_feishu_text
+from .feishu import last_detail, send_feishu_alert, send_feishu_text
 from .exceptions import BotStopped
 from .gates import GatesMixin
 from .logging_utils import LoggingMixin
@@ -113,10 +113,13 @@ class YahooAutoBot(
         try:
             if image_path:
                 send_feishu_alert(text, at_all=at_all, image_path=image_path)
+                detail = last_detail()
+                if detail:
+                    print(f"[feishu] {detail}")
             else:
                 send_feishu_text(text, at_all=at_all)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[feishu] notify failed: {e}")
 
     def ensure_running(self):
         """Checks if bot should continue running, else raises BotStopped"""
