@@ -649,6 +649,48 @@ class QbtMixin:
         )
         return process_queue
 
+    async def _qbt_needs_value_added(self, page):
+        """QBT 购买页出现「上传订单截图」= 要人工做增值服务，不能自动点确定。"""
+        if page is None:
+            return False
+        try:
+            if page.is_closed():
+                return False
+        except Exception:
+            return False
+        try:
+            loc = page.locator("text=上传订单截图")
+            return bool(await loc.count())
+        except Exception:
+            return False
+
+    async def _skip_qbt_value_added(self, page, yahoo_result):
+        info = yahoo_result or {}
+        oid = str(info.get("order_id") or "Unknown")
+        pid = str(info.get("product_id") or "")
+        acc = str(info.get("account_key") or info.get("bid_email") or "")
+        if hasattr(self, "screenshot_pending_orders"):
+            self.screenshot_pending_orders.add(oid)
+        await self.log(
+            f"订单 {oid} 购买页有「上传订单截图」，需人工完成增值服务。已回填运费，不点确定。",
+            "WARNING",
+        )
+        await self.trigger_sound("attention")
+        is_new = True
+        if oid and hasattr(self, "add_risk_history_entry"):
+            is_new = self.add_risk_history_entry(oid, "人工处理: 需完成增值服务（上传订单截图）")
+        if is_new:
+            shot = str(info.get("receipt_shot_path") or "")
+            self.notify_feishu(
+                f"订单 {oid} / 商品 {pid} 需要人工完成增值服务\n"
+                f"账号 {acc}\n"
+                "QBT 购买页出现「上传订单截图」。雅虎侧已处理，运费已回填，未点「确定」。\n"
+                "请核对下面打码截图（仅商品信息+支付情报），确认无误后人工完成后台。",
+                at_all=True,
+                image_path=shot,
+            )
+        return "need_value_added"
+
     async def backfill_order(self, backend_page: Page, yahoo_result, backend_total=0, test_mode=True):
         await self.log("Stage 4: Backfilling Data to Backend...")
         if not yahoo_result:
@@ -720,13 +762,6 @@ class QbtMixin:
                 except Exception:
                     pass
 
-            if await backend_page.locator("text=上传订单截图").count():
-                oid = yahoo_result.get("order_id") or "Unknown"
-                self.screenshot_pending_orders.add(str(oid))
-                await self.log(f"警告: 订单 {oid} 需要手动上传截图！请人工处理。", "WARNING")
-                await self.trigger_sound("attention")
-                self.notify_feishu(f"订单 {oid} 需要手动上传截图，请人工处理。")
-
             seller_id = yahoo_result.get("seller_id") or ""
             if seller_id in self.FORCE_SHIPPING_WARNING_SELLERS or yahoo_result.get("shipping_warning"):
                 await self.log(f"特殊店铺 {seller_id} -> 强制添加运费变更备注")
@@ -737,6 +772,10 @@ class QbtMixin:
                     await self.log("回填：已在操作日志中添加运费变更提示。")
                 else:
                     await self.log("回填警告：未找到 '操作日志' 输入框 (textarea.log_content)。", "WARNING")
+
+            if await self._qbt_needs_value_added(backend_page):
+                await self._skip_qbt_value_added(backend_page, yahoo_result)
+                return "need_value_added"
 
             confirm_btn = backend_page.locator("button.sure-but-btn, button[onclick='sureClick()']")
             if test_mode:

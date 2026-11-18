@@ -14,7 +14,7 @@ from .constants import (
     REMARK_WHITELIST_PATTERNS,
     SUCCESS_STATUSES,
 )
-from .feishu import send_feishu_text
+from .feishu import send_feishu_alert, send_feishu_text
 from .exceptions import BotStopped
 from .gates import GatesMixin
 from .logging_utils import LoggingMixin
@@ -109,9 +109,12 @@ class YahooAutoBot(
         self.confirm_action = None
         self.confirm_event = asyncio.Event()
 
-    def notify_feishu(self, text):
+    def notify_feishu(self, text, at_all=False, image_path=""):
         try:
-            send_feishu_text(text)
+            if image_path:
+                send_feishu_alert(text, at_all=at_all, image_path=image_path)
+            else:
+                send_feishu_text(text, at_all=at_all)
         except Exception:
             pass
 
@@ -217,6 +220,8 @@ class YahooAutoBot(
             return "本单自动购买是否成功: 跳过（雅虎无购买数据，可能未中标或卖家取消）"
         if status == "SKIPPED_TRADE_CANCELLED":
             return "本单自动购买是否成功: 跳过（卖家已取消中标/落札者削除，无法交易）"
+        if status == "SKIPPED_NEED_VALUE_ADDED":
+            return "本单自动购买是否成功: 雅虎已买，QBT 需人工完成增值服务（上传订单截图）"
         if status == "SKIPPED_COMBINED_SHIPPING":
             return "本单自动购买是否成功: 跳过（雅虎出现多件同捆选择，已转人工）"
         if status == "SKIPPED_QBT_RETRY":

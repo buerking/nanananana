@@ -1,4 +1,5 @@
 # 与原 bot_engine.YahooAutoBot 类常量一致，集中方便改 CVV/卡/白名单。
+import os
 DEFAULT_CVV = "059"
 DEFAULT_CARD_ID = "23"
 FORCE_SHIPPING_WARNING_SELLERS = ["82meTj3FgR5hnjCcmaDn6vbxatPWC"]
@@ -34,10 +35,17 @@ CHROME_CDP_PORTS = {
     "ym": 9223,
 }
 QBT_BROWSER_ACCOUNT = "ad"
-# 可用环境变量 FEISHU_WEBHOOK 覆盖。当前仓库原先没有任何飞书调用。
+# 可用环境变量 FEISHU_WEBHOOK / FEISHU_APP_ID / FEISHU_APP_SECRET 覆盖。
 FEISHU_WEBHOOK = (
-    "https://open.feishu.cn/open-apis/bot/v2/hook/0698f195-67e8-4359-b3dc-cd947782d2b4"
+    os.environ.get("FEISHU_WEBHOOK")
+    or "https://open.feishu.cn/open-apis/bot/v2/hook/0698f195-67e8-4359-b3dc-cd947782d2b4"
 )
+FEISHU_APP_ID = os.environ.get("FEISHU_APP_ID") or "cli_aaf6bb056339dcbd"
+FEISHU_APP_SECRET = os.environ.get("FEISHU_APP_SECRET") or "3EEGI9iEUti7cbbtm6ZGWbscZZoLCSzR"
+FEISHU_IMAGE_HOST = (
+    "https://softbank.jpgoodbuy.com/common_upload.php?act=post_document_flow"
+)
+FEISHU_IMAGE_FOLDER = "/upload/daiGouImage"
 BACKEND_URL = "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/get-auction-not-buy-list"
 QBT_AUCTION_BUY_URL = (
     "https://www.qbt.jp/yii/web/index.php?r=shopAdmin/order/auction-buy&id={order_id}"

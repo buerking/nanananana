@@ -3,7 +3,9 @@
 同捆校验、待运费地址是主流程上的分支，不是另一套产品。
 """
 import asyncio
+import datetime
 import json
+import os
 import re
 from urllib.parse import parse_qs, urlparse
 
@@ -975,6 +977,7 @@ class YahooPurchaseMixin:
             "seller_id": order.get("seller_id") or "",
             "user_name": order.get("user_name") or "",
             "storage_code": order.get("storage_code") or "",
+            "receipt_shot_path": getattr(ctx, "receipt_shot_path", "") or "",
         }
 
     async def _finish_already_purchased(self, ctx):
@@ -2335,6 +2338,137 @@ class YahooPurchaseMixin:
             except Exception:
                 pass
 
+    async def _dismiss_trade_modals(self, page):
+        loc = page.locator(
+            "dialog[open] button:has-text('閉じる'), "
+            "#modalArea button:has-text('閉じる')"
+        )
+        try:
+            if await loc.count() and await loc.first.is_visible():
+                await loc.first.click()
+                await asyncio.sleep(0.3)
+        except Exception:
+            pass
+
+    async def _mask_receipt_privacy_sections(self, page):
+        """情報页只留商品+支付，打码地址/落札者/出品者/同捆。"""
+        try:
+            await page.evaluate(
+                """() => {
+                  const MASK = ['お届け情報','落札者情報','出品者情報','まとめて取引情報','お届け先','お届け先住所'];
+                  const KEEP = ['お支払い情報','ストアへのお支払い金額','お支払い金額'];
+                  const headerOf = (el) => {
+                    const node = el.querySelector('thead, h2, h3, h4, caption, th, dt');
+                    return ((node && node.textContent) || '').replace(/\\s+/g, ' ').trim();
+                  };
+                  const cover = (el) => {
+                    if (!el || el.dataset.yabMasked) return;
+                    el.dataset.yabMasked = '1';
+                    const cs = getComputedStyle(el);
+                    if (cs.position === 'static') el.style.position = 'relative';
+                    const ov = document.createElement('div');
+                    ov.setAttribute('data-yab-mask', '1');
+                    ov.style.cssText = 'position:absolute;inset:0;background:#111;z-index:2147483646;border-radius:4px;';
+                    el.appendChild(ov);
+                  };
+                  const hitMask = (text) => MASK.some((k) => (text || '').includes(k));
+                  const hitKeep = (text) => KEEP.some((k) => (text || '').includes(k));
+                  for (const el of document.querySelectorAll('table')) {
+                    const header = headerOf(el);
+                    if (hitMask(header) && !hitKeep(header)) cover(el);
+                  }
+                  for (const el of document.querySelectorAll('section, article, dl')) {
+                    if (hitKeep(el.innerText || '')) continue;
+                    const header = headerOf(el);
+                    if (hitMask(header)) cover(el);
+                  }
+                }"""
+            )
+        except Exception:
+            pass
+
+    async def _unmask_receipt_privacy_sections(self, page):
+        try:
+            await page.evaluate(
+                """() => {
+                  document.querySelectorAll('[data-yab-mask]').forEach((n) => n.remove());
+                  document.querySelectorAll('[data-yab-masked]').forEach((n) => {
+                    n.removeAttribute('data-yab-masked');
+                  });
+                }"""
+            )
+        except Exception:
+            pass
+
+    async def _receipt_shot_target(self, page, is_store):
+        if is_store:
+            for sel in (
+                "section:has(h3:has-text('ストアへのお支払い金額'))",
+                "section:has-text('ストアへのお支払い金額')",
+                "#dtlinfo",
+            ):
+                loc = page.locator(sel)
+                try:
+                    if await loc.count() and await loc.first.is_visible():
+                        return loc.first
+                except Exception:
+                    continue
+        loc = page.locator("main")
+        try:
+            if await loc.count():
+                return loc.first
+        except Exception:
+            pass
+        return page.locator("body").first
+
+    async def _capture_receipt_screenshot(self, ctx):
+        """情報页打码后截商品+支付，供 QBT 增值服务飞书核对。"""
+        page = ctx.yahoo_page if ctx else None
+        if page is None:
+            return ""
+        try:
+            if page.is_closed():
+                return ""
+        except Exception:
+            return ""
+        is_store = bool(getattr(ctx, "is_store", False)) or self._is_store_status_url(
+            page.url or ""
+        )
+        await self._dismiss_trade_modals(page)
+        if is_store:
+            await self._expand_store_order_detail(page)
+        else:
+            await self._open_personal_info_tab(page)
+        await asyncio.sleep(0.4)
+        await self._mask_receipt_privacy_sections(page)
+        order = (ctx.order_info if ctx else None) or (ctx.order if ctx else None) or {}
+        oid = str(order.get("order_id") or "unknown")
+        pid = str(order.get("product_id") or "item")
+        folder = os.path.join(getattr(self, "LOGS_DIR", ".") or ".", "receipts")
+        try:
+            os.makedirs(folder, exist_ok=True)
+        except Exception:
+            pass
+        path = os.path.join(
+            folder,
+            f"{oid}_{pid}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png",
+        )
+        try:
+            target = await self._receipt_shot_target(page, is_store)
+            try:
+                await target.scroll_into_view_if_needed()
+            except Exception:
+                pass
+            await target.screenshot(path=path, type="png")
+            ctx.receipt_shot_path = path
+            await self.log(f"已截取打码支付情报: {path}")
+            return path
+        except Exception as e:
+            await self.log(f"打码截图失败: {e}", "WARNING")
+            return ""
+        finally:
+            await self._unmask_receipt_privacy_sections(page)
+
     async def _read_next_data(self, page):
         loc = page.locator("#__NEXT_DATA__")
         try:
@@ -2520,6 +2654,10 @@ class YahooPurchaseMixin:
             else:
                 await self.log("订单详情页未读到送料，QBT 运费请人工核对。", "WARNING")
         await self._log_order_fee_banner(ctx, kind, page.url or target, amounts)
+        try:
+            await self._capture_receipt_screenshot(ctx)
+        except Exception as e:
+            await self.log(f"支付情报截图异常: {e}", "DEBUG")
 
     async def step_click_pay(self, ctx):
         yahoo_page = ctx.yahoo_page
@@ -2832,6 +2970,7 @@ class YahooPurchaseMixin:
             "total": ctx.yahoo_total,
             "is_cod": ctx.early_cod,
             "shipping_warning": ctx.early_cod,
+            "receipt_shot_path": getattr(ctx, "receipt_shot_path", "") or "",
         }
         if ctx.is_wait_for_shipping:
             if ctx.test_mode:

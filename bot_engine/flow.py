@@ -39,6 +39,7 @@ class OrderContext:
     yahoo_pages_before: list = field(default_factory=list)
     backfill_blocked: bool = False
     suffix_confirmed_for_pay: bool = False
+    receipt_shot_path: str = ""
 
     @property
     def order_id(self):

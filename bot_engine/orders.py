@@ -115,6 +115,8 @@ class OrderMixin:
         ):
             if not payload.get(key):
                 payload[key] = src.get(key) or ""
+        if not payload.get("receipt_shot_path"):
+            payload["receipt_shot_path"] = src.get("receipt_shot_path") or ""
         return payload
 
     async def process_wait_freight_queue(self, backend_page, test_mode=True, run_stats=None):
@@ -217,13 +219,19 @@ class OrderMixin:
                         "ERROR",
                     )
                     return pinned, backend_page
-                await self.backfill_order(
+                filled = await self.backfill_order(
                     ctx.detail_page, result, ctx.backend_total, test_mode
                 )
                 self.remove_wait_shipping(oid)
-                await self.log(
-                    f"待运费队列: {oid} 已回填运费 {result.get('shipping')} 并点确定。"
-                )
+                if filled == "need_value_added":
+                    await self.log(
+                        f"待运费队列: {oid} 已回填运费 {result.get('shipping')}，"
+                        "有「上传订单截图」，未点确定，转人工增值服务。"
+                    )
+                else:
+                    await self.log(
+                        f"待运费队列: {oid} 已回填运费 {result.get('shipping')} 并点确定。"
+                    )
                 return result, backend_page
             self.touch_wait_shipping(oid)
             return result, backend_page
