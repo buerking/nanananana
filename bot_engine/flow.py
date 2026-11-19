@@ -40,6 +40,7 @@ class OrderContext:
     backfill_blocked: bool = False
     suffix_confirmed_for_pay: bool = False
     receipt_shot_path: str = ""
+    from_wait_freight: bool = False
 
     @property
     def order_id(self):

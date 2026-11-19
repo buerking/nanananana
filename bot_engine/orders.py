@@ -12,6 +12,7 @@ from .constants import (
     WAIT_CLICK_MS,
     YAHOO_AUCTION_URL,
     YAHOO_HOME_URL,
+    YAHOO_TRADE_NAV_URL,
 )
 from .exceptions import BotStopped
 from .flow import OrderContext, run_chain
@@ -198,17 +199,25 @@ class OrderMixin:
             "storage_code": str(item.get("storage_code") or ""),
             "status": "未购买待确认",
             "option_info": "普通快递（有快递单号可追踪）",
+            "from_wait_freight": True,
         }
-        ctx = OrderContext(order=order, backend_page=backend_page, test_mode=test_mode)
+        ctx = OrderContext(
+            order=order,
+            backend_page=backend_page,
+            test_mode=test_mode,
+            from_wait_freight=True,
+        )
         result = None
         oid = order["order_id"]
         try:
             if not oid:
-                return {"status": "DETAIL_PAGE_ERROR"}, backend_page
+                result = {"status": "DETAIL_PAGE_ERROR"}
+                return result, backend_page
             if not order.get("product_id"):
                 await self.log(f"待运费队列 {oid} 没有商品ID，跳过。", "WARNING")
                 self.touch_wait_shipping(oid)
-                return {"status": "PRODUCT_LINK_NOT_FOUND"}, backend_page
+                result = {"status": "PRODUCT_LINK_NOT_FOUND"}
+                return result, backend_page
             buy_url = QBT_AUCTION_BUY_URL.format(order_id=oid)
             await backend_page.goto(buy_url, wait_until="domcontentloaded", timeout=30000)
             ctx.detail_page = backend_page
@@ -216,18 +225,20 @@ class OrderMixin:
             pinned = await self.ensure_qbt_detail_is_this_order(ctx)
             if pinned:
                 self.touch_wait_shipping(oid)
-                return pinned, backend_page
+                result = pinned
+                return result, backend_page
             await self.step_parse_bound_items(ctx)
             opened = await self.step_open_yahoo(ctx)
             if opened:
                 self.touch_wait_shipping(oid)
-                return opened, backend_page
-            denied = await run_chain(
-                [self.gate_yahoo_login, self.gate_risk_keywords], ctx
-            )
+                result = opened
+                return result, backend_page
+            # 待运费已落札过，不再用拍品页敏感词拦（否则西濃等会每 10 秒重开一页）。
+            denied = await self.gate_yahoo_login(ctx)
             if denied:
                 self.touch_wait_shipping(oid)
-                return denied, backend_page
+                result = denied
+                return result, backend_page
             ctx.sync_order_info()
             result = await self.execute_yahoo_purchase(
                 ctx.yahoo_page, ctx.order_info, test_mode, detail_page=ctx.detail_page
@@ -452,7 +463,16 @@ class OrderMixin:
         if not product_id:
             await self.log("Product link not found!", "ERROR")
             return {"status": "PRODUCT_LINK_NOT_FOUND"}
-        url = YAHOO_AUCTION_URL.format(product_id=product_id)
+        wait_freight = bool(
+            getattr(ctx, "from_wait_freight", False)
+            or ctx.order.get("from_wait_freight")
+        )
+        if wait_freight:
+            url = YAHOO_TRADE_NAV_URL.format(product_id=product_id)
+            url_hint = product_id
+        else:
+            url = YAHOO_AUCTION_URL.format(product_id=product_id)
+            url_hint = f"/auction/{product_id}"
         account_key = ctx.order.get("account_key") or self.account_key_from_email(
             ctx.order.get("bid_email")
         )
@@ -470,7 +490,7 @@ class OrderMixin:
                 p for p in list(yahoo_ctx.pages) if not p.is_closed()
             ]
             ctx.yahoo_page = await self.reuse_or_goto(
-                yahoo_ctx, url, url_hint=f"/auction/{product_id}"
+                yahoo_ctx, url, url_hint=url_hint
             )
             await ctx.yahoo_page.bring_to_front()
             await self.log(f"已打开雅虎页面: {ctx.yahoo_page.url}")
@@ -479,7 +499,16 @@ class OrderMixin:
             return {"status": "DETAIL_PAGE_ERROR"}
         return None
 
+    def _from_wait_freight(self, ctx):
+        return bool(
+            getattr(ctx, "from_wait_freight", False)
+            or (ctx.order or {}).get("from_wait_freight")
+            or (getattr(ctx, "order_info", None) or {}).get("from_wait_freight")
+        )
+
     def _order_tabs_ok_to_close(self, ctx, result):
+        if self._from_wait_freight(ctx):
+            return True
         if getattr(ctx, "backfill_blocked", False):
             return False
         if not result:
@@ -502,16 +531,29 @@ class OrderMixin:
             or f"auctionid={product_id}" in url
         ):
             return True
+        if hasattr(self, "_page_url_matches_product") and self._page_url_matches_product(
+            url, product_id, product_id
+        ):
+            return True
         before = getattr(ctx, "yahoo_pages_before", None) or []
         return page not in before
 
-    async def _close_success_yahoo_tabs(self, ctx):
-        page = ctx.yahoo_page
-        if page is None:
-            return
-        try:
-            context = page.context
-        except Exception:
+    def _yahoo_context_for_ctx(self, ctx):
+        page = getattr(ctx, "yahoo_page", None)
+        if page is not None:
+            try:
+                if not page.is_closed():
+                    return page.context
+            except Exception:
+                pass
+        account_key = (ctx.order or {}).get("account_key") or self.account_key_from_email(
+            (ctx.order or {}).get("bid_email")
+        )
+        return self.context_for_account(account_key)
+
+    async def _close_success_yahoo_tabs(self, ctx, keep_one=False):
+        context = self._yahoo_context_for_ctx(ctx)
+        if not context:
             return
         to_close = []
         for p in list(context.pages):
@@ -519,6 +561,15 @@ class OrderMixin:
                 to_close.append(p)
         if not to_close:
             return
+        if keep_one:
+            if to_close:
+                keep = to_close.pop(0)
+                try:
+                    await keep.bring_to_front()
+                except Exception:
+                    pass
+            if not to_close:
+                return
         live = []
         for p in list(context.pages):
             try:
@@ -544,7 +595,8 @@ class OrderMixin:
             except Exception:
                 continue
         if closed:
-            await self.log(f"本单成功，已关闭 {closed} 个雅虎标签。")
+            why = "待运费复查完毕" if self._from_wait_freight(ctx) else "本单结束"
+            await self.log(f"{why}，已关闭 {closed} 个雅虎标签。")
 
     async def mw_cleanup_after_order(self, ctx, result):
         ok = self._order_tabs_ok_to_close(ctx, result)
@@ -571,6 +623,10 @@ class OrderMixin:
             if keep_yahoo or keep_detail:
                 status = (result or {}).get("status") if result else "无结果"
                 await self.log(f"本单有问题 ({status})，保留标签供人工审查。")
+                try:
+                    await self._close_success_yahoo_tabs(ctx, keep_one=True)
+                except Exception:
+                    pass
 
         if ok:
             try:

@@ -167,6 +167,9 @@ WAIT_SHIPPING_SUBMITTED_HINTS = (
 ALREADY_PURCHASED_HINTS = (
     "ご購入ありがとうございます",
     "支払いが完了しました",
+    "お支払いが完了",
+    "支払い完了",
+    "決済完了",
     "商品の発送連絡をお待ちください",
     "発送連絡をお待ちください",
     "支払い完了の連絡を行いました",
@@ -219,6 +222,10 @@ class YahooPurchaseMixin:
                 backend_total=int(order_info.get("backend_total") or 0),
             )
             ctx.order_info = dict(order_info)
+            ctx.from_wait_freight = bool(
+                getattr(ctx, "from_wait_freight", False)
+                or order_info.get("from_wait_freight")
+            )
             return await self._run_purchase_pipeline(ctx)
         except BotStopped:
             raise
@@ -1014,6 +1021,15 @@ class YahooPurchaseMixin:
             return await self._finish_already_purchased(ctx)
         if await self._wait_shipping_still_pending(page):
             return await self._finish_wait_shipping_submitted(ctx)
+        url = page.url or ""
+        if "contact.auctions.yahoo.co.jp" in url and "/trade/top" in url:
+            if not getattr(ctx, "_tried_info_tab_for_done", False):
+                ctx._tried_info_tab_for_done = True
+                await self._open_personal_info_tab(page)
+                if await self._page_shows_already_purchased(page):
+                    return await self._finish_already_purchased(ctx)
+                if await self._wait_shipping_still_pending(page):
+                    return await self._finish_wait_shipping_submitted(ctx)
         return None
 
     async def _store_status_page_outcome(self, page):
@@ -1499,6 +1515,37 @@ class YahooPurchaseMixin:
                 return await self._skip_trade_cancelled(ctx)
             if await self._page_has_no_purchase_data(page):
                 return await self._skip_no_purchase_data(ctx)
+            wait_freight = bool(
+                getattr(ctx, "from_wait_freight", False)
+                or (ctx.order_info or {}).get("from_wait_freight")
+                or (ctx.order or {}).get("from_wait_freight")
+            )
+            if wait_freight:
+                qbt_text = (
+                    (ctx.order_info or {}).get("qbt_page_text")
+                    or (ctx.order or {}).get("qbt_page_text")
+                    or ""
+                )
+                fee_m = re.search(r"日本国内运费[：:]\s*([\d.]+)", qbt_text)
+                qbt_fee = 0
+                if fee_m:
+                    try:
+                        qbt_fee = int(float(fee_m.group(1)))
+                    except Exception:
+                        qbt_fee = 0
+                if qbt_fee > 0:
+                    if not getattr(ctx, "shipping_known", False):
+                        ctx.shipping_cost = qbt_fee
+                        ctx.shipping_known = True
+                    await self.log(
+                        f"待运费复查：取引ナビ没有購入手続き，QBT 已有运费 {qbt_fee}円，按已付款回填。"
+                    )
+                    return await self._finish_already_purchased(ctx)
+                await self.log(
+                    "待运费复查：个人取引ナビ没有「購入手続きをする」，"
+                    "不再改地址，按已提交交易处理。"
+                )
+                return await self._finish_wait_shipping_submitted(ctx)
             await self.log(
                 f"个人取引ナビ没有「購入手続きをする」。URL={page.url}",
                 "WARNING",
@@ -1667,6 +1714,17 @@ class YahooPurchaseMixin:
         order_info = ctx.order_info
         test_mode = ctx.test_mode
         await self._capture_auction_page_postage(ctx)
+        url = (yahoo_page.url or "") if yahoo_page else ""
+        if (
+            "contact.auctions.yahoo.co.jp" in url
+            or self._is_store_status_url(url)
+            or ("buy.auctions.yahoo.co.jp" in url and "/order/" in url)
+        ):
+            await self.log(f"已在取引相关页，跳过拍品入口: {url}")
+            continued = await self._continue_personal_checkout(ctx)
+            if continued:
+                return continued
+            return None
         # 只认 #bidButtonGroup，避免相关推荐「今すぐ落札」把已结束拍品卡在列表页。
         buy_now_btn = yahoo_page.locator(
             "#bidButtonGroup button:has-text('購入手続きへ'), "
@@ -2185,10 +2243,16 @@ class YahooPurchaseMixin:
 
     def _url_auction_id(self, url):
         try:
-            query = parse_qs(urlparse(url or "").query)
+            parsed = urlparse(url or "")
+            query = parse_qs(parsed.query)
         except Exception:
             return ""
-        return (query.get("aid") or query.get("auctionId") or [""])[0]
+        aid = (query.get("aid") or query.get("auctionId") or query.get("auctionid") or [""])[0]
+        if aid:
+            return aid
+        path = (parsed.path or "").lower()
+        m = re.search(r"/auction/([a-z]?\d+)", path)
+        return m.group(1) if m else ""
 
     async def _deny_wrong_yahoo_product(self, ctx, where):
         """当前页 aid 必须是本单拍品。上一单留下的结算页不能拿来改室号或点确认。"""

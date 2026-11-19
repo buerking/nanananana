@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 import subprocess
 import urllib.error
 import urllib.request
@@ -221,19 +222,69 @@ class BrowserMixin:
                 pass
             raise
 
+    def _page_url_matches_product(self, url, product_id="", url_hint=""):
+        current = (url or "").lower()
+        if not current.startswith("http") or "qbt.jp" in current:
+            return False
+        hint = (url_hint or "").lower().strip()
+        if hint and hint in current:
+            return True
+        pid = (product_id or "").strip().lower()
+        if not pid:
+            m = re.search(r"/auction/([a-z]?\d+)", ((url_hint or "") + " " + (url or "")).lower())
+            pid = m.group(1) if m else ""
+        if not pid:
+            return False
+        return (
+            f"/auction/{pid}" in current
+            or f"aid={pid}" in current
+            or f"auctionid={pid}" in current
+        )
+
     async def reuse_or_goto(self, context, url, url_hint="", timeout=WAIT_HANG_MS):
-        """已打开相同商品/后台页则复用，否则直接 goto，不模拟点击等新标签。"""
+        """已打开相同商品/后台页则复用，重复标签顺手关掉，否则再 new_page。"""
         hint = (url_hint or "").lower()
-        for page in context.pages:
-            if page.is_closed():
+        pid = ""
+        m = re.search(r"/auction/([a-z]?\d+)", ((url or "") + " " + hint).lower())
+        if m:
+            pid = m.group(1)
+        if not pid:
+            m = re.search(r"\b([a-z]\d{8,})\b", hint)
+            if m:
+                pid = m.group(1)
+        matched = []
+        for page in list(context.pages):
+            try:
+                if page.is_closed():
+                    continue
+            except Exception:
                 continue
             current = (page.url or "").lower()
-            if hint and hint in current:
-                await page.bring_to_front()
-                return page
+            if self._page_url_matches_product(current, pid, hint):
+                matched.append(page)
+                continue
+            if pid:
+                continue
             if url.lower().split("?")[0] in current.split("?")[0] and current.startswith("http"):
-                await page.bring_to_front()
-                return page
+                matched.append(page)
+        if matched:
+            keep = matched[0]
+            closed = 0
+            for page in matched[1:]:
+                try:
+                    if page.is_closed() or page is keep:
+                        continue
+                    await page.close()
+                    closed += 1
+                except Exception:
+                    continue
+            if closed:
+                await self.log(f"同一商品已有多个标签，复用 1 个并关掉 {closed} 个重复页。")
+            try:
+                await keep.bring_to_front()
+            except Exception:
+                pass
+            return keep
         page = await context.new_page()
         try:
             await page.goto(url, wait_until="commit", timeout=timeout)
@@ -243,6 +294,8 @@ class BrowserMixin:
                 pass
         except Exception:
             if hint and hint in (page.url or "").lower():
+                return page
+            if pid and self._page_url_matches_product(page.url or "", pid, hint):
                 return page
             raise
         return page
