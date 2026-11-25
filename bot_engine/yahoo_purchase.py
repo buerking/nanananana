@@ -354,6 +354,29 @@ class YahooPurchaseMixin:
         """点击可能打开新标签的链接，并切到新页。避免还停在拍品页找按钮。"""
         page = ctx.yahoo_page
         context = page.context
+        want = (self._product_id(ctx) or "").lower()
+        if want:
+            for other in list(context.pages):
+                try:
+                    if other is page or other.is_closed():
+                        continue
+                    url = other.url or ""
+                    aid = (self._url_auction_id(url) or "").lower()
+                    if aid != want:
+                        continue
+                    if "contact.auctions.yahoo.co.jp" in url or "buy.auctions.yahoo.co.jp" in url:
+                        ctx.yahoo_page = other
+                        await other.bring_to_front()
+                        await self.log(f"取引/结算页已打开，复用标签: {url}")
+                        page = other
+                        if wait_locator:
+                            if not await self.wait_visible(
+                                page.locator(wait_locator), timeout_ms=timeout
+                            ):
+                                await self.log(f"点击后未等到目标元素。URL={page.url}", "WARNING")
+                        return page
+                except Exception:
+                    continue
         pages_before = list(context.pages)
         clicked = False
         try:
@@ -370,6 +393,32 @@ class YahooPurchaseMixin:
             if new_pages:
                 ctx.yahoo_page = new_pages[-1]
         page = ctx.yahoo_page
+        extras = []
+        try:
+            for other in list(context.pages):
+                if other is page or other.is_closed():
+                    continue
+                if other not in pages_before:
+                    extras.append(other)
+                    continue
+                if want:
+                    aid = (self._url_auction_id(other.url) or "").lower()
+                    if aid == want and other is not page:
+                        extras.append(other)
+            if extras:
+                live = [p for p in context.pages if not p.is_closed()]
+                for extra in extras:
+                    if extra is page:
+                        continue
+                    if len([p for p in live if not p.is_closed()]) <= 1:
+                        break
+                    try:
+                        await extra.close()
+                        live = [p for p in context.pages if not p.is_closed()]
+                    except Exception:
+                        continue
+        except Exception:
+            pass
         try:
             await page.wait_for_load_state("domcontentloaded", timeout=WAIT_HANG_MS)
         except Exception:
@@ -1569,6 +1618,21 @@ class YahooPurchaseMixin:
         await self.log(f"取引后续：当前是{label} {yahoo_page.url}")
 
         if kind == "login":
+            wait_freight = bool(
+                getattr(ctx, "from_wait_freight", False)
+                or (ctx.order_info or {}).get("from_wait_freight")
+                or (ctx.order or {}).get("from_wait_freight")
+            )
+            if wait_freight:
+                if hasattr(self, "_try_skip_ghost_yahoo_login"):
+                    try:
+                        await self._try_skip_ghost_yahoo_login(yahoo_page)
+                    except Exception:
+                        pass
+                if self._is_yahoo_login_or_reauth_url(ctx.yahoo_page.url):
+                    await self.log("待运费复查遇到登录页，不等 5 分钟，本轮跳过。", "WARNING")
+                    return deny("YAHOO_REAUTH")
+                return await self._continue_personal_checkout(ctx)
             await self.wait_out_yahoo_login_or_reauth(yahoo_page, "取引后续")
             if self._is_yahoo_login_or_reauth_url(ctx.yahoo_page.url):
                 return deny("YAHOO_REAUTH")

@@ -6,6 +6,7 @@ import re
 from playwright.async_api import Page
 
 from .constants import (
+    CLOSE_TABS_STATUSES,
     QBT_AUCTION_BUY_URL,
     QBT_BROWSER_ACCOUNT,
     SUCCESS_STATUSES,
@@ -234,11 +235,29 @@ class OrderMixin:
                 result = opened
                 return result, backend_page
             # 待运费已落札过，不再用拍品页敏感词拦（否则西濃等会每 10 秒重开一页）。
-            denied = await self.gate_yahoo_login(ctx)
-            if denied:
-                self.touch_wait_shipping(oid)
-                result = denied
-                return result, backend_page
+            # 登录页也不要 gate_yahoo_login 把整任务停掉，本轮跳过即可。
+            yahoo_url = ""
+            try:
+                yahoo_url = (ctx.yahoo_page.url if ctx.yahoo_page else "") or ""
+            except Exception:
+                yahoo_url = ""
+            if hasattr(self, "_is_yahoo_login_or_reauth_url") and self._is_yahoo_login_or_reauth_url(
+                yahoo_url
+            ):
+                if hasattr(self, "_try_skip_ghost_yahoo_login"):
+                    try:
+                        await self._try_skip_ghost_yahoo_login(ctx.yahoo_page)
+                    except Exception:
+                        pass
+                try:
+                    yahoo_url = (ctx.yahoo_page.url if ctx.yahoo_page else "") or ""
+                except Exception:
+                    yahoo_url = ""
+                if self._is_yahoo_login_or_reauth_url(yahoo_url):
+                    await self.log("待运费复查遇到登录页，本轮跳过，不停止任务。", "WARNING")
+                    self.touch_wait_shipping(oid)
+                    result = {"status": "YAHOO_REAUTH"}
+                    return result, backend_page
             ctx.sync_order_info()
             result = await self.execute_yahoo_purchase(
                 ctx.yahoo_page, ctx.order_info, test_mode, detail_page=ctx.detail_page
@@ -513,7 +532,7 @@ class OrderMixin:
             return False
         if not result:
             return False
-        return result.get("status") in SUCCESS_STATUSES
+        return result.get("status") in CLOSE_TABS_STATUSES
 
     def _yahoo_tab_belongs_to_order(self, page, ctx):
         try:

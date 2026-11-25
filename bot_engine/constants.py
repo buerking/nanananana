@@ -66,6 +66,20 @@ YAHOO_STORE_TRADE_STATUS_URL = (
     "https://buy.auctions.yahoo.co.jp/order/status?auctionId={product_id}"
 )
 SUCCESS_STATUSES = ("PURCHASED", "TEST_SUCCESS", "WAIT_SHIPPING", "WAIT_SHIPPING_CONTACT")
+# 这些结论没有必要留一堆雅虎页给人工看；留着会把 Chrome 撑崩。
+CLOSE_TABS_STATUSES = SUCCESS_STATUSES + (
+    "ADDRESS_FAIL",
+    "SKIPPED_RISK",
+    "SKIPPED_NO_PURCHASE_DATA",
+    "SKIPPED_TRADE_CANCELLED",
+    "YAHOO_ID_MISMATCH",
+    "YAHOO_REAUTH",
+    "PURCHASE_UNCONFIRMED",
+    "WRONG_YAHOO_TAB",
+    "DETAIL_PAGE_ERROR",
+)
+# 每个 Chrome 闲时最多留这么多标签（列表+首页+当前页）。超过就扫掉旧拍品/购买页。
+MAX_CHROME_PAGES = 8
 # 雅虎跳转/水合上限。wait_for_url 等匹配到会立刻返回，不会真的空等 5 分钟。
 WAIT_HANG_MS = 5 * 60 * 1000
 # 单次可见点击；隐藏节点不要用 Playwright 默认 30 秒空等。

@@ -10,6 +10,7 @@ from playwright.async_api import async_playwright
 from .constants import (
     ACCOUNT_EMAILS,
     CHROME_CDP_PORTS,
+    MAX_CHROME_PAGES,
     QBT_BROWSER_ACCOUNT,
     WAIT_HANG_MS,
     YAHOO_HOME_URL,
@@ -222,6 +223,110 @@ class BrowserMixin:
                 pass
             raise
 
+    def _tab_kind(self, url):
+        u = (url or "").lower()
+        if not u or u in ("about:blank", "chrome://newtab/") or u.startswith("chrome-error"):
+            return "blank"
+        if "qbt.jp" in u:
+            if "get-auction-not-buy-list" in u:
+                return "qbt_list"
+            if "auction-buy" in u:
+                return "qbt_buy"
+            return "qbt_other"
+        if "login.yahoo" in u or "wallet.yahoo" in u:
+            return "yahoo_login"
+        if (
+            "/jp/auction/" in u
+            or "contact.auctions.yahoo.co.jp" in u
+            or "buy.auctions.yahoo.co.jp" in u
+        ):
+            return "yahoo_product"
+        if "auctions.yahoo.co.jp" in u:
+            return "yahoo_home"
+        return "other"
+
+    async def _close_pages_safe(self, pages, keep):
+        closed = 0
+        keep = set(keep or [])
+        for page in pages:
+            if page in keep:
+                continue
+            try:
+                if page.is_closed():
+                    continue
+                live = [p for p in page.context.pages if not p.is_closed() and p not in (page,)]
+                if not live and page not in keep:
+                    continue
+                await page.close()
+                closed += 1
+            except Exception:
+                continue
+        return closed
+
+    async def sweep_idle_tabs(self, keep_pages=None):
+        """闲时清掉堆积的拍品/取引ナビ/QBT 购买页，避免 Chrome 标签爆炸后闪退。"""
+        keep_pages = [p for p in (keep_pages or []) if p is not None]
+        total_closed = 0
+        for key, context in list((self.yahoo_contexts or {}).items()):
+            if not context:
+                continue
+            try:
+                closed = await self._sweep_context_tabs(context, key, keep_pages)
+            except Exception as e:
+                await self.log(f"[{key}] 清标签失败: {e}", "DEBUG")
+                closed = 0
+            total_closed += closed
+        if total_closed:
+            await self.log(f"闲时清理浏览器标签 {total_closed} 个，防止堆积闪退。")
+        return total_closed
+
+    async def _sweep_context_tabs(self, context, account_key, keep_pages):
+        keep = set(keep_pages or [])
+        try:
+            pages = [p for p in list(context.pages) if not p.is_closed()]
+        except Exception:
+            return 0
+        if len(pages) <= 1:
+            return 0
+        buckets = {
+            "blank": [],
+            "yahoo_login": [],
+            "yahoo_product": [],
+            "qbt_buy": [],
+            "qbt_list": [],
+            "yahoo_home": [],
+            "qbt_other": [],
+            "other": [],
+        }
+        for page in pages:
+            if page in keep:
+                continue
+            try:
+                kind = self._tab_kind(page.url or "")
+            except Exception:
+                kind = "other"
+            buckets.setdefault(kind, []).append(page)
+        to_close = []
+        to_close.extend(buckets["blank"])
+        if len(buckets["qbt_list"]) > 1:
+            to_close.extend(buckets["qbt_list"][1:])
+        if len(buckets["yahoo_home"]) > 1:
+            to_close.extend(buckets["yahoo_home"][1:])
+        closed = await self._close_pages_safe(to_close, keep)
+        try:
+            live = [p for p in list(context.pages) if not p.is_closed()]
+        except Exception:
+            live = []
+        if len(live) <= MAX_CHROME_PAGES:
+            return closed
+        extras = []
+        for kind in ("yahoo_product", "qbt_buy", "yahoo_login", "other"):
+            extras.extend(buckets.get(kind) or [])
+        overflow = max(0, len(live) - MAX_CHROME_PAGES)
+        if overflow and extras:
+            closed += await self._close_pages_safe(extras[:overflow], keep)
+        return closed
+
     def _page_url_matches_product(self, url, product_id="", url_hint=""):
         current = (url or "").lower()
         if not current.startswith("http") or "qbt.jp" in current:
@@ -285,6 +390,12 @@ class BrowserMixin:
             except Exception:
                 pass
             return keep
+        try:
+            live_n = len([p for p in context.pages if not p.is_closed()])
+        except Exception:
+            live_n = 0
+        if live_n >= MAX_CHROME_PAGES:
+            await self.sweep_idle_tabs()
         page = await context.new_page()
         try:
             await page.goto(url, wait_until="commit", timeout=timeout)

@@ -158,7 +158,7 @@ class QbtMixin:
         return any_qbt
 
     async def ensure_backend_not_buy_list(self, page=None, force=False, reuse_buy_page=False):
-        """打开 get-auction-not-buy-list。失败单的 auction-buy 详情留给人工看，不要覆盖。"""
+        """打开 get-auction-not-buy-list。顺手关掉堆积的 auction-buy，避免标签爆炸。"""
         list_page = None
         if self.browser_context:
             for p in list(self.browser_context.pages):
@@ -202,6 +202,7 @@ class QbtMixin:
             except Exception:
                 buy_ready = False
         if buy_ready:
+            await self._close_extra_qbt_buy_pages(list_page, reuse_buy_page)
             await list_page.bring_to_front()
             return list_page
         await self.log(
@@ -225,8 +226,35 @@ class QbtMixin:
             )
         except Exception as e:
             await self.log(f"未购买列表表格未出现: {e}", "WARNING")
+        await self._close_extra_qbt_buy_pages(list_page, reuse_buy_page)
         await list_page.bring_to_front()
         return list_page
+
+    async def _close_extra_qbt_buy_pages(self, keep_page, reuse_buy_page=False):
+        if reuse_buy_page or not self.browser_context:
+            return
+        extra_buy = []
+        for p in list(self.browser_context.pages):
+            try:
+                if p.is_closed() or p is keep_page:
+                    continue
+                if self._is_qbt_auction_buy_url(p.url):
+                    extra_buy.append(p)
+            except Exception:
+                continue
+        if not extra_buy:
+            return
+        closed_buy = 0
+        for p in extra_buy:
+            try:
+                if p.is_closed():
+                    continue
+                await p.close()
+                closed_buy += 1
+            except Exception:
+                continue
+        if closed_buy:
+            await self.log(f"已关闭 {closed_buy} 个多余的 QBT 购买页。")
 
     async def check_risk_order_status(self, order_id):
         """
