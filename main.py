@@ -90,7 +90,7 @@ bot = YahooAutoBot(log_callback=manager.broadcast)
 
 class BotConfig(BaseModel):
     headless: bool = False
-    test_mode: bool = True
+    test_mode: bool = False
     target_order_id: Optional[str] = None
     run_mode: str = "normal"
 
@@ -106,7 +106,7 @@ async def start_bot(config: BotConfig):
     asyncio.create_task(
         bot.run_loop(
             config.headless,
-            config.test_mode,
+            False,
             config.target_order_id,
             run_mode=config.run_mode or "normal",
         )
@@ -128,8 +128,25 @@ async def stop_bot():
     return {"status": "stopped"}
 
 
+@app.on_event("startup")
+async def on_startup():
+    await bot.ensure_chrome_watchdog()
+
+
 @app.get("/status")
 async def get_status():
+    chrome = []
+    try:
+        loop = asyncio.get_running_loop()
+        chrome = await asyncio.wait_for(
+            loop.run_in_executor(None, bot._chrome_status_sync),
+            timeout=3,
+        )
+    except Exception:
+        try:
+            chrome = bot._chrome_status_from_cache()
+        except Exception:
+            chrome = []
     return {
         "running": bot.is_running,
         "paused": bot.is_paused,
@@ -137,7 +154,24 @@ async def get_status():
         "pending_order_id": getattr(bot, "pending_order_id", "") or "",
         "run_mode": getattr(bot, "run_mode", "normal") or "normal",
         "queue": list(getattr(bot, "gated_queue", None) or []),
+        "chrome": chrome,
     }
+
+
+class ChromeRestartInput(BaseModel):
+    key: str
+
+
+@app.post("/chrome/restart")
+async def restart_chrome(item: ChromeRestartInput):
+    key = (item.key or "").strip().lower()
+    if key not in ("ad", "ym"):
+        return {"status": "error", "message": "key 必须是 ad 或 ym"}
+    try:
+        ok = await bot.restart_account_browser(key, reason="管理页手动重启")
+        return {"status": "ok" if ok else "busy", "key": key}
+    except Exception as e:
+        return {"status": "error", "key": key, "message": str(e)}
 
 
 @app.get("/screenshot_orders")

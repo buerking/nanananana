@@ -172,6 +172,45 @@
         .tag-remove:hover {
             color: #ff4d4f;
         }
+
+        .chrome-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .chrome-card {
+            border: 1px solid #eee;
+            border-radius: 6px;
+            padding: 12px;
+            background: #fafafa;
+        }
+
+        .chrome-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .chrome-ok {
+            background: #52c41a;
+        }
+
+        .chrome-warn {
+            background: #faad14;
+        }
+
+        .chrome-down {
+            background: #ff4d4f;
+        }
+
+        @media (max-width: 700px) {
+            .chrome-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
@@ -196,6 +235,16 @@
                 style="background: #722ed1; border-color: #722ed1;">🧪 单单测试</button>
             <button onclick="initAudio(); startGatedLive()" class="btn-primary"
                 style="background: #d4380d; border-color: #d4380d;">逐单实购</button>
+        </div>
+
+        <div class="panel" id="chrome-monitor-panel">
+            <h3 class="panel-title">🖥️ 浏览器监控 (ad / ym)</h3>
+            <p style="color:#888;font-size:12px;margin:0 0 12px;">
+                点「启动浏览器」或开始运行后会托管这两套 Chrome。窗口消失或 CDP 断线时约 8 秒内自动拉起，也可点按钮手动重启。
+            </p>
+            <div class="chrome-grid" id="chrome-monitor-cards">
+                <div style="color:#999;">正在探测浏览器状态…</div>
+            </div>
         </div>
 
         <div id="screenshot-alert-panel"
@@ -320,8 +369,7 @@
         </div>
 
         <div>
-            <label><input type="checkbox" id="test-mode" checked> 测试模式 (不真正点击付款)</label>
-            <label style="margin-left: 15px;"><input type="checkbox" id="headless-mode"> 无头模式 (后台运行)</label>
+            <label><input type="checkbox" id="headless-mode"> 无头模式 (后台运行)</label>
         </div>
 
         <h3>运行日志</h3>
@@ -586,17 +634,17 @@
             try {
                 await fetch(`${API_URL}/launch_browser`, { method: 'POST' });
                 log("Command sent: Launch Browser");
+                checkStatus();
             } catch (e) { log("Error: " + e); }
         }
 
         async function startBot() {
-            const testMode = document.getElementById('test-mode').checked;
             const headless = document.getElementById('headless-mode').checked;
             try {
                 const res = await fetch(`${API_URL}/start`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ headless, test_mode: testMode })
+                    body: JSON.stringify({ headless, test_mode: false })
                 });
                 const data = await res.json();
                 if (data.status === 'started') {
@@ -609,7 +657,6 @@
         }
 
         async function startSingleTest() {
-            const testMode = document.getElementById('test-mode').checked;
             const headless = document.getElementById('headless-mode').checked;
             const targetId = document.getElementById('single-order-id').value.trim();
 
@@ -622,7 +669,7 @@
                 const res = await fetch(`${API_URL}/start`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ headless, test_mode: testMode, target_order_id: targetId })
+                    body: JSON.stringify({ headless, test_mode: false, target_order_id: targetId })
                 });
                 const data = await res.json();
                 if (data.status === 'started') {
@@ -636,7 +683,7 @@
 
         async function startGatedLive() {
             const headless = document.getElementById('headless-mode').checked;
-            if (!confirm("逐单实购会真实下单并扣款（不受「测试模式」勾选影响）。确定开始？")) {
+            if (!confirm("逐单实购会真实下单并扣款。确定开始？")) {
                 return;
             }
             try {
@@ -685,11 +732,71 @@
             } catch (e) { log("Error: " + e); }
         }
 
+        function renderChromeMonitor(list) {
+            const wrap = document.getElementById('chrome-monitor-cards');
+            if (!wrap) return;
+            const rows = Array.isArray(list) ? list : [];
+            if (!rows.length) {
+                wrap.innerHTML = '<div style="color:#999;">尚未探测到浏览器状态</div>';
+                return;
+            }
+            wrap.innerHTML = rows.map(row => {
+                const key = String(row.key || '').replace(/[^a-z]/g, '');
+                const alive = !!row.alive;
+                const cdp = !!row.cdp;
+                const restarting = !!row.restarting;
+                let state = '离线';
+                let cls = 'chrome-down';
+                if (restarting) {
+                    state = '重启中';
+                    cls = 'chrome-warn';
+                } else if (alive) {
+                    state = '在线';
+                    cls = 'chrome-ok';
+                } else if (cdp) {
+                    state = '窗口在，自动化未连接';
+                    cls = 'chrome-warn';
+                }
+                const wanted = row.wanted ? '已托管（掉线自动拉起）' : '未托管（尚未启动浏览器/任务）';
+                const pages = (row.pages === 0 || row.pages) ? row.pages : '-';
+                const err = row.last_error ? `<br>最近错误: ${String(row.last_error).slice(0, 80)}` : '';
+                return `<div class="chrome-card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                        <strong><span class="chrome-dot ${cls}"></span>${row.label || key}</strong>
+                        <span style="font-size:13px;">${state}</span>
+                    </div>
+                    <div style="font-size:12px;color:#666;margin-top:8px;line-height:1.6;">
+                        CDP ${row.port || '-'} · 标签 ${pages}<br>
+                        ${row.emails || ''}<br>
+                        ${wanted}${err}
+                    </div>
+                    <button class="btn-default" style="margin-top:10px;padding:4px 10px;font-size:12px;"
+                        onclick="restartChrome('${key}')" ${restarting || !key ? 'disabled' : ''}>重启此浏览器</button>
+                </div>`;
+            }).join('');
+        }
+
+        async function restartChrome(key) {
+            if (!key) return;
+            try {
+                log("正在重启浏览器 " + key + " …");
+                const res = await fetch(`${API_URL}/chrome/restart`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key })
+                });
+                const data = await res.json();
+                log("重启浏览器 " + key + ": " + (data.status || '') + (data.message ? " " + data.message : ""));
+                checkStatus();
+            } catch (e) { log("重启失败: " + e); }
+        }
+
         async function checkStatus() {
             try {
                 const res = await fetch(`${API_URL}/status`);
                 const data = await res.json();
                 updateStatus(data.running, data.waiting_confirm, data.pending_order_id);
+                renderChromeMonitor(data.chrome);
             } catch (e) { }
         }
 

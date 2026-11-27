@@ -7,7 +7,13 @@ import inspect
 import re
 from urllib.parse import parse_qs, unquote, urlparse
 
-from .constants import ACCOUNT_EMAILS, WAIT_CLICK_MS, WAIT_HANG_MS
+from .constants import (
+    ACCOUNT_EMAILS,
+    WAIT_CLICK_MS,
+    WAIT_HANG_MS,
+    YAHOO_SYSERR_MAX_TRIES,
+    YAHOO_SYSERR_WAIT_SECONDS,
+)
 
 # 登录抽风页（会话还在，却画出 ID 表单）。不要拿「ログイン」单独判断，结算页也有再ログイン。
 YAHOO_LOGIN_FORM_SEL = (
@@ -169,8 +175,61 @@ class WaitMixin:
         text = body or ""
         return YAHOO_SYSTEM_ERROR_TEXT in text
 
+    def _syserr_state_for(self, page):
+        if not hasattr(self, "_syserr_reload_state") or self._syserr_reload_state is None:
+            self._syserr_reload_state = {}
+        key = id(page)
+        state = self._syserr_reload_state.get(key)
+        if state is None:
+            state = {"tries": 0, "busy": False, "path": ""}
+            self._syserr_reload_state[key] = state
+        return state
+
+    async def _human_refresh_page(self, page):
+        """模拟人工按 F5，不用 Playwright/CDP 的 page.reload（容易把雅虎卡在错误页）。"""
+        url = page.url or ""
+        try:
+            await page.bring_to_front()
+        except Exception:
+            pass
+        try:
+            await page.keyboard.press("F5")
+        except Exception as e:
+            await self.log(f"F5 未生效，改用页面内刷新: {e}", "WARNING")
+            try:
+                await page.evaluate("() => { location.reload(); }")
+            except Exception:
+                if url:
+                    try:
+                        await page.goto(url, wait_until="commit", timeout=WAIT_HANG_MS)
+                    except Exception:
+                        pass
+        try:
+            await page.wait_for_load_state("domcontentloaded", timeout=15000)
+        except Exception:
+            pass
+        await asyncio.sleep(1.2)
+
+    async def _wait_yahoo_syserr_clear(self, page, timeout_s):
+        """刷新后先等着：雅虎常会自己再跳一次，立刻连刷会一直停在错误页。"""
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + float(timeout_s)
+        while loop.time() < deadline:
+            await asyncio.sleep(1.5)
+            try:
+                if page.is_closed():
+                    return False
+                if not await self._yahoo_system_error_visible(page):
+                    return True
+            except Exception:
+                continue
+        try:
+            return not await self._yahoo_system_error_visible(page)
+        except Exception:
+            return False
+
     async def _wait_visible_reload_syserr(self, page, locator, timeout_ms=WAIT_HANG_MS):
-        """等目标出现；若是系统错误页则刷新后再等。"""
+        """等目标出现；若是系统错误页则按人工节奏刷新后再等。"""
 
         async def ready():
             await self._reload_if_yahoo_system_error(page)
@@ -181,8 +240,8 @@ class WaitMixin:
 
         return await self.wait_until(ready, timeout_ms=timeout_ms)
 
-    async def _reload_if_yahoo_system_error(self, page, max_tries=3):
-        """系统错误页刷新即可跳过，不要当失败停住。"""
+    async def _reload_if_yahoo_system_error(self, page, max_tries=None):
+        """系统错误页：人工 F5，每次后等 30 秒看它自己恢复，最多 3 次。不要连刷。"""
         if page is None:
             return False
         if hasattr(self, "_page_has_trade_cancelled"):
@@ -197,36 +256,68 @@ class WaitMixin:
                     return False
             except Exception:
                 pass
+        try:
+            if not await self._yahoo_system_error_visible(page):
+                state = self._syserr_state_for(page)
+                state["tries"] = 0
+                return False
+        except Exception:
+            return False
+
+        cap = int(max_tries or YAHOO_SYSERR_MAX_TRIES or 3)
+        wait_s = float(YAHOO_SYSERR_WAIT_SECONDS or 30)
+        state = self._syserr_state_for(page)
+        path = ""
+        try:
+            path = (urlparse(page.url or "").path or "").rstrip("/")
+        except Exception:
+            path = page.url or ""
+        if state.get("path") and state.get("path") != path:
+            state["tries"] = 0
+        state["path"] = path
+
+        if state.get("busy"):
+            recovered = await self._wait_yahoo_syserr_clear(page, wait_s)
+            if recovered:
+                state["tries"] = 0
+                await self.log("等待期间雅虎系统错误已消失，继续。")
+            return True
+
+        if state["tries"] >= cap:
+            return True
+
+        state["busy"] = True
         refreshed = False
-        for i in range(max_tries):
-            try:
-                if not await self._yahoo_system_error_visible(page):
+        try:
+            while state["tries"] < cap:
+                try:
+                    if not await self._yahoo_system_error_visible(page):
+                        if refreshed:
+                            await self.log("刷新后系统错误已消失，继续。")
+                        state["tries"] = 0
+                        return refreshed
+                except Exception:
                     return refreshed
-            except Exception:
-                return refreshed
-            refreshed = True
-            await self.log(
-                f"雅虎系统错误（再度お試しください），刷新页面 ({i + 1}/{max_tries})...",
-                "WARNING",
-            )
-            url = page.url or ""
-            try:
-                await page.reload(wait_until="domcontentloaded", timeout=WAIT_HANG_MS)
-            except Exception as e:
-                await self.log(f"刷新超时，改用重新打开当前地址: {e}", "WARNING")
-                if url:
-                    try:
-                        await page.goto(url, wait_until="domcontentloaded", timeout=WAIT_HANG_MS)
-                    except Exception:
-                        pass
-            try:
-                await page.wait_for_load_state("domcontentloaded", timeout=WAIT_CLICK_MS)
-            except Exception:
-                pass
-        if refreshed and await self._yahoo_system_error_visible(page):
-            await self.log("多次刷新后仍是雅虎系统错误页。", "WARNING")
-        elif refreshed:
-            await self.log("刷新后系统错误已消失，继续。")
+                state["tries"] += 1
+                refreshed = True
+                await self.log(
+                    f"雅虎系统错误（再度お試しください），模拟人工刷新 "
+                    f"({state['tries']}/{cap})，随后等待 {int(wait_s)} 秒...",
+                    "WARNING",
+                )
+                await self._human_refresh_page(page)
+                recovered = await self._wait_yahoo_syserr_clear(page, wait_s)
+                if recovered:
+                    await self.log("等待后系统错误已消失，继续。")
+                    state["tries"] = 0
+                    return True
+            if await self._yahoo_system_error_visible(page):
+                await self.log(
+                    f"已按人工节奏刷新 {cap} 次（每次间隔 {int(wait_s)} 秒），仍是雅虎系统错误页。",
+                    "WARNING",
+                )
+        finally:
+            state["busy"] = False
         return refreshed
 
     async def has_visible(self, locator, limit=8):

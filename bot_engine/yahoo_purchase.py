@@ -168,16 +168,22 @@ ALREADY_PURCHASED_HINTS = (
     "ご購入ありがとうございます",
     "支払いが完了しました",
     "お支払いが完了",
+    "お支払い完成",
     "支払い完了",
     "決済完了",
     "商品の発送連絡をお待ちください",
     "発送連絡をお待ちください",
+    "発送連絡待ち",
     "支払い完了の連絡を行いました",
 )
 PAID_WAIT_SHIP_NEXT = (
     "buyerPayDoneYahoo",
     "paidWaitShip",
     "buyerPaid",
+    "buyerPayDone",
+    "payDoneYahoo",
+    "waitSellerShip",
+    "sellerShipWait",
 )
 WAIT_SHIPPING_FORM = (
     "form[name='tradeForm'], #mBoxConfBt, h2:has-text('落札者情報'), "
@@ -210,7 +216,7 @@ def _parse_yen(value):
 
 class YahooPurchaseMixin:
     async def execute_yahoo_purchase(
-        self, yahoo_page: Page, order_info, test_mode=True, detail_page=None
+        self, yahoo_page: Page, order_info, test_mode=False, detail_page=None
     ):
         try:
             ctx = OrderContext(
@@ -883,29 +889,79 @@ class YahooPurchaseMixin:
             )
         return deny("SKIPPED_TRADE_CANCELLED")
 
+    def _walk_next_nodes(self, data, limit=250):
+        stack = [data]
+        seen = 0
+        while stack and seen < limit:
+            cur = stack.pop()
+            seen += 1
+            if isinstance(cur, list):
+                stack.extend(cur[:40])
+                continue
+            if not isinstance(cur, dict):
+                continue
+            yield cur
+            stack.extend(cur.values())
+
     def _personal_trade_progress(self, data):
         status = ""
         step = ""
         notice_types = []
-        stack = [data]
-        seen = 0
-        while stack and seen < 80:
-            cur = stack.pop()
-            seen += 1
-            if not isinstance(cur, dict):
-                continue
+        for cur in self._walk_next_nodes(data):
             if cur.get("progressStatus"):
                 status = str(cur.get("progressStatus") or "")
             step_obj = cur.get("progressStep")
             if isinstance(step_obj, dict) and step_obj.get("type"):
                 step = str(step_obj.get("type") or "")
+            ts = cur.get("tradeStep")
+            if isinstance(ts, dict) and ts.get("current"):
+                step = str(ts.get("current") or step)
             for item in cur.get("notice") or []:
                 if isinstance(item, dict) and item.get("type"):
                     notice_types.append(str(item.get("type")))
-            for key in ("props", "pageProps", "initialState", "initialProps", "top"):
-                if isinstance(cur.get(key), dict):
-                    stack.append(cur[key])
         return status, step, notice_types
+
+    def _next_data_has_paid_tokens(self, data):
+        if not data:
+            return False
+        status, step, notices = self._personal_trade_progress(data)
+        tokens = {status, step, *notices}
+        if tokens & set(PAID_WAIT_SHIP_NEXT):
+            return True
+        blob_parts = []
+        for cur in self._walk_next_nodes(data, limit=250):
+            for val in cur.values():
+                if isinstance(val, str) and val:
+                    blob_parts.append(val)
+        blob = " ".join(blob_parts)
+        if any(h in blob for h in PAID_WAIT_SHIP_NEXT):
+            return True
+        return any(h in blob for h in ALREADY_PURCHASED_HINTS)
+
+    async def _personal_nav_looks_settled(self, page):
+        """連絡 Tab 上看不见購入手続き，但已有情報 Tab，且不是待填取引情報/同捆。"""
+        if page is None:
+            return False
+        url = page.url or ""
+        if "contact.auctions.yahoo.co.jp" not in url:
+            return False
+        if await self._visible_action(page, PERSONAL_PROCEDURE_SEL):
+            return False
+        if await self._personal_bundle_choice_visible(page):
+            return False
+        try:
+            body = await page.locator("main, body").first.inner_text()
+        except Exception:
+            body = ""
+        if "取引情報を入力してください" in (body or ""):
+            return False
+        info_tab = page.locator("button:has-text('情報'), [role='tab']:has-text('情報')")
+        try:
+            if await info_tab.count() and await info_tab.first.is_visible():
+                return True
+        except Exception:
+            pass
+        return False
 
     async def _page_shows_already_purchased(self, page):
         """店铺已付款，或个人 /trade/top 已支付等发货（商品の発送連絡をお待ちください）。"""
@@ -920,9 +976,7 @@ class YahooPurchaseMixin:
             return False
         try:
             next_data = await self._read_next_data(page)
-            status, step, notices = self._personal_trade_progress(next_data) if next_data else ("", "", [])
-            tokens = {status, step, *notices}
-            if tokens & set(PAID_WAIT_SHIP_NEXT):
+            if self._next_data_has_paid_tokens(next_data):
                 return True
         except Exception:
             pass
@@ -1110,7 +1164,7 @@ class YahooPurchaseMixin:
                 found["v"] = "already_purchased"
                 return True
             if await self._yahoo_system_error_visible(page):
-                await self._reload_if_yahoo_system_error(page, max_tries=1)
+                await self._reload_if_yahoo_system_error(page)
             found["v"] = await self._store_status_page_outcome(page)
             return bool(found["v"])
 
@@ -1595,6 +1649,15 @@ class YahooPurchaseMixin:
                     "不再改地址，按已提交交易处理。"
                 )
                 return await self._finish_wait_shipping_submitted(ctx)
+            if await self._personal_nav_looks_settled(page):
+                await self.log(
+                    "个人取引ナビ没有「購入手続きをする」，但情報 Tab 已在、也不是待填取引情報。"
+                    "按已处理交易读取运费，不报改版。"
+                )
+                done = await self._finish_if_already_done(ctx)
+                if done:
+                    return done
+                return await self._finish_already_purchased(ctx)
             await self.log(
                 f"个人取引ナビ没有「購入手続きをする」。URL={page.url}",
                 "WARNING",
@@ -2144,13 +2207,9 @@ class YahooPurchaseMixin:
         if hasattr(self, "_dismiss_reauth_note"):
             await self._dismiss_reauth_note(yahoo_page)
 
-        syserr_reloads = 0
-
         async def ready():
-            nonlocal syserr_reloads
-            if await self._yahoo_system_error_visible(yahoo_page) and syserr_reloads < 3:
-                syserr_reloads += 1
-                await self._reload_if_yahoo_system_error(yahoo_page, max_tries=1)
+            if await self._yahoo_system_error_visible(yahoo_page):
+                await self._reload_if_yahoo_system_error(yahoo_page)
                 return False
             if await self._cvv_required_on_page(yahoo_page):
                 return True
@@ -2221,7 +2280,6 @@ class YahooPurchaseMixin:
         未出现 3DS 时上限 5 分钟；一旦出现 3DS，一直等到人工输入并确定，不跳过、不进下一单。
         """
         notified_3ds = False
-        syserr_reloads = 0
         saw_3ds = False
         wait_shipping = bool(
             ctx and getattr(ctx, "is_wait_for_shipping", False)
@@ -2231,7 +2289,7 @@ class YahooPurchaseMixin:
             timeout_ms = min(int(timeout_ms or WAIT_HANG_MS), WAIT_CLICK_MS * 2)
 
         async def arrived():
-            nonlocal notified_3ds, syserr_reloads, saw_3ds
+            nonlocal notified_3ds, saw_3ds
             if await self._3ds_visible_on_page(page):
                 saw_3ds = True
                 if not notified_3ds:
@@ -2242,9 +2300,8 @@ class YahooPurchaseMixin:
                         "WARNING",
                     )
                 return False
-            if await self._yahoo_system_error_visible(page) and syserr_reloads < 3:
-                syserr_reloads += 1
-                await self._reload_if_yahoo_system_error(page, max_tries=1)
+            if await self._yahoo_system_error_visible(page):
+                await self._reload_if_yahoo_system_error(page)
                 return False
             if await self._wait_shipping_submit_settled(page, ctx):
                 return True

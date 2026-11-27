@@ -34,6 +34,9 @@ CHROME_CDP_PORTS = {
     "ad": 9222,
     "ym": 9223,
 }
+# 监控页 / 看门狗：Chrome 掉线后自动拉起。
+CHROME_WATCHDOG_SECONDS = 8
+CHROME_RESTART_COOLDOWN = 45
 QBT_BROWSER_ACCOUNT = "ad"
 # 可用环境变量 FEISHU_WEBHOOK / FEISHU_APP_ID / FEISHU_APP_SECRET 覆盖。
 FEISHU_WEBHOOK = (
@@ -84,5 +87,8 @@ MAX_CHROME_PAGES = 8
 WAIT_HANG_MS = 5 * 60 * 1000
 # 单次可见点击；隐藏节点不要用 Playwright 默认 30 秒空等。
 WAIT_CLICK_MS = 8000
+# 雅虎「システムでエラーが発生しました」：模拟人工 F5，每次后等 30 秒看它自己恢复，最多 3 次。
+YAHOO_SYSERR_MAX_TRIES = 3
+YAHOO_SYSERR_WAIT_SECONDS = 30
 # 同一用户+同一卖家暂时只有一单时，等第二单进未购买；从首次出现在未购买起算。
 BUNDLE_HOLD_SECONDS = 5 * 60

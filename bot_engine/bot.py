@@ -54,6 +54,12 @@ class YahooAutoBot(
         self.page = None
         self.yahoo_contexts = {}
         self.yahoo_browsers = {}
+        self.chrome_wanted = {k: False for k in ("ad", "ym")}
+        self.chrome_restarting = {}
+        self.chrome_last_restart = {}
+        self.chrome_health_cache = {}
+        self._chrome_lock = None
+        self._chrome_watchdog_task = None
         self.qbt_account = QBT_BROWSER_ACCOUNT
         if getattr(sys, "frozen", False):
             self.BASE_DIR = os.path.dirname(sys.executable)
@@ -268,13 +274,12 @@ class YahooAutoBot(
             ):
                 self.notify_feishu(f"订单 {order_id_str} 需要人工: {status}")
 
-    async def run_loop(self, headless=False, test_mode=True, target_order_id=None, run_mode="normal"):
+    async def run_loop(self, headless=False, test_mode=False, target_order_id=None, run_mode="normal"):
         """Main automation loop"""
         if self.is_running:
             return
         gated = (run_mode or "normal") == "gated_live"
-        if gated:
-            test_mode = False
+        test_mode = False
         self.run_mode = "gated_live" if gated else "normal"
         self.is_running = True
         self.waiting_confirm = False
@@ -293,14 +298,22 @@ class YahooAutoBot(
                 self.notify_feishu("YahooAutoBot 已启动（逐单实购，真实下单）")
             else:
                 self.notify_feishu(
-                    "YahooAutoBot 已启动"
-                    + ("（测试模式）" if test_mode else "（正式模式）")
+                    "YahooAutoBot 已启动（正式模式）"
                     + (f"\n单单测试: {target_order_id}" if target_order_id else "")
                 )
             buy_next_immediately = False
             skip_next_head = False
             while self.is_running:
                 self.ensure_running()
+                try:
+                    await self.ensure_wanted_browsers()
+                except Exception as e:
+                    await self.log(f"浏览器巡检失败: {e}", "WARNING")
+                qbt_key = getattr(self, "qbt_account", QBT_BROWSER_ACCOUNT)
+                if not self.browser_context and not (self.yahoo_contexts or {}).get(qbt_key):
+                    await self.log("出价浏览器尚未就绪，5秒后重试。", "WARNING")
+                    await asyncio.sleep(5)
+                    continue
                 await self.log("开始本轮扫描未购买列表...")
                 try:
                     await self.sweep_idle_tabs()
@@ -309,6 +322,10 @@ class YahooAutoBot(
                 backend_page = await self.find_backend_tab()
                 if not backend_page:
                     await self.log("未找到后台标签页。尝试打开...", "WARNING")
+                    if not self.browser_context:
+                        await self.log("QBT 所在 Chrome 仍不可用，本轮跳过。", "WARNING")
+                        await asyncio.sleep(5)
+                        continue
                     backend_page = await self.browser_context.new_page()
                 backend_page = await self.ensure_backend_not_buy_list(
                     backend_page, force=True

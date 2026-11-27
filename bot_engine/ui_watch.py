@@ -519,6 +519,18 @@ class YahooUiWatchMixin:
                     return None
             except Exception:
                 pass
+        if checkpoint_id == "personal_purchase_procedure" and hasattr(
+            self, "_personal_nav_looks_settled"
+        ):
+            try:
+                if await self._personal_nav_looks_settled(page):
+                    await self.log(
+                        "个人取引ナビ已是情報/連絡态且无購入手続き，不报改版。",
+                        "WARNING",
+                    )
+                    return None
+            except Exception:
+                pass
         if checkpoint_id == "pay_confirm_button" and hasattr(self, "_kantan_pay_button_ready"):
             try:
                 if await self._kantan_pay_button_ready(page):

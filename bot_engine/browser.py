@@ -10,6 +10,8 @@ from playwright.async_api import async_playwright
 from .constants import (
     ACCOUNT_EMAILS,
     CHROME_CDP_PORTS,
+    CHROME_RESTART_COOLDOWN,
+    CHROME_WATCHDOG_SECONDS,
     MAX_CHROME_PAGES,
     QBT_BROWSER_ACCOUNT,
     WAIT_HANG_MS,
@@ -183,12 +185,10 @@ class BrowserMixin:
         return context, page
 
     async def start_browser(self, headless=False, for_login=False):
-        if self.yahoo_contexts:
-            await self.log("Browser already open.")
-            return
-        await self.log("正在连接 ad / ym 两套 Chrome（已开着则复用，不关窗口）...")
+        await self.ensure_chrome_watchdog()
+        await self.log("正在连接 ad / ym 两套 Chrome（已开着则复用，掉线则拉起）...")
         try:
-            self.playwright = await async_playwright().start()
+            await self._ensure_playwright()
             chrome = _system_chrome_path()
             if chrome:
                 await self.log(f"使用本机 Chrome: {chrome}")
@@ -201,13 +201,8 @@ class BrowserMixin:
             if not hasattr(self, "yahoo_browsers"):
                 self.yahoo_browsers = {}
             for key in ACCOUNT_EMAILS:
-                ctx, page = await self._launch_account_context(
-                    key, headless, open_qbt=(key == qbt_key)
-                )
-                self.yahoo_contexts[key] = ctx
-                if key == qbt_key:
-                    self.browser_context = ctx
-                    self.page = page
+                self._mark_chrome_wanted(key, True)
+                await self.ensure_account_browser(key, headless=headless)
             if for_login:
                 await self.log(
                     "请分别登录：\n"
@@ -410,6 +405,322 @@ class BrowserMixin:
                 return page
             raise
         return page
+
+    def _chrome_guard(self):
+        lock = getattr(self, "_chrome_lock", None)
+        if lock is None:
+            self._chrome_lock = asyncio.Lock()
+            lock = self._chrome_lock
+        return lock
+
+    def _mark_chrome_wanted(self, account_key, wanted=True):
+        if not hasattr(self, "chrome_wanted") or self.chrome_wanted is None:
+            self.chrome_wanted = {}
+        self.chrome_wanted[account_key] = bool(wanted)
+
+    def _chrome_row_skeleton(self, account_key, **extra):
+        qbt_key = getattr(self, "qbt_account", QBT_BROWSER_ACCOUNT)
+        row = {
+            "key": account_key,
+            "label": "ad 出价 / QBT" if account_key == qbt_key else "ym 出价",
+            "port": self._cdp_port(account_key),
+            "emails": " / ".join(ACCOUNT_EMAILS.get(account_key) or []),
+            "qbt": account_key == qbt_key,
+            "cdp": False,
+            "playwright": False,
+            "pages": 0,
+            "alive": False,
+            "wanted": bool((getattr(self, "chrome_wanted", None) or {}).get(account_key)),
+            "restarting": bool((getattr(self, "chrome_restarting", None) or {}).get(account_key)),
+            "last_error": "",
+        }
+        row.update(extra)
+        return row
+
+    def _chrome_status_from_cache(self):
+        cache = getattr(self, "chrome_health_cache", None) or {}
+        rows = []
+        for key in ACCOUNT_EMAILS:
+            cached = dict(cache.get(key) or {})
+            if cached:
+                cached["wanted"] = bool(
+                    (getattr(self, "chrome_wanted", None) or {}).get(key)
+                )
+                cached["restarting"] = bool(
+                    (getattr(self, "chrome_restarting", None) or {}).get(key)
+                )
+                rows.append(cached)
+            else:
+                rows.append(self._chrome_row_skeleton(key))
+        return rows
+
+    def _chrome_status_sync(self):
+        """不碰 Playwright，只探 CDP，给管理页兜底轮询用。"""
+        rows = []
+        cache = getattr(self, "chrome_health_cache", None) or {}
+        for key in ACCOUNT_EMAILS:
+            cached = dict(cache.get(key) or {})
+            cdp_ok = False
+            try:
+                req = urllib.request.urlopen(
+                    f"{self._cdp_http(self._cdp_port(key))}/json/version", timeout=0.4
+                )
+                req.read()
+                req.close()
+                cdp_ok = True
+            except Exception:
+                cdp_ok = False
+            pw_ok = bool(cached.get("playwright")) if cdp_ok else False
+            pages = int(cached.get("pages") or 0) if cdp_ok else 0
+            rows.append(
+                self._chrome_row_skeleton(
+                    key,
+                    cdp=cdp_ok,
+                    playwright=pw_ok,
+                    pages=pages,
+                    alive=bool(cdp_ok and pw_ok),
+                    last_error="" if cdp_ok else str(cached.get("last_error") or ""),
+                )
+            )
+        return rows
+
+    async def chrome_status_for_ui(self):
+        rows = []
+        for key in ACCOUNT_EMAILS:
+            try:
+                rows.append(
+                    await asyncio.wait_for(self.inspect_account_chrome(key), timeout=2.2)
+                )
+            except Exception:
+                cached = dict(
+                    (getattr(self, "chrome_health_cache", None) or {}).get(key) or {}
+                )
+                rows.append(cached if cached else self._chrome_row_skeleton(key))
+        return rows
+
+    async def inspect_account_chrome(self, account_key):
+        cdp_ok = await self._cdp_ready(self._cdp_port(account_key), timeout_s=0.8)
+        pw_ok = False
+        ctx_ok = False
+        pages = 0
+        err = ""
+        browser = (getattr(self, "yahoo_browsers", None) or {}).get(account_key)
+        ctx = (self.yahoo_contexts or {}).get(account_key)
+        if cdp_ok:
+            if browser is not None:
+                try:
+                    pw_ok = bool(browser.is_connected())
+                except Exception as e:
+                    pw_ok = False
+                    err = str(e)[:160]
+            if ctx is not None:
+                try:
+                    pages = len([p for p in ctx.pages if not p.is_closed()])
+                    ctx_ok = True
+                    pw_ok = True
+                except Exception as e:
+                    ctx_ok = False
+                    pw_ok = False
+                    err = str(e)[:160]
+        info = self._chrome_row_skeleton(
+            account_key,
+            cdp=bool(cdp_ok),
+            playwright=bool(pw_ok),
+            pages=pages,
+            alive=bool(cdp_ok and ctx_ok),
+            last_error=err,
+        )
+        if not hasattr(self, "chrome_health_cache") or self.chrome_health_cache is None:
+            self.chrome_health_cache = {}
+        self.chrome_health_cache[account_key] = info
+        return info
+
+    def _pids_listening_on_port(self, port):
+        pids = set()
+        try:
+            kwargs = {
+                "text": True,
+                "errors": "ignore",
+                "stderr": subprocess.DEVNULL,
+            }
+            if os.name == "nt":
+                kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+            out = subprocess.check_output(["netstat", "-ano", "-p", "tcp"], **kwargs)
+        except Exception:
+            return []
+        suffix = f":{int(port)}"
+        for line in out.splitlines():
+            cols = line.split()
+            if len(cols) < 5:
+                continue
+            if cols[-2].upper() != "LISTENING":
+                continue
+            local = cols[1]
+            if local.endswith(suffix) or local.rsplit(":", 1)[-1] == str(port):
+                try:
+                    pid = int(cols[-1])
+                except ValueError:
+                    continue
+                if pid > 0:
+                    pids.add(pid)
+        return list(pids)
+
+    def _kill_chrome_on_port(self, port):
+        killed = []
+        my_pid = os.getpid()
+        for pid in self._pids_listening_on_port(port):
+            if pid == my_pid:
+                continue
+            try:
+                if os.name == "nt":
+                    subprocess.run(
+                        ["taskkill", "/PID", str(pid), "/T", "/F"],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                    )
+                else:
+                    os.kill(pid, 9)
+                killed.append(pid)
+            except Exception:
+                continue
+        return killed
+
+    async def _ensure_playwright(self):
+        if self.playwright is None:
+            self.playwright = await async_playwright().start()
+        if not hasattr(self, "yahoo_browsers") or self.yahoo_browsers is None:
+            self.yahoo_browsers = {}
+        if not hasattr(self, "yahoo_contexts") or self.yahoo_contexts is None:
+            self.yahoo_contexts = {}
+
+    async def _drop_account_playwright(self, account_key):
+        qbt_key = getattr(self, "qbt_account", QBT_BROWSER_ACCOUNT)
+        ctx = (self.yahoo_contexts or {}).pop(account_key, None)
+        browser = (self.yahoo_browsers or {}).pop(account_key, None)
+        if qbt_key == account_key:
+            if self.browser_context is ctx:
+                self.browser_context = None
+            self.page = None
+        if browser is not None:
+            try:
+                await asyncio.wait_for(browser.close(), timeout=3)
+            except Exception:
+                pass
+
+    async def restart_account_browser(self, account_key, headless=False, reason=""):
+        """某个 Chrome 掉了：清 Playwright 引用，必要时杀占用端口的僵尸进程，再拉起并连 CDP。"""
+        key = (account_key or "").strip().lower()
+        if key not in ACCOUNT_EMAILS:
+            raise ValueError(f"未知浏览器 {account_key}")
+        self._mark_chrome_wanted(key, True)
+        restarting = getattr(self, "chrome_restarting", None)
+        if restarting is None:
+            self.chrome_restarting = {}
+            restarting = self.chrome_restarting
+        async with self._chrome_guard():
+            if restarting.get(key):
+                return False
+            restarting[key] = True
+            try:
+                why = f"（{reason}）" if reason else ""
+                await self.log(f"[{key}] Chrome 准备重启{why}...", "WARNING")
+                await self._drop_account_playwright(key)
+                port = self._cdp_port(key)
+                cdp_ok = await self._cdp_ready(port, timeout_s=1.0)
+                if not cdp_ok:
+                    killed = self._kill_chrome_on_port(port)
+                    if killed:
+                        await self.log(
+                            f"[{key}] CDP {port} 无响应，已结束占用进程 {killed}，再启动 Chrome。",
+                            "WARNING",
+                        )
+                        await asyncio.sleep(1.2)
+                await self._ensure_playwright()
+                qbt_key = getattr(self, "qbt_account", QBT_BROWSER_ACCOUNT)
+                ctx, page = await self._launch_account_context(
+                    key, headless, open_qbt=(key == qbt_key)
+                )
+                self.yahoo_contexts[key] = ctx
+                if key == qbt_key:
+                    self.browser_context = ctx
+                    self.page = page
+                if not hasattr(self, "chrome_last_restart") or self.chrome_last_restart is None:
+                    self.chrome_last_restart = {}
+                self.chrome_last_restart[key] = asyncio.get_running_loop().time()
+                await self.log(f"[{key}] Chrome 已重新连上（CDP {port}）。")
+                await self.inspect_account_chrome(key)
+                return True
+            finally:
+                restarting[key] = False
+
+    async def ensure_account_browser(self, account_key, headless=False):
+        key = (account_key or "").strip().lower()
+        for _ in range(50):
+            if not (getattr(self, "chrome_restarting", None) or {}).get(key):
+                break
+            await asyncio.sleep(0.4)
+        info = await self.inspect_account_chrome(key)
+        if info.get("alive"):
+            self._mark_chrome_wanted(key, True)
+            return True
+        if info.get("cdp") and not info.get("playwright"):
+            await self.log(f"[{key}] Chrome 还在，自动化连接断了，只重连 CDP。", "WARNING")
+            return await self.restart_account_browser(key, headless=headless, reason="CDP重连")
+        return await self.restart_account_browser(key, headless=headless, reason="窗口消失")
+
+    async def ensure_wanted_browsers(self):
+        wanted = getattr(self, "chrome_wanted", None) or {}
+        last = getattr(self, "chrome_last_restart", None) or {}
+        now = asyncio.get_running_loop().time()
+        cooldown = float(CHROME_RESTART_COOLDOWN or 45)
+        for key in ACCOUNT_EMAILS:
+            if not wanted.get(key):
+                await self.inspect_account_chrome(key)
+                continue
+            info = await self.inspect_account_chrome(key)
+            if info.get("alive"):
+                continue
+            prev = float(last.get(key) or 0)
+            if prev and (now - prev) < cooldown:
+                continue
+            try:
+                before = float((getattr(self, "chrome_last_restart", None) or {}).get(key) or 0)
+                ok = await self.ensure_account_browser(key)
+                after = float((getattr(self, "chrome_last_restart", None) or {}).get(key) or 0)
+                if ok and after > before:
+                    try:
+                        self.notify_feishu(
+                            f"Chrome [{key}] 掉线后已自动重启（CDP {self._cdp_port(key)}）。"
+                        )
+                    except Exception:
+                        pass
+            except Exception as e:
+                await self.log(f"[{key}] 自动重启失败: {e}", "ERROR")
+
+    async def chrome_watchdog_loop(self):
+        await self.log("浏览器看门狗已启动（监控 ad/ym，掉线会自动拉起）。")
+        interval = float(CHROME_WATCHDOG_SECONDS or 8)
+        while True:
+            try:
+                await self.ensure_wanted_browsers()
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                try:
+                    await self.log(f"浏览器看门狗本轮异常: {e}", "DEBUG")
+                except Exception:
+                    pass
+            try:
+                await asyncio.sleep(interval)
+            except asyncio.CancelledError:
+                raise
+
+    async def ensure_chrome_watchdog(self):
+        task = getattr(self, "_chrome_watchdog_task", None)
+        if task is not None and not task.done():
+            return
+        self._chrome_watchdog_task = asyncio.create_task(self.chrome_watchdog_loop())
 
     async def close_browser(self, kill_chrome=False):
         """默认只断开 Playwright。Chrome 进程留下，下次 main 用 CDP 再连。"""

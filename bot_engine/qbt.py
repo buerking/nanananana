@@ -727,7 +727,7 @@ class QbtMixin:
                 await self.log(f"飞书发图结果: {detail}")
         return "need_value_added"
 
-    async def backfill_order(self, backend_page: Page, yahoo_result, backend_total=0, test_mode=True):
+    async def backfill_order(self, backend_page: Page, yahoo_result, backend_total=0, test_mode=False):
         await self.log("Stage 4: Backfilling Data to Backend...")
         if not yahoo_result:
             return

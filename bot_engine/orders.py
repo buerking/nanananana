@@ -21,7 +21,7 @@ from .qbt import parse_storage_code
 
 
 class OrderMixin:
-    async def process_order(self, order, backend_page: Page, test_mode=True):
+    async def process_order(self, order, backend_page: Page, test_mode=False):
         """队列里每一项都当「一笔雅虎拍品」跑完：开 QBT 详情 → 打开该行 product_id → 下单 → 回填。
 
         入队规则见 filter_buyable_orders：仅一对一。雅虎页开在对应出价账号的 Chrome。
@@ -149,7 +149,7 @@ class OrderMixin:
             await self.log("增值服务未能截到打码图，飞书先发文字。", "WARNING")
         return payload
 
-    async def process_wait_freight_queue(self, backend_page, test_mode=True, run_stats=None):
+    async def process_wait_freight_queue(self, backend_page, test_mode=False, run_stats=None):
         """没有可买的一对一时：只处理本机 JSON 里「等待商家确认运费」的单，不扫待确认整表。"""
         pending = [
             x
@@ -188,7 +188,7 @@ class OrderMixin:
             await self.log(f"待运费队列 {oid} 本轮结论: {status}", "WARNING")
         return backend_page
 
-    async def process_wait_freight_order(self, item, backend_page, test_mode=True):
+    async def process_wait_freight_order(self, item, backend_page, test_mode=False):
         """查雅虎是否已报运费；有则填 jpWaybillFee 并点确定。不再点「等待商家确认运费」。"""
         order = {
             "order_id": str(item.get("order_id") or ""),
