@@ -201,6 +201,8 @@ class StorageMixin:
             if str(item.get("order_id") or "") == oid:
                 return False
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        is_store = bool(extra.get("is_store") or info.get("is_store"))
+        trade_url = str(extra.get("url") or extra.get("trade_url") or info.get("trade_url") or "")
         self.wait_shipping_queue.append(
             {
                 "order_id": oid,
@@ -210,6 +212,9 @@ class StorageMixin:
                 "seller_id": str(info.get("seller_id") or extra.get("seller_id") or ""),
                 "user_name": str(info.get("user_name") or extra.get("user_name") or ""),
                 "storage_code": str(info.get("storage_code") or extra.get("storage_code") or ""),
+                "is_store": is_store,
+                "trade_kind": "store" if is_store else "personal",
+                "trade_url": trade_url,
                 "added_at": now,
                 "last_checked": "",
                 "status": "waiting",

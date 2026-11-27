@@ -623,6 +623,11 @@ class YahooPurchaseMixin:
         """/top 是 Next 壳，等取引ナビ正文或已购/待运费，避免把页头广告当改版。"""
         if page is None:
             return
+        try:
+            if await self._yahoo_system_error_visible(page):
+                await self._switch_personal_trade_url_on_syserr(page)
+        except Exception:
+            pass
 
         async def ready():
             try:
@@ -1074,6 +1079,11 @@ class YahooPurchaseMixin:
 
     def _purchase_result_payload(self, ctx, status):
         order = ctx.order_info or ctx.order or {}
+        url = ""
+        try:
+            url = (ctx.yahoo_page.url if ctx.yahoo_page else "") or ""
+        except Exception:
+            url = ""
         return {
             "status": status,
             "shipping": int(getattr(ctx, "shipping_cost", 0) or 0),
@@ -1088,6 +1098,8 @@ class YahooPurchaseMixin:
             "user_name": order.get("user_name") or "",
             "storage_code": order.get("storage_code") or "",
             "receipt_shot_path": getattr(ctx, "receipt_shot_path", "") or "",
+            "is_store": bool(getattr(ctx, "is_store", False)),
+            "url": url,
         }
 
     async def _finish_already_purchased(self, ctx):
@@ -1583,18 +1595,29 @@ class YahooPurchaseMixin:
         if done:
             return done
         url = page.url or ""
-        if (
+        top_empty = (
             "contact.auctions.yahoo.co.jp/top" in url
             and "/trade/top" not in url
             and not await self._visible_action(page, PERSONAL_PROCEDURE_SEL)
             and not await self._page_shows_wait_shipping_submitted(page)
             and not await self._page_has_trade_cancelled(page)
             and not await self._page_has_no_purchase_data(page)
-        ):
+        )
+        top_syserr = False
+        try:
+            top_syserr = (
+                "contact.auctions.yahoo.co.jp/top" in url
+                and "/trade/top" not in url
+                and await self._yahoo_system_error_visible(page)
+            )
+        except Exception:
+            top_syserr = False
+        if top_empty or top_syserr:
             product_id = (self._product_id(ctx) or "").strip()
             if product_id:
                 trade_url = YAHOO_TRADE_TOP_URL.format(product_id=product_id)
-                await self.log(f"/top 未出水合正文，改开 /trade/top: {trade_url}")
+                why = "是系统错误页" if top_syserr else "未出水合正文"
+                await self.log(f"/top {why}，改开 /trade/top: {trade_url}")
                 try:
                     await page.goto(trade_url, wait_until="commit", timeout=WAIT_HANG_MS)
                     await self._wait_personal_nav_ready(page)
@@ -1987,8 +2010,8 @@ class YahooPurchaseMixin:
                 elif product_id:
                     opened = False
                     for trade_url in (
-                        YAHOO_TRADE_NAV_URL.format(product_id=product_id),
                         YAHOO_TRADE_TOP_URL.format(product_id=product_id),
+                        YAHOO_TRADE_NAV_URL.format(product_id=product_id),
                     ):
                         await self.log(f"直接打开取引ナビ: {trade_url}")
                         try:
@@ -1999,6 +2022,12 @@ class YahooPurchaseMixin:
                                 )
                             except Exception:
                                 pass
+                            if await self._yahoo_system_error_visible(yahoo_page):
+                                await self.log(
+                                    f"{trade_url} 是系统错误页，换下一条取引ナビ地址。",
+                                    "WARNING",
+                                )
+                                continue
                             opened = True
                             break
                         except Exception as e:

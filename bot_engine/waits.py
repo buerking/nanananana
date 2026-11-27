@@ -13,6 +13,7 @@ from .constants import (
     WAIT_HANG_MS,
     YAHOO_SYSERR_MAX_TRIES,
     YAHOO_SYSERR_WAIT_SECONDS,
+    YAHOO_TRADE_TOP_URL,
 )
 
 # 登录抽风页（会话还在，却画出 ID 表单）。不要拿「ログイン」单独判断，结算页也有再ログイン。
@@ -240,8 +241,53 @@ class WaitMixin:
 
         return await self.wait_until(ready, timeout_ms=timeout_ms)
 
+    async def _goto_commit(self, page, url):
+        try:
+            await page.goto(url, wait_until="commit", timeout=WAIT_HANG_MS)
+        except Exception as e:
+            await self.log(f"打开失败 {url}: {e}", "WARNING")
+            return False
+        try:
+            await page.wait_for_load_state("domcontentloaded", timeout=15000)
+        except Exception:
+            pass
+        return True
+
+    async def _switch_personal_trade_url_on_syserr(self, page):
+        """/top 系统错误几乎都是走错入口：个人待运费/旧ナビ在 /trade/top，不要连刷 /top。"""
+        if page is None:
+            return False
+        try:
+            if not await self._yahoo_system_error_visible(page):
+                return False
+        except Exception:
+            return False
+        url = page.url or ""
+        try:
+            parsed = urlparse(url)
+        except Exception:
+            return False
+        host = (parsed.netloc or "").lower()
+        path = (parsed.path or "").rstrip("/")
+        if "contact.auctions.yahoo.co.jp" not in host:
+            return False
+        if "/trade/top" in path:
+            return False
+        if not path.endswith("/top"):
+            return False
+        qs = parse_qs(parsed.query or "")
+        aid = str((qs.get("aid") or qs.get("auctionId") or [""])[0] or "").strip()
+        if not aid:
+            return False
+        dest = YAHOO_TRADE_TOP_URL.format(product_id=aid)
+        await self.log(
+            f"系统错误页是新版 /top，不是刷新能好的。改开个人取引ナビ /trade/top: {dest}",
+            "WARNING",
+        )
+        return await self._goto_commit(page, dest)
+
     async def _reload_if_yahoo_system_error(self, page, max_tries=None):
-        """系统错误页：人工 F5，每次后等 30 秒看它自己恢复，最多 3 次。不要连刷。"""
+        """系统错误页：先换对 URL；仍错再用人工 F5，每次后等 30 秒，最多 3 次。"""
         if page is None:
             return False
         if hasattr(self, "_page_has_trade_cancelled"):
@@ -254,6 +300,20 @@ class WaitMixin:
             try:
                 if await self._page_has_no_purchase_data(page):
                     return False
+            except Exception:
+                pass
+        switched = False
+        try:
+            switched = await self._switch_personal_trade_url_on_syserr(page)
+        except Exception:
+            switched = False
+        if switched:
+            try:
+                if not await self._yahoo_system_error_visible(page):
+                    await self.log("改开 /trade/top 后系统错误已消失，继续。")
+                    state = self._syserr_state_for(page)
+                    state["tries"] = 0
+                    return True
             except Exception:
                 pass
         try:

@@ -13,7 +13,8 @@ from .constants import (
     WAIT_CLICK_MS,
     YAHOO_AUCTION_URL,
     YAHOO_HOME_URL,
-    YAHOO_TRADE_NAV_URL,
+    YAHOO_STORE_TRADE_STATUS_URL,
+    YAHOO_TRADE_TOP_URL,
 )
 from .exceptions import BotStopped
 from .flow import OrderContext, run_chain
@@ -201,6 +202,9 @@ class OrderMixin:
             "status": "未购买待确认",
             "option_info": "普通快递（有快递单号可追踪）",
             "from_wait_freight": True,
+            "is_store": bool(item.get("is_store")),
+            "trade_kind": str(item.get("trade_kind") or ""),
+            "trade_url": str(item.get("trade_url") or ""),
         }
         ctx = OrderContext(
             order=order,
@@ -487,8 +491,8 @@ class OrderMixin:
             or ctx.order.get("from_wait_freight")
         )
         if wait_freight:
-            url = YAHOO_TRADE_NAV_URL.format(product_id=product_id)
-            url_hint = product_id
+            url = self._wait_freight_entry_url(product_id, ctx.order)
+            url_hint = url
         else:
             url = YAHOO_AUCTION_URL.format(product_id=product_id)
             url_hint = f"/auction/{product_id}"
@@ -512,11 +516,32 @@ class OrderMixin:
                 yahoo_ctx, url, url_hint=url_hint
             )
             await ctx.yahoo_page.bring_to_front()
+            cur = (ctx.yahoo_page.url or "") if ctx.yahoo_page else ""
+            if wait_freight and ctx.yahoo_page and url and url.split("#")[0] not in cur.split("#")[0]:
+                await self.log(f"待运费入口不是目标页，改开: {url}")
+                try:
+                    await ctx.yahoo_page.goto(url, wait_until="commit", timeout=WAIT_HANG_MS)
+                except Exception as e:
+                    await self.log(f"待运费入口打开失败: {e}", "WARNING")
             await self.log(f"已打开雅虎页面: {ctx.yahoo_page.url}")
         except Exception as e:
             await self.log(f"阶段2失败 (读取详情/打开雅虎): {e}", "ERROR")
             return {"status": "DETAIL_PAGE_ERROR"}
         return None
+
+    def _wait_freight_entry_url(self, product_id, order=None):
+        """待运费已提交取引情報：个人走 /trade/top，店铺走 /order/status。不要开新版 /top。"""
+        info = dict(order or {})
+        saved = str(info.get("trade_url") or "").strip()
+        if info.get("is_store") or str(info.get("trade_kind") or "") == "store":
+            if "buy.auctions.yahoo.co.jp" in saved and "/order/" in saved:
+                return saved.split("#")[0]
+            return YAHOO_STORE_TRADE_STATUS_URL.format(product_id=product_id)
+        if "/trade/top" in saved:
+            return YAHOO_TRADE_TOP_URL.format(product_id=product_id)
+        if "buy.auctions.yahoo.co.jp" in saved and "/order/" in saved:
+            return saved.split("#")[0]
+        return YAHOO_TRADE_TOP_URL.format(product_id=product_id)
 
     def _from_wait_freight(self, ctx):
         return bool(

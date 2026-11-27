@@ -322,9 +322,25 @@ class BrowserMixin:
             closed += await self._close_pages_safe(extras[:overflow], keep)
         return closed
 
-    def _page_url_matches_product(self, url, product_id="", url_hint=""):
+    def _yahoo_entry_kind(self, url):
+        u = (url or "").lower()
+        if "buy.auctions.yahoo.co.jp" in u and "/order/" in u:
+            return "store"
+        if "/trade/top" in u:
+            return "personal_old"
+        if "contact.auctions.yahoo.co.jp" in u and "/top" in u:
+            return "personal_new"
+        if "/jp/auction/" in u or "/auction/" in u:
+            return "listing"
+        return ""
+
+    def _page_url_matches_product(self, url, product_id="", url_hint="", target_url=""):
         current = (url or "").lower()
         if not current.startswith("http") or "qbt.jp" in current:
+            return False
+        want = self._yahoo_entry_kind(target_url or url_hint)
+        have = self._yahoo_entry_kind(current)
+        if want and have and want != have:
             return False
         hint = (url_hint or "").lower().strip()
         if hint and hint in current:
@@ -360,7 +376,7 @@ class BrowserMixin:
             except Exception:
                 continue
             current = (page.url or "").lower()
-            if self._page_url_matches_product(current, pid, hint):
+            if self._page_url_matches_product(current, pid, hint, target_url=url):
                 matched.append(page)
                 continue
             if pid:
@@ -401,7 +417,7 @@ class BrowserMixin:
         except Exception:
             if hint and hint in (page.url or "").lower():
                 return page
-            if pid and self._page_url_matches_product(page.url or "", pid, hint):
+            if pid and self._page_url_matches_product(page.url or "", pid, hint, target_url=url):
                 return page
             raise
         return page
