@@ -116,6 +116,8 @@ CHECKOUT_FORM_SEL = (
 )
 
 KANTAN_PAY_SEL = (
+    "a[href*='buyer/payment/input']:has-text('Yahoo!かんたん決済で支払う'), "
+    "a.gv-Button--primary[href*='buyer/payment/input'], "
     "a:has-text('Yahoo!かんたん決済で支払う'), "
     "button:has-text('Yahoo!かんたん決済で支払う')"
 )
@@ -164,6 +166,10 @@ WAIT_SHIPPING_SUBMITTED_HINTS = (
     "送料の連絡をお待ちください",
     "送料決定後、確定します",
 )
+# 卖家已报运费、买家还没付：不是「尚未回传运费」。
+FREIGHT_READY_STATUS = ("buyerInputYahooAfterShip",)
+FREIGHT_READY_NOTICES = ("paymentYahooWaiting",)
+FREIGHT_READY_HISTORY = "送料の連絡がありました"
 ALREADY_PURCHASED_HINTS = (
     "ご購入ありがとうございます",
     "支払いが完了しました",
@@ -258,6 +264,8 @@ class YahooPurchaseMixin:
                     done = await self._finish_if_already_done(inner_ctx)
                     if done:
                         return done
+                    await self._maybe_enter_seller_freight_payment(inner_ctx)
+                    page = inner_ctx.yahoo_page
                     await self._reload_if_yahoo_system_error(page)
                     await self._try_skip_wallet_sub_add(page)
                 return await step(inner_ctx)
@@ -568,7 +576,11 @@ class YahooPurchaseMixin:
                 break
             if await self._reload_stuck_page(ctx.yahoo_page):
                 break
-        await self.wait_visible(ctx.yahoo_page.locator(CHECKOUT_FORM_SEL), timeout_ms=WAIT_HANG_MS)
+        url = (ctx.yahoo_page.url if ctx.yahoo_page else "") or ""
+        if "buyer/payment" not in url:
+            await self.wait_visible(
+                ctx.yahoo_page.locator(CHECKOUT_FORM_SEL), timeout_ms=WAIT_HANG_MS
+            )
         await self.log(f"购买手续页当前 URL: {ctx.yahoo_page.url}")
         self._remember_yahoo_trade_ids(ctx)
 
@@ -653,6 +665,12 @@ class YahooPurchaseMixin:
 
     def _text_says_wait_shipping(self, text):
         t = text or ""
+        if (
+            "代金をお支払いください" in t
+            or "Yahoo!かんたん決済で支払う" in t
+            or FREIGHT_READY_HISTORY in t
+        ):
+            return False
         return any(h in t for h in WAIT_SHIPPING_HINTS)
 
     async def _page_has_known_postage_on_edit(self, page):
@@ -926,6 +944,60 @@ class YahooPurchaseMixin:
                     notice_types.append(str(item.get("type")))
         return status, step, notice_types
 
+    def _next_data_trade_top(self, data):
+        if not data:
+            return {}
+        for cur in self._walk_next_nodes(data, limit=250):
+            top = cur.get("top")
+            if isinstance(top, dict) and isinstance(top.get("tradeInfo"), dict):
+                return top
+            if isinstance(cur.get("tradeInfo"), dict) and (
+                cur.get("action") or cur.get("progressStatus") or cur.get("auctionId")
+            ):
+                return cur
+        return {}
+
+    def _seller_freight_from_next_data(self, data):
+        """卖家已报运费、还要买家付款时，next_data 里有 paymentButtonUrl 和 送料。"""
+        empty = {"ready": False, "pay_url": "", "fee": None, "total": None, "oid": ""}
+        if not data:
+            return empty
+        top = self._next_data_trade_top(data) or {}
+        action = top.get("action") if isinstance(top.get("action"), dict) else {}
+        pay_url = str(action.get("paymentButtonUrl") or "").strip()
+        pay_show = str(action.get("paymentButton") or "").lower() == "show"
+        trade = top.get("tradeInfo") if isinstance(top.get("tradeInfo"), dict) else {}
+        pay = trade.get("paymentInfo") if isinstance(trade.get("paymentInfo"), dict) else {}
+        send = trade.get("sendInfo") if isinstance(trade.get("sendInfo"), dict) else {}
+        method = send.get("shipMethod") if isinstance(send.get("shipMethod"), dict) else {}
+        fee = _parse_yen(pay.get("shippingFee") or method.get("fee"))
+        total = _parse_yen(pay.get("totalPrice"))
+        oid = str(top.get("orderId") or "")
+        status, step, notices = self._personal_trade_progress(data)
+        hist = " ".join(
+            str(item.get("action") or "")
+            for item in (trade.get("tradeHistory") or [])
+            if isinstance(item, dict)
+        )
+        ready = bool(
+            pay_show
+            or pay_url
+            or status in FREIGHT_READY_STATUS
+            or any(n in FREIGHT_READY_NOTICES for n in notices)
+            or FREIGHT_READY_HISTORY in hist
+        )
+        if not ready:
+            return empty
+        if fee is None and not pay_url and not pay_show:
+            return empty
+        return {
+            "ready": True,
+            "pay_url": pay_url,
+            "fee": fee,
+            "total": total,
+            "oid": oid,
+        }
+
     def _next_data_has_paid_tokens(self, data):
         if not data:
             return False
@@ -1022,6 +1094,10 @@ class YahooPurchaseMixin:
         except Exception:
             return False
         text = body or ""
+        if FREIGHT_READY_HISTORY in text or "代金をお支払いください" in text:
+            return False
+        if await self._kantan_pay_button_ready(page):
+            return False
         if any(h in text for h in WAIT_SHIPPING_SUBMITTED_HINTS):
             return True
         if "取引情報を入力してください" in text:
@@ -1039,8 +1115,122 @@ class YahooPurchaseMixin:
             pass
         return False
 
+    async def _seller_freight_pay_info(self, page):
+        """当前取引ナビ：卖家是否已报运费、支付链接/金额。"""
+        info = {
+            "ready": False,
+            "pay_url": "",
+            "fee": None,
+            "total": None,
+            "oid": "",
+        }
+        if page is None:
+            return info
+        try:
+            next_data = await self._read_next_data(page)
+        except Exception:
+            next_data = None
+        parsed = self._seller_freight_from_next_data(next_data)
+        if parsed.get("ready"):
+            info.update(parsed)
+        try:
+            body = await page.locator("main, body").first.inner_text()
+        except Exception:
+            body = ""
+        text = body or ""
+        if info.get("fee") is None:
+            if (
+                FREIGHT_READY_HISTORY in text
+                or "代金をお支払いください" in text
+                or "Yahoo!かんたん決済で支払う" in text
+                or info.get("ready")
+            ) and "送料の連絡をお待ちください" not in text:
+                m = re.search(r"送料[：:\s]*([\d,]+)\s*円", text)
+                if m:
+                    info["fee"] = int(m.group(1).replace(",", ""))
+                elif re.search(r"送料無料|出品者負担", text):
+                    info["fee"] = 0
+        if (
+            "代金をお支払いください" in text
+            or FREIGHT_READY_HISTORY in text
+        ) and "送料の連絡をお待ちください" not in text:
+            if info.get("fee") is not None or "Yahoo!かんたん決済で支払う" in text:
+                info["ready"] = True
+        if not info.get("pay_url"):
+            try:
+                loc = page.locator(KANTAN_PAY_SEL)
+                n = await loc.count()
+                for i in range(min(n, 8)):
+                    item = loc.nth(i)
+                    try:
+                        href = (await item.get_attribute("href")) or ""
+                    except Exception:
+                        href = ""
+                    if "buyer/payment/input" in href:
+                        info["pay_url"] = href
+                        info["ready"] = True
+                        break
+                    if href and await item.is_visible():
+                        info["pay_url"] = href
+                        info["ready"] = True
+                        break
+            except Exception:
+                pass
+        return info
+
+    async def _maybe_enter_seller_freight_payment(self, ctx):
+        """卖家已报运费：记下金额并打开支付页，不要当「尚未回传运费」跳过。"""
+        page = ctx.yahoo_page if ctx else None
+        if page is None:
+            return False
+        url = page.url or ""
+        if self._checkout_like_url(url):
+            return True
+        if "contact.auctions.yahoo.co.jp" not in url:
+            return False
+        info = await self._seller_freight_pay_info(page)
+        if not info.get("ready"):
+            return False
+        if info.get("fee") is not None:
+            ctx.shipping_cost = int(info["fee"])
+            ctx.shipping_known = True
+            await self.log(f"待运费复查：卖家已报运费 {ctx.shipping_cost}円，进入支付。")
+        else:
+            await self.log("待运费复查：卖家已报运费，进入支付。")
+        if info.get("total") is not None:
+            ctx.yahoo_total = int(info["total"])
+        if info.get("oid"):
+            ctx.yahoo_oid = str(info["oid"])
+        ctx.is_wait_for_shipping = False
+        ctx.trade_info_submitted = True
+        ctx.is_personal = True
+        await self._open_personal_trade_tab(page)
+        if await self._click_kantan_pay_if_ready(ctx):
+            self._remember_yahoo_trade_ids(ctx)
+            return self._checkout_like_url((ctx.yahoo_page.url if ctx.yahoo_page else "") or "")
+        pay_url = (info.get("pay_url") or "").strip()
+        if pay_url.startswith("/"):
+            pay_url = "https://contact.auctions.yahoo.co.jp" + pay_url
+        if pay_url:
+            await self.log(f"点击未命中，改为打开支付页: {pay_url}")
+            try:
+                await page.goto(pay_url, wait_until="commit", timeout=WAIT_HANG_MS)
+            except Exception as e:
+                await self.log(f"打开支付页失败: {e}", "WARNING")
+            try:
+                await page.wait_for_load_state("domcontentloaded", timeout=WAIT_HANG_MS)
+            except Exception:
+                pass
+            self._remember_yahoo_trade_ids(ctx)
+            return self._checkout_like_url(page.url or "")
+        await self.log("卖家已报运费，但页上没有「Yahoo!かんたん決済で支払う」。", "WARNING")
+        return False
+
     async def _wait_shipping_still_pending(self, page):
         """已提交取引情報，且还不能付款（卖家没报运费）。"""
+        info = await self._seller_freight_pay_info(page)
+        if info.get("ready"):
+            return False
         if not await self._page_shows_wait_shipping_submitted(page):
             return False
         if await self._kantan_pay_button_ready(page):
@@ -1075,6 +1265,9 @@ class YahooPurchaseMixin:
             return False
         await self.log("发现可点的「Yahoo!かんたん決済で支払う」，进入支付。")
         await self._follow_click(ctx, page.locator(KANTAN_PAY_SEL).first)
+        page = ctx.yahoo_page
+        if page is not None and not self._checkout_like_url(page.url or ""):
+            await self._wait_for_checkout_page(page, 20000)
         return True
 
     def _purchase_result_payload(self, ctx, status):
@@ -1134,15 +1327,24 @@ class YahooPurchaseMixin:
             return None
         if await self._page_shows_already_purchased(page):
             return await self._finish_already_purchased(ctx)
+        freight = await self._seller_freight_pay_info(page)
+        if freight.get("ready"):
+            return None
         if await self._wait_shipping_still_pending(page):
             return await self._finish_wait_shipping_submitted(ctx)
         url = page.url or ""
         if "contact.auctions.yahoo.co.jp" in url and "/trade/top" in url:
             if not getattr(ctx, "_tried_info_tab_for_done", False):
                 ctx._tried_info_tab_for_done = True
+                if await self._kantan_pay_button_ready(page):
+                    return None
                 await self._open_personal_info_tab(page)
                 if await self._page_shows_already_purchased(page):
                     return await self._finish_already_purchased(ctx)
+                freight = await self._seller_freight_pay_info(page)
+                if freight.get("ready"):
+                    await self._open_personal_trade_tab(page)
+                    return None
                 if await self._wait_shipping_still_pending(page):
                     return await self._finish_wait_shipping_submitted(ctx)
         return None
@@ -1566,6 +1768,9 @@ class YahooPurchaseMixin:
             await self._click_kantan_pay_if_ready(ctx)
             yahoo_page = ctx.yahoo_page
         else:
+            entered = await self._maybe_enter_seller_freight_payment(ctx)
+            if entered:
+                return None
             kantan_btn = yahoo_page.locator(KANTAN_PAY_SEL)
             if await self.has_visible(kantan_btn):
                 return await self._finish_wait_shipping_submitted(ctx)
@@ -1594,6 +1799,9 @@ class YahooPurchaseMixin:
         done = await self._finish_if_already_done(ctx)
         if done:
             return done
+        entered = await self._maybe_enter_seller_freight_payment(ctx)
+        if entered:
+            return None
         url = page.url or ""
         top_empty = (
             "contact.auctions.yahoo.co.jp/top" in url
@@ -1647,6 +1855,9 @@ class YahooPurchaseMixin:
                 or (ctx.order or {}).get("from_wait_freight")
             )
             if wait_freight:
+                entered = await self._maybe_enter_seller_freight_payment(ctx)
+                if entered:
+                    return None
                 qbt_text = (
                     (ctx.order_info or {}).get("qbt_page_text")
                     or (ctx.order or {}).get("qbt_page_text")
@@ -1690,6 +1901,16 @@ class YahooPurchaseMixin:
                 extra="已判定个人取引ナビ，页上没有「購入手続きをする」。",
             )
             return None
+        href, text = "", ""
+        try:
+            href = (await link.get_attribute("href")) or ""
+            text = " ".join(((await link.inner_text()) or "").split())
+        except Exception:
+            pass
+        if "buyer/payment/input" in href or "かんたん決済" in text:
+            entered = await self._maybe_enter_seller_freight_payment(ctx)
+            if entered:
+                return None
         ctx.is_personal = True
         ctx.is_store = False
         await self.log("个人取引ナビ：立即点「購入手続きをする」。")
@@ -1743,6 +1964,9 @@ class YahooPurchaseMixin:
             return await self._finish_already_purchased(ctx)
 
         if kind == "wait_shipping_submitted":
+            entered = await self._maybe_enter_seller_freight_payment(ctx)
+            if entered:
+                return None
             return await self._finish_wait_shipping_submitted(ctx)
 
         if kind == "id_mismatch":
@@ -1824,7 +2048,7 @@ class YahooPurchaseMixin:
         if page is None:
             return
         url = page.url or ""
-        if "/jp/auction/" not in url and "auctions.yahoo.co.jp" not in url:
+        if not self._is_auction_listing_url(url):
             return
         text = ""
         loc = page.locator("#itemPostage")
@@ -2514,6 +2738,38 @@ class YahooPurchaseMixin:
         if kind == "store":
             return "/order/status" in path and (not pid or pid in query or pid in path)
         return "/trade/top" in path and (not pid or pid in query or pid in path)
+
+    async def _open_personal_trade_tab(self, page):
+        """「Yahoo!かんたん決済で支払う」在取引 Tab，情報 Tab 上看不见。"""
+        if page is None:
+            return
+        trade_btn = page.locator("button:has-text('取引')")
+        try:
+            n = await trade_btn.count()
+        except Exception:
+            return
+        for i in range(min(n, 6)):
+            btn = trade_btn.nth(i)
+            try:
+                text = " ".join(((await btn.inner_text()) or "").split())
+            except Exception:
+                text = ""
+            if text != "取引":
+                continue
+            try:
+                cls = (await btn.get_attribute("class")) or ""
+                if "current" in cls:
+                    return
+                await btn.click()
+                await asyncio.sleep(0.8)
+                return
+            except Exception:
+                try:
+                    await btn.click()
+                    await asyncio.sleep(0.8)
+                    return
+                except Exception:
+                    continue
 
     async def _open_personal_info_tab(self, page):
         """个人取引ナビ运费表在「情報」Tab，点击后 DOM 才出现お支払い情報。"""
